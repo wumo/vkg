@@ -1,0 +1,36 @@
+name: Export Conan Recipe
+
+on:
+  release:
+    types: [created]
+  push:
+    branches:
+      - master
+
+jobs:
+  export:
+    if: startsWith(github.event.head_commit.message, 'release plz')
+    runs-on: ubuntu-latest
+
+    steps:
+      - uses: actions/checkout@v2
+      - name: Set up Python
+        uses: actions/setup-python@v1
+        with:
+          python-version: '3.x'
+      - name: Install dependencies
+        run: |
+          python -m pip install --upgrade pip
+          pip install --upgrade conan_package_tools
+      - name: Export conan recipe
+        env:
+          CONAN_BUILD_POLICY: ${{ secrets.CONAN_BUILD_POLICY }}
+          CONAN_CHANNEL: ${{ secrets.CONAN_CHANNEL }}
+          CONAN_PASSWORD: ${{ secrets.CONAN_PASSWORD }}
+          CONAN_REMOTES: ${{ secrets.CONAN_REMOTES }}
+          CONAN_UPLOAD: ${{ secrets.CONAN_UPLOAD }}
+          CONAN_UPLOAD_ONLY_RECIPE: ${{ secrets.CONAN_UPLOAD_ONLY_RECIPE }}
+          CONAN_USERNAME: ${{ secrets.CONAN_USERNAME }}
+        run: |
+          conan user
+          python build.py
