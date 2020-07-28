@@ -26,7 +26,7 @@ protected:
   virtual auto resize() -> void;
   virtual void onFrame(uint32_t imageIndex, float elapsed);
 
-  auto createDebutUtils() -> void;
+  auto createDebugUtils() -> void;
   auto createSyncObjects() -> void;
   auto createCommandBuffers() -> void;
 

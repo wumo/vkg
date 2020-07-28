@@ -12,7 +12,7 @@ Base::Base(WindowConfig windowConfig, FeatureConfig featureConfig)
   window_ = std::make_unique<Window>(windowConfig);
   instance = std::make_unique<Instance>(featureConfig);
   window_->createSurface(instance->vkInstance());
-  createDebutUtils();
+  createDebugUtils();
   device = std::make_unique<Device>(*instance, window_->vkSurface(), featureConfig);
   swapchain = std::make_unique<Swapchain>(*device, window_->vkSurface(), windowConfig);
   Base::resize();
@@ -30,7 +30,7 @@ static VKAPI_ATTR VkBool32 VKAPI_CALL debugCallback(
 
   return VK_FALSE;
 }
-auto Base::createDebutUtils() -> void {
+auto Base::createDebugUtils() -> void {
 #if defined(USE_VALIDATION_LAYER)
   using severity = vk::DebugUtilsMessageSeverityFlagBitsEXT;
   using msgType = vk::DebugUtilsMessageTypeFlagBitsEXT;
