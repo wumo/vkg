@@ -32,7 +32,7 @@ PipelineQuery::PipelineQuery(vk::Device device): device{device} {
   pipelineStats.resize(info.queryCount);
 }
 auto PipelineQuery::reset(vk::CommandBuffer cb) -> void {
-  cb.resetQueryPool(*queryPool, 0, pipelineStats.size());
+  cb.resetQueryPool(*queryPool, 0, uint32_t(pipelineStats.size()));
 }
 auto PipelineQuery::begin(vk::CommandBuffer cb) -> void {
   cb.beginQuery(*queryPool, 0, {});

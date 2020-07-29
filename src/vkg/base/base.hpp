@@ -1,12 +1,27 @@
 #pragma once
 
+#include <memory>
 #include "instance.hpp"
 #include "device.hpp"
 #include "swapchain.hpp"
 #include "window.hpp"
 #include "vkg/util/fps_meter.hpp"
-#include <memory>
 #include "call_frame_updater.hpp"
+#include "resource/buffers.hpp"
+#include "resource/textures.hpp"
+#include "pipeline/shaders.hpp"
+#include "pipeline/render_pass.hpp"
+#include "pipeline/descriptors.hpp"
+#include "pipeline/descriptor_updaters.hpp"
+#include "pipeline/descriptor_def.hpp"
+#include "pipeline/descriptor_macro.hpp"
+#include "pipeline/descriptor_pool.hpp"
+#include "pipeline/pipeline.hpp"
+#include "pipeline/pipeline_def.hpp"
+#include "pipeline/pipeline_macro.hpp"
+#include "pipeline/graphics_pipeline.hpp"
+#include "pipeline/compute_pipeline_maker.hpp"
+#include "pipeline/pipeline_query.hpp"
 
 namespace vkg {
 typedef void (*Updater)(double, void *);
@@ -24,6 +39,7 @@ public:
 
 protected:
   virtual auto resize() -> void;
+  virtual auto onInit() -> void{};
   virtual void onFrame(uint32_t imageIndex, float elapsed);
 
   auto createDebutUtils() -> void;

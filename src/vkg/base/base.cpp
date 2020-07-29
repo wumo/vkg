@@ -1,6 +1,5 @@
 #include "base.hpp"
 #include <iostream>
-#include "resource/texture_layout.hpp"
 #include "vkg/util/syntactic_sugar.hpp"
 
 VULKAN_HPP_DEFAULT_DISPATCH_LOADER_DYNAMIC_STORAGE
@@ -115,6 +114,7 @@ void Base::onFrame(uint32_t imageIndex, float elapsed) {
 }
 
 void Base::loop(const std::function<void(double)> &updater) {
+  onInit();
   auto start = std::chrono::high_resolution_clock::now();
   while(!window_->windowShouldClose()) {
     window_->setWindowTitle(toString(
@@ -148,7 +148,7 @@ void Base::loop(const std::function<void(double)> &updater) {
     fpsMeter.update(elapsed);
 
     updater(elapsed);
-    onFrame(imageIndex, elapsed);
+    onFrame(imageIndex, float(elapsed));
 
     auto &semaphore = semaphores[frameIndex];
     try {

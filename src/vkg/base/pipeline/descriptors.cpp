@@ -13,7 +13,7 @@ auto DescriptorSetLayoutMaker::binding(
   if(bindingFlag & vk::DescriptorBindingFlagBits::eUpdateAfterBind)
     updateAfterBind = true;
   errorIf(
-    variableDescriptorBinding != -1 && binding >= variableDescriptorBinding,
+    variableDescriptorBinding >=0 && binding >= uint32_t(variableDescriptorBinding),
     "variable descriptor binding should be the largest binding!");
   if(bindingFlag & vk::DescriptorBindingFlagBits::eVariableDescriptorCount) {
     errorIf(

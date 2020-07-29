@@ -54,6 +54,28 @@ set(sources
   src/vkg/base/pipeline/graphics_pipeline.cpp
   src/vkg/base/pipeline/compute_pipeline_maker.cpp
   src/vkg/base/pipeline/raytracing_pipeline.cpp
+  
+  src/vkg/math/matrices.cpp
+  src/vkg/render/model/aabb.cpp
+  src/vkg/render/model/transform.cpp
+  src/vkg/render/model/animation.cpp
+  src/vkg/render/model/light.cpp
+  src/vkg/render/model/material.cpp
+  src/vkg/render/model/mesh.cpp
+  src/vkg/render/model/model.cpp
+  src/vkg/render/model/model_instance.cpp
+  src/vkg/render/model/node.cpp
+  src/vkg/render/model/primitive.cpp
+  src/vkg/render/model/camera.cpp
+  
+  src/vkg/render/builder/primitive_builder.cpp
+  src/vkg/render/builder/gltf_loader.cpp
+  
+  src/vkg/render/graph/frame_graph.cpp
+  
+  src/vkg/render/renderer.cpp
+  src/vkg/render/scene.cpp
+  src/vkg/render/scene_frame.cpp
   )
 
 set(definitions "")

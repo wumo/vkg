@@ -1,5 +1,5 @@
 #pragma once
-#include "vkg/base/device.hpp" f
+#include "vkg/base/device.hpp"
 #include <memory>
 
 namespace vkg {

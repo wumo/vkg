@@ -11,7 +11,8 @@ class vkgConan(ConanFile):
         "spirv-cross/20200519",
         "glm/0.9.9.8",
         "stb/20200203",
-        "tinygltf/2.2.0"
+        "tinygltf/2.2.0",
+        "par_lib/master@wumo/stable",
     )
     generators = "cmake"
     scm = {

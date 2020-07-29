@@ -6,9 +6,9 @@ GraphicsPipelineMaker::GraphicsPipelineMaker(vk::Device device): device(device) 
 
 auto GraphicsPipelineMaker::vertexInput(
   std::initializer_list<VertexInputBinding> bindings) -> GraphicsPipelineMaker & {
-  for(auto &binding: bindings) {
+  for(const auto &binding: bindings) {
     _vertexBindings.emplace_back(binding.binding, binding.stride, binding.inputRate);
-    for(auto &attr: binding.attributes)
+    for(const auto &attr: binding.attributes)
       _vertexAttributes.emplace_back(
         attr.location, attr.binding, attr.format, attr.offset);
   }
@@ -18,10 +18,10 @@ auto GraphicsPipelineMaker::vertexInput(
 auto GraphicsPipelineMaker::vertexInputAuto(
   std::initializer_list<VertexInputAutoBinding> bindings) -> GraphicsPipelineMaker & {
   uint32_t bindingIdx = 0, location = 0;
-  for(auto &binding: bindings) {
+  for(const auto &binding: bindings) {
     auto _bindingIdx = bindingIdx++;
     _vertexBindings.emplace_back(_bindingIdx, binding.stride, binding.inputRate);
-    for(auto &attr: binding.attributes)
+    for(const auto &attr: binding.attributes)
       _vertexAttributes.emplace_back(location++, _bindingIdx, attr.format, attr.offset);
   }
   return *this;
@@ -204,7 +204,7 @@ auto GraphicsPipelineMaker::blendColorAttachment(vk::Bool32 enable)
   blend.alphaBlendOp = vk::BlendOp::eAdd;
   using flag = vk::ColorComponentFlagBits;
   blend.colorWriteMask = flag::eR | flag::eG | flag::eB | flag::eA;
-  return BlendColorAttachmentMaker{*this, uint32_t(colorBlendAttachments.size() - 1)};
+  return BlendColorAttachmentMaker{*this, uint32_t(colorBlendAttachments.size()) - 1};
 }
 BlendColorAttachmentMaker::BlendColorAttachmentMaker(
   GraphicsPipelineMaker &maker, uint32_t index)

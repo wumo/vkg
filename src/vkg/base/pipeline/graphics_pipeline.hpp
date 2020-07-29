@@ -13,7 +13,7 @@ class BlendColorAttachmentMaker;
 struct VertexInputAttribute {
   uint32_t binding{}, location{};
   vk::Format format{};
-  size_t offset = 0;
+  uint32_t offset = 0;
 };
 
 struct VertexInputBinding {
@@ -25,7 +25,7 @@ struct VertexInputBinding {
 
 struct VertexInputAutoAttribute {
   vk::Format format{};
-  size_t offset = 0;
+  uint32_t offset = 0;
 };
 
 struct VertexInputAutoBinding {
