@@ -12,21 +12,20 @@ layout(local_size_x_id = 0, local_size_y_id = 1, local_size_z_id = 2) in;
 layout(push_constant) uniform TotalMeshInstances { uint total; };
 
 layout(set = 0, binding = 0) uniform Frustum { vec4 planes[6]; };
-layout(set = 0, binding = 1, scalar) buffer DrawIndirectCMDBuffer {
-  VkDrawIndexedIndirectCommand drawCMDs[];
-};
-layout(set = 0, binding = 2, scalar) buffer OutDrawIndirectCMDBuffer {
-  VkDrawIndexedIndirectCommand outDrawCMDs[];
-};
-layout(set = 0, binding = 3, scalar) buffer OutDrawCountBuffer { uint drawCount; };
-
-layout(set = 1, binding = 0, scalar) readonly buffer MeshesBuffer {
+layout(set = 0, binding = 1, scalar) readonly buffer MeshesBuffer {
   MeshInstanceUBO meshInstances[];
 };
-layout(set = 1, binding = 1, scalar) readonly buffer PrimitiveBuffer {
+layout(set = 0, binding = 2, scalar) readonly buffer PrimitiveBuffer {
   PrimitiveUBO primitives[];
 };
-layout(set = 1, binding = 2, std430) readonly buffer TransformBuffer { mat4 matrices[]; };
+layout(set = 0, binding = 3, std430) readonly buffer TransformBuffer { mat4 matrices[]; };
+layout(set = 0, binding = 4, scalar) readonly buffer DrawGroupOffsetBuffer {
+  uint drawCMDOffset[];
+};
+layout(set = 0, binding = 5, scalar) buffer DrawIndirectCMDBuffer {
+  VkDrawIndexedIndirectCommand drawCMDs[];
+};
+layout(set = 0, binding = 6, scalar) buffer DrawCountBuffer { uint drawCMDCount[]; };
 
 bool isInFrustum(vec4 p, float radius) {
   p /= p.w;
@@ -72,26 +71,27 @@ void main() {
 
   if(id >= total) return;
 
-  VkDrawIndexedIndirectCommand drawCMD = drawCMDs[id];
-  uint inst = drawCMD.firstInstance;
-  MeshInstanceUBO mesh = meshInstances[inst];
-  mat4 model = matrices[inst];
+  MeshInstanceUBO mesh = meshInstances[id];
+
   if(!mesh.visible) return;
+
   PrimitiveUBO prim = primitives[mesh.primitive];
   AABB aabb = prim.aabb;
+  mat4 model = matrices[id];
   transformAABB(aabb, model);
-
   vec3 center = (aabb.min + aabb.max) / 2;
   float radius = length(aabb.max - aabb.min) / 2;
-  if(isInFrustum(vec4(center, 1), 0)) {
-    uint outIdx = atomicAdd(drawCount, 1);
-    drawCMD.instanceCount = 1u;
-    outDrawCMDs[outIdx] = drawCMD;
-    return;
+  if(isInFrustum(vec4(center, 1), 0) || isInFrustum(vec4(center, 1), radius)) {
+    VkDrawIndexedIndirectCommand drawCMD;
+    drawCMD.firstIndex = prim.index.start;
+    drawCMD.indexCount = prim.index.size;
+    drawCMD.vertexOffset = int(prim.position.start);
+    drawCMD.firstInstance = id;
+    drawCMD.instanceCount = 1;
+
+    uint groupID = mesh.drawGroupID;
+    uint outIdx = atomicAdd(drawCMDCount[groupID], 1);
+    uint offset = drawCMDOffset[groupID];
+    drawCMDs[offset + outIdx] = drawCMD;
   }
-  if(!isInFrustum(vec4(center, 1), radius)) return;
-  
-  uint outIdx = atomicAdd(drawCount, 1);
-  drawCMD.instanceCount = 1u;
-  outDrawCMDs[outIdx] = drawCMD;
 }

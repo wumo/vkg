@@ -10,7 +10,7 @@ class Renderer: public Base {
 public:
   Renderer(WindowConfig windowConfig, FeatureConfig featureConfig);
 
-  auto addScene(SceneConfig sceneConfig = {}, std::string name = "DefaultScene")
+  auto addScene(SceneConfig sceneConfig = {}, const std::string& name = "DefaultScene")
     -> Scene &;
 
 protected:

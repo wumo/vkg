@@ -124,6 +124,7 @@ auto Swapchain::imageView(uint32_t index) const -> vk::ImageView {
   return *imageViews[index];
 }
 auto Swapchain::format() const -> vk::Format { return surfaceFormat.format; }
+auto Swapchain::imageExtent() const -> vk::Extent2D { return extent_; }
 auto Swapchain::width() const -> uint32_t { return extent_.width; }
 auto Swapchain::height() const -> uint32_t { return extent_.height; }
 }

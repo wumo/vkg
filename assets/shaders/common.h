@@ -25,15 +25,21 @@ struct MeshInstanceUBO {
   uint primitive;
   uint node;
   uint instance;
-  bool notDraw;
+  bool visible;
+  uint drawGroupID;
 };
 
 struct AABB {
   vec3 min, max;
 };
 
+struct UIntRange {
+  uint start;
+  uint size;
+};
+
 struct PrimitiveUBO {
-  uvec2 index, position, normal, uv;
+  UIntRange index, position, normal, uv;
   AABB aabb;
 };
 

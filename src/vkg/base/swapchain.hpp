@@ -16,6 +16,7 @@ public:
   auto imageCount() const -> uint32_t;
   auto image(uint32_t index) const -> vk::Image;
   auto imageView(uint32_t index) const -> vk::ImageView;
+  auto imageExtent() const -> vk::Extent2D;
   auto width() const -> uint32_t;
   auto height() const -> uint32_t;
   auto format() const -> vk::Format;

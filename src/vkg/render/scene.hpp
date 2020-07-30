@@ -46,6 +46,9 @@ class Renderer;
 
 class Scene: public Pass {
 public:
+  struct PassIn {
+    FrameGraphResource swapchainExtent;
+  };
   struct PassOut {
     FrameGraphResource positions;
     FrameGraphResource normals;
@@ -60,6 +63,9 @@ public:
     FrameGraphResource lighting;
     FrameGraphResource lights;
     FrameGraphResource camera;
+    FrameGraphResource drawCMDBuffer;
+    FrameGraphResource drawCMDCountBuffer;
+    std::vector<FrameGraphResource> drawGroupCount;
   };
 
   Scene(Renderer &renderer, SceneConfig sceneConfig, std::string name);
@@ -110,9 +116,9 @@ public:
   auto allocatePrimitiveDesc() -> Allocation<Primitive::Desc>;
   auto allocateMeshInstDesc() -> Allocation<ModelInstance::MeshInstanceDesc>;
 
-  auto resize(uint32_t width, uint32_t height) -> void;
+  auto addToDrawGroup(uint32_t meshId, uint32_t oldGroupID = nullIdx) -> uint32_t;
 
-  auto addPass(FrameGraph &builder) -> void;
+  auto addPass(FrameGraph &builder, PassIn in) -> void;
 
   void setup(PassBuilder &builder) override;
   void compile(Resources &resources) override;
@@ -149,6 +155,9 @@ private:
     std::vector<std::unique_ptr<Texture>> textures;
     std::vector<vk::DescriptorImageInfo> sampler2Ds;
     uint32_t lastUsedSampler2DIndex{};
+
+    std::unique_ptr<Buffer> drawCMD;
+    std::unique_ptr<Buffer> drawCMDCount;
   } Dev;
 
   struct {
@@ -161,11 +170,15 @@ private:
     std::unique_ptr<Lighting> lighting;
     std::vector<Light> lights;
     std::unique_ptr<Camera> camera_;
+
+    const uint32_t numDrawGroup{6};
+    std::vector<uint32_t> drawGroupInstCount;
   } Host;
 
   vk::Rect2D renderArea;
 
   PassOut out;
+  PassIn passIn;
   bool boundPassData{false};
 };
 }

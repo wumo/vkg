@@ -17,7 +17,11 @@ public:
     uint32_t nodeTransf;
     /**modelInstance transform offset*/
     uint32_t instanceTransf;
-    vk::Bool32 notDraw;
+    /**whether or not this should be drawn*/
+    vk::Bool32 visible;
+    /**the draw group used to draw this mesh instance. MeshInsts with same draw group will
+     * be grouped*/
+    uint32_t drawGroupID;
   };
   ModelInstance(Scene &scene, uint32_t id, const Transform &transform, uint32_t modelId);
   virtual auto id() const -> uint32_t;

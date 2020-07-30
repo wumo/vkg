@@ -66,7 +66,7 @@ void ComputeTransf::execute(RenderContext &ctx, Resources &resources) {
   ctx.device.end(cb);
 }
 
-auto addComputeTransfPass(FrameGraph &builder, ComputeTransf::PassIn passIn)
+auto addComputeTransfPass(FrameGraph &builder, const ComputeTransf::PassIn &passIn)
   -> ComputeTransf::PassOut {
   auto out = builder.addPass<ComputeTransf>("ComputeTransfPass", passIn);
   ComputeTransf::PassOut passOut;

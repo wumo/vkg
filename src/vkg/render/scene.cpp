@@ -66,6 +66,12 @@ Scene::Scene(Renderer &renderer, SceneConfig sceneConfig, std::string name)
   Dev.lastUsedSampler2DIndex = uint32_t(Dev.textures.size());
 
   newMaterial(MaterialType::eNone);
+
+  Dev.drawCMD = buffer::devIndirectStorageBuffer(
+    device, sizeof(vk::DrawIndexedIndirectCommand) * sceneConfig.maxNumMeshInstances);
+  Dev.drawCMD =
+    buffer::devIndirectStorageBuffer(device, sizeof(uint32_t) * Host.numDrawGroup);
+  Host.drawGroupInstCount.resize(Host.numDrawGroup);
 }
 
 auto Scene::newPrimitive(
@@ -94,7 +100,7 @@ auto Scene::newPrimitives(PrimitiveBuilder &builder) -> std::vector<uint32_t> {
   }
   return primitives;
 }
-auto Scene::newMaterial(vkg::MaterialType type) -> uint32_t {
+auto Scene::newMaterial(MaterialType type) -> uint32_t {
   auto id = uint32_t(Host.materials.size());
   Host.materials.emplace_back(*this, id, type);
   return id;
@@ -124,8 +130,7 @@ auto Scene::newMesh(uint32_t primitive, uint32_t material) -> uint32_t {
   Host.meshes.emplace_back(id, primitive, material);
   return id;
 }
-auto Scene::newNode(const vkg::Transform &transform, const std::string &name)
-  -> uint32_t {
+auto Scene::newNode(const Transform &transform, const std::string &name) -> uint32_t {
   auto id = uint32_t(Host.nodes.size());
   Host.nodes.emplace_back(*this, id, transform);
   Host.nodes.back().setName(name);
@@ -141,8 +146,7 @@ auto Scene::loadModel(const std::string &file, MaterialType materialType) -> uin
   GLTFLoader loader{*this, materialType};
   return loader.load(file);
 }
-auto Scene::newModelInstance(uint32_t model, const vkg::Transform &transform)
-  -> uint32_t {
+auto Scene::newModelInstance(uint32_t model, const Transform &transform) -> uint32_t {
   auto id = uint32_t(Host.modelInstances.size());
   Host.modelInstances.emplace_back(*this, id, transform, model);
   return id;
@@ -153,17 +157,13 @@ auto Scene::newLight() -> uint32_t {
   Host.lighting->setNumLights(Host.lighting->numLights() + 1);
   return id;
 }
-auto Scene::camera() -> vkg::Camera & { return *Host.camera_; }
-auto Scene::primitive(uint32_t index) -> vkg::Primitive & {
-  return Host.primitives.at(index);
-}
-auto Scene::material(uint32_t index) -> vkg::Material & {
-  return Host.materials.at(index);
-}
-auto Scene::mesh(uint32_t index) -> vkg::Mesh & { return Host.meshes.at(index); }
-auto Scene::node(uint32_t index) -> vkg::Node & { return Host.nodes.at(index); }
-auto Scene::model(uint32_t index) -> vkg::Model & { return Host.models.at(index); }
-auto Scene::modelInstance(uint32_t index) -> vkg::ModelInstance & {
+auto Scene::camera() -> Camera & { return *Host.camera_; }
+auto Scene::primitive(uint32_t index) -> Primitive & { return Host.primitives.at(index); }
+auto Scene::material(uint32_t index) -> Material & { return Host.materials.at(index); }
+auto Scene::mesh(uint32_t index) -> Mesh & { return Host.meshes.at(index); }
+auto Scene::node(uint32_t index) -> Node & { return Host.nodes.at(index); }
+auto Scene::model(uint32_t index) -> Model & { return Host.models.at(index); }
+auto Scene::modelInstance(uint32_t index) -> ModelInstance & {
   return Host.modelInstances.at(index);
 }
 auto Scene::texture(uint32_t index) -> Texture & { return *Dev.textures.at(index); }
@@ -187,5 +187,40 @@ auto Scene::allocatePrimitiveDesc() -> Allocation<Primitive::Desc> {
 }
 auto Scene::allocateMeshInstDesc() -> Allocation<ModelInstance::MeshInstanceDesc> {
   return Dev.meshInstances->allocate();
+}
+auto Scene::addToDrawGroup(uint32_t meshId, uint32_t oldGroupID) -> uint32_t {
+  auto &mesh_ = mesh(meshId);
+  auto &primitive_ = primitive(mesh_.primitive());
+  auto &material_ = material(mesh_.material());
+
+  uint32_t gID;
+  switch(material_.type()) {
+    case MaterialType::eBRDF:
+    case MaterialType::eBRDFSG:
+      switch(primitive_.topology()) {
+        case PrimitiveTopology::Triangles: gID = 0; break;
+        case PrimitiveTopology::Lines: gID = 1; break;
+        default: throw std::runtime_error("Not supported");
+      }
+      break;
+    case MaterialType::eNone:
+      switch(primitive_.topology()) {
+        case PrimitiveTopology::Triangles: gID = 2; break;
+        case PrimitiveTopology::Lines: gID = 3; break;
+        default: throw std::runtime_error("Not supported");
+      }
+      break;
+    case MaterialType::eTransparent:
+      switch(primitive_.topology()) {
+        case PrimitiveTopology::Triangles: gID = 4; break;
+        case PrimitiveTopology::Lines: gID = 5; break;
+        default: throw std::runtime_error("Not supported");
+      }
+      break;
+    default: throw std::runtime_error("Not supported");
+  }
+  if(oldGroupID != nullIdx) Host.drawGroupInstCount[oldGroupID]--;
+  Host.drawGroupInstCount[gID]++;
+  return gID;
 }
 }

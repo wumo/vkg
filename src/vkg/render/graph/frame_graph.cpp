@@ -44,7 +44,9 @@ auto PassBuilder::build() -> void {
   pass.outputs = std::move(outputs);
 }
 
-Resources::Resources(uint32_t numResources) { physicalResources.resize(numResources); }
+Resources::Resources(Device &device, uint32_t numResources): device{device} {
+  physicalResources.resize(numResources);
+}
 
 FrameGraph::FrameGraph(Device &device): device_(device) {}
 auto FrameGraph::device() -> Device & { return device_; }
@@ -153,7 +155,7 @@ auto FrameGraph::build() -> void {
     }
   }
 
-  resources = std::make_unique<Resources>(uint32_t(resRevisions.size()));
+  resources = std::make_unique<Resources>(device_, uint32_t(resRevisions.size()));
 }
 
 auto FrameGraph::onFrame(vk::CommandBuffer graphicsCB, vk::CommandBuffer computeCB)

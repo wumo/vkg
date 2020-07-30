@@ -109,7 +109,7 @@ private:
 
 class Resources {
 public:
-  explicit Resources(uint32_t numResources);
+  explicit Resources(Device &device,uint32_t numResources);
 
   template<typename T>
   auto set(FrameGraphResource &resource, T res) -> Resources & {
@@ -121,7 +121,8 @@ public:
   auto get(FrameGraphResource &resource) -> T {
     return std::any_cast<T>(physicalResources.at(resource.id));
   }
-
+  
+  Device &device;
 private:
   std::vector<std::any> physicalResources;
 };

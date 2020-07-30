@@ -24,8 +24,8 @@ public:
     AABB aabb;
   };
   Primitive(
-    Scene &scene, uint32_t id, UIntRange index, UIntRange position,
-    UIntRange normal, UIntRange uv, PrimitiveTopology topology, DynamicType type);
+    Scene &scene, uint32_t id, UIntRange index, UIntRange position, UIntRange normal,
+    UIntRange uv, PrimitiveTopology topology, DynamicType type);
   virtual auto id() const -> uint32_t;
   virtual auto index() const -> UIntRange;
   virtual auto position() const -> UIntRange;

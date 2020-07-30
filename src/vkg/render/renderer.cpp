@@ -1,8 +1,10 @@
 #include "renderer.hpp"
 
+#include <utility>
+
 namespace vkg {
 Renderer::Renderer(WindowConfig windowConfig, FeatureConfig featureConfig)
-  : Base(windowConfig, featureConfig) {}
+  : Base(std::move(windowConfig), featureConfig) {}
 
 void Renderer::resize() {
   Base::resize();
@@ -10,15 +12,23 @@ void Renderer::resize() {
     scene->resize(swapchain->width(), swapchain->height());
 }
 
-auto Renderer::addScene(SceneConfig sceneConfig, std::string name) -> Scene & {
+auto Renderer::addScene(SceneConfig sceneConfig, const std::string &name) -> Scene & {
   scenes[name] = std::make_unique<Scene>(*this, sceneConfig, name);
   return *scenes[name];
 }
 
 void Renderer::onInit() {
   frameGraph = std::make_unique<FrameGraph>(*device);
+
+  FrameGraphResource extent;
+  frameGraph->addPass(
+    "Renderer",
+    [&](PassBuilder &builder) {
+      extent = builder.create("SwapchainExtent", ResourceType::eValue);
+    },
+    [&](Resources &resources) { resources.set(extent, swapchain->imageExtent()); });
   for(auto &[_, scene]: scenes)
-    scene->addPass(*frameGraph);
+    scene->addPass(*frameGraph, {extent});
 
   frameGraph->build();
 }
