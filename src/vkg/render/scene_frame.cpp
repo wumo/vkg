@@ -1,24 +1,35 @@
 #include "scene.hpp"
+#include "pass/compute_transf.hpp"
 
 namespace vkg {
+
+auto Scene::addPass(FrameGraph &builder) -> void {
+  builder.addPass(name + "Pass", *this);
+
+  auto transfPassOut = addComputeTransfPass(
+    builder, {out.transforms, out.meshInstances, out.meshInstancesCount, out.matrices});
+}
 
 auto Scene::resize(uint32_t width, uint32_t height) -> void {
   Host.camera_->resize(width, height);
 }
 
 void Scene::setup(PassBuilder &builder) {
-  out.positions = builder.create(toString(name, "_positions"));
-  out.normals = builder.create(toString(name, "_normals"));
-  out.uvs = builder.create(toString(name, "_uvs"));
-  out.indices = builder.create(toString(name, "_indices"));
-  out.primitives = builder.create(toString(name, "_primitives"));
-  out.materials = builder.create(toString(name, "_materials"));
-  out.transforms = builder.create(toString(name, "_transforms"));
-  out.meshInstances = builder.create(toString(name, "_meshInstances"));
-  out.matrices = builder.create(toString(name, "_matrices"));
-  out.lighting = builder.create(toString(name, "_lighting"));
-  out.lights = builder.create(toString(name, "_lights"));
-  out.camera = builder.create(toString(name, "_camera"));
+  using ty = ResourceType;
+  out.positions = builder.create(toString(name, "_positions"), ty::eBuffer);
+  out.normals = builder.create(toString(name, "_normals"), ty::eBuffer);
+  out.uvs = builder.create(toString(name, "_uvs"), ty::eBuffer);
+  out.indices = builder.create(toString(name, "_indices"), ty::eBuffer);
+  out.primitives = builder.create(toString(name, "_primitives"), ty::eBuffer);
+  out.materials = builder.create(toString(name, "_materials"), ty::eBuffer);
+  out.transforms = builder.create(toString(name, "_transforms"), ty::eBuffer);
+  out.meshInstances = builder.create(toString(name, "_meshInstances"), ty::eBuffer);
+  out.meshInstancesCount =
+    builder.create(toString(name, "_meshInstancesCount"), ty::eValue);
+  out.matrices = builder.create(toString(name, "_matrices"), ty::eBuffer);
+  out.lighting = builder.create(toString(name, "_lighting"), ty::eBuffer);
+  out.lights = builder.create(toString(name, "_lights"), ty::eBuffer);
+  out.camera = builder.create(toString(name, "_camera"), ty::eBuffer);
 }
 
 void Scene::compile(Resources &resources) {
@@ -38,6 +49,7 @@ void Scene::compile(Resources &resources) {
     resources.set(out.camera, Dev.camera->buffer());
   }
   Host.camera_->updateUBO();
+  resources.set(out.meshInstancesCount, Dev.meshInstances->count());
 }
 void Scene::execute(RenderContext &ctx, Resources &resources) {}
 

@@ -1,0 +1,22 @@
+#version 450
+#extension GL_GOOGLE_include_directive : require
+#include "atmosphere.h"
+
+layout(push_constant) uniform UniformCumulate { bool cumulate; };
+layout(set = 0, binding = 1) uniform sampler2D transmittance;
+layout(set = 0, binding = 2, rgba32f) uniform image2D delta_irradiance;
+layout(set = 0, binding = 3, rgba32f) uniform image2D irradiance;
+
+layout(constant_id = 0) const uint lx = 1;
+layout(constant_id = 1) const uint ly = 1;
+layout(constant_id = 2) const uint lz = 1;
+layout(local_size_x_id = 0, local_size_y_id = 1, local_size_z_id = 2) in;
+
+void main() {
+  ivec2 coord = ivec2(gl_GlobalInvocationID.xy);
+  vec3 result =
+    ComputeDirectIrradianceTexture(ATMOSPHERE, transmittance, coord + vec2(0.5, 0.5));
+
+  imageStore(delta_irradiance, coord, vec4(result, 0));
+  if(!cumulate) imageStore(irradiance, coord, vec4(0));
+}

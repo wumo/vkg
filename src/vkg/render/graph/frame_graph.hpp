@@ -6,25 +6,27 @@
 #include <set>
 #include <any>
 #include <span>
+#include <utility>
 
 namespace vkg {
 
-struct Pass;
+class Pass;
 struct FrameGraphResource;
 class FrameGraph;
 struct RenderContext;
 class Resources;
 class PassBuilder;
-class FrameGraphBuilder;
 
 using PassSetup = std::function<void(PassBuilder &)>;
 using PassCompile = std::function<void(Resources &)>;
 using PassExec = std::function<void(RenderContext &, Resources &)>;
 
+enum class ResourceType { eBuffer, eImage, eValue };
 struct FrameGraphResource {
-  std::string_view name;
+  std::string name;
   uint32_t id;
   uint32_t revision;
+  ResourceType type;
 };
 
 struct FrameGraphResourcePass {
@@ -33,39 +35,56 @@ struct FrameGraphResourcePass {
 };
 
 struct FrameGraphResources {
-  std::string_view name;
+  std::string name;
   uint32_t id;
+  ResourceType type;
   std::vector<FrameGraphResourcePass> revisions;
 };
 
-struct Pass {
-  PassSetup setup;
-  PassCompile compile;
-  PassExec execute;
+class Pass {
+  friend class PassBuilder;
+  friend class FrameGraph;
 
+public:
+  virtual ~Pass() = default;
+  virtual void setup(PassBuilder &builder){};
+  virtual void compile(Resources &resources){};
+  virtual void execute(RenderContext &ctx, Resources &resources){};
+
+private:
+  std::string name;
+  uint32_t id;
+  uint32_t order;
   std::vector<FrameGraphResource> inputs;
   std::vector<FrameGraphResource> outputs;
 };
 
-class PassDef {
+class LambdaPass: public Pass {
 public:
-  virtual void setup(PassBuilder &builder){};
-  virtual void compile(Resources &resources){};
-  virtual void execute(RenderContext &ctx, Resources &resources){};
+  LambdaPass(PassSetup setup, PassCompile compile, PassExec execute);
+
+  void setup(PassBuilder &builder) override;
+  void compile(Resources &resources) override;
+  void execute(RenderContext &ctx, Resources &resources) override;
+
+private:
+  PassSetup setup_;
+  PassCompile compile_;
+  PassExec execute_;
 };
 
 class PassBuilder {
-  friend class FrameGraphBuilder;
+  friend class FrameGraph;
 
 public:
-  explicit PassBuilder(FrameGraphBuilder &builder, uint32_t id);
+  explicit PassBuilder(FrameGraph &frameGraph, uint32_t id, Pass &pass);
 
   auto device() -> Device &;
 
   /**
    * Create new resources as the output of this pass. Resource's name shouldn't already exist.
    */
-  auto create(std::string_view name) -> FrameGraphResource;
+  auto create(std::string name, ResourceType type) -> FrameGraphResource;
   /**
    * Read the resource as the input of this pass.
    */
@@ -75,21 +94,23 @@ public:
    *
    * Error will be thrown when multiple passes write to the same version of resource.
    */
-  auto write(FrameGraphResource &output) -> FrameGraphResource;
+  auto write(FrameGraphResource &input) -> FrameGraphResource;
 
 private:
-  auto build() -> Pass;
+  auto build() -> void;
 
-  FrameGraphBuilder &builder;
+  FrameGraph &frameGraph;
   const uint32_t id;
+  Pass &pass;
   std::vector<FrameGraphResource> inputs;
+  std::set<uint32_t> uniqueInputs;
   std::vector<FrameGraphResource> outputs;
 };
 
 class Resources {
 public:
   explicit Resources(uint32_t numResources);
-  
+
   template<typename T>
   auto set(FrameGraphResource &resource, T res) -> Resources & {
     physicalResources.at(resource.id) = res;
@@ -111,47 +132,49 @@ struct RenderContext {
   vk::CommandBuffer compute;
 };
 
+template<class T>
+concept DerivedPass = std::is_base_of<Pass, T>::value;
+
 class FrameGraph {
+  friend class PassBuilder;
 
 public:
-  FrameGraph(Device &device, std::vector<Pass> passes, Resources resources);
+  explicit FrameGraph(Device &device);
+
+  auto addPass(
+    std::string name, PassSetup setup = PassSetup{}, PassCompile compile = PassCompile{},
+    PassExec execute = PassExec{}) -> std::span<FrameGraphResource>;
+  auto addPass(std::string name, Pass &pass) -> std::span<FrameGraphResource>;
+  template<DerivedPass T, typename... Args>
+  auto addPass(std::string name, Args &&... args) -> std::span<FrameGraphResource> {
+    allocated.push_back(std::make_unique<T>(std::forward<Args>(args)...));
+    return addPass(std::move(name), *allocated.back());
+  }
+
+  auto device() -> Device &;
+
+  auto build() -> void;
 
   auto onFrame(vk::CommandBuffer graphicsCB, vk::CommandBuffer computeCB) -> void;
 
 private:
-  Device &device_;
-  std::vector<Pass> passes;
-  Resources resources;
-};
-
-class FrameGraphBuilder {
-  friend class PassBuilder;
-
-public:
-  explicit FrameGraphBuilder(Device &device);
-
-  auto addPass(
-    PassSetup setup = PassSetup{}, PassCompile compile = PassCompile{},
-    PassExec execute = PassExec{}) -> std::span<FrameGraphResource>;
-
-  auto addPass(PassDef &pass) -> std::span<FrameGraphResource>;
-
-  auto device() -> Device &;
-
-  auto createFrameGraph() -> std::unique_ptr<FrameGraph>;
-
-private:
-  auto create(std::string_view name, uint32_t passId) -> FrameGraphResource;
+  auto create(const std::string& name, uint32_t passId, ResourceType type) -> FrameGraphResource;
   auto read(FrameGraphResource &input, uint32_t passId) -> void;
-  auto write(FrameGraphResource &output, uint32_t passId) -> FrameGraphResource;
+  auto write(FrameGraphResource &input, uint32_t passId) -> FrameGraphResource;
   auto check(FrameGraphResource &resource) -> void;
 
   Device &device_;
 
-  std::vector<Pass> passes;
+  std::vector<Pass *> passes;
+  std::vector<uint32_t> sortedPassIds;
+  std::vector<std::unique_ptr<Pass>> allocated;
 
   std::map<std::string_view, uint32_t> resourceIds;
-  std::vector<FrameGraphResources> resources;
+  std::vector<FrameGraphResources> resRevisions;
+
+  std::unique_ptr<Resources> resources;
+
+  bool frozen{false};
 };
 
 }

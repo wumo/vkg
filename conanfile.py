@@ -14,6 +14,7 @@ class vkgConan(ConanFile):
         "tinygltf/2.2.0",
         "par_lib/master@wumo/stable",
     )
+    build_requires = ("file2header/1.0.6@wumo/stable")
     generators = "cmake"
     scm = {
         "type": "git",

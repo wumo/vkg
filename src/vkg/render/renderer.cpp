@@ -11,16 +11,16 @@ void Renderer::resize() {
 }
 
 auto Renderer::addScene(SceneConfig sceneConfig, std::string name) -> Scene & {
-  scenes[name] = std::make_unique<Scene>(*device, sceneConfig, name);
+  scenes[name] = std::make_unique<Scene>(*this, sceneConfig, name);
   return *scenes[name];
 }
 
 void Renderer::onInit() {
-  FrameGraphBuilder builder{*device};
+  frameGraph = std::make_unique<FrameGraph>(*device);
   for(auto &[_, scene]: scenes)
-    builder.addPass(*scene);
+    scene->addPass(*frameGraph);
 
-  frameGraph = builder.createFrameGraph();
+  frameGraph->build();
 }
 
 void Renderer::onFrame(uint32_t imageIndex, float elapsed) {

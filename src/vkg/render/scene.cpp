@@ -1,11 +1,14 @@
 #include "scene.hpp"
-
-#include <utility>
+#include "renderer.hpp"
 #include "vkg/render/builder/gltf_loader.hpp"
+#include <utility>
 
 namespace vkg {
-Scene::Scene(Device &device, SceneConfig &sceneConfig, std::string name)
-  : device{device}, sceneConfig{sceneConfig}, name{std::move(name)} {
+Scene::Scene(Renderer &renderer, SceneConfig sceneConfig, std::string name)
+  : device{*renderer.device},
+    featureConfig{renderer.featureConfig_},
+    sceneConfig{sceneConfig},
+    name{std::move(name)} {
 
   renderArea = vk::Rect2D{
     {sceneConfig.offsetX, sceneConfig.offsetY},

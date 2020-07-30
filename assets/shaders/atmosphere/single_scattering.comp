@@ -1,0 +1,35 @@
+#version 450
+#extension GL_GOOGLE_include_directive : require
+#include "atmosphere.h"
+
+layout(push_constant) uniform LRRUniform {
+  mat4 luminance_from_radiance;
+  bool cumulate;
+};
+layout(set = 0, binding = 1) uniform sampler2D transmittance;
+
+layout(set = 0, binding = 2, rgba32f) uniform image3D delta_rayleigh;
+layout(set = 0, binding = 3, rgba32f) uniform image3D delta_mie;
+layout(set = 0, binding = 4, rgba32f) uniform image3D scattering;
+
+layout(constant_id = 0) const uint lx = 1;
+layout(constant_id = 1) const uint ly = 1;
+layout(constant_id = 2) const uint lz = 1;
+layout(local_size_x_id = 0, local_size_y_id = 1, local_size_z_id = 2) in;
+
+void main() {
+  ivec3 coord = ivec3(gl_GlobalInvocationID.xyz);
+
+  vec3 deltaRayleighResult;
+  vec3 deltaMie;
+  ComputeSingleScatteringTexture(
+    ATMOSPHERE, transmittance, coord + vec3(0.5, 0.5, 0), deltaRayleighResult, deltaMie);
+  vec4 scatteringResult = vec4(
+    mat3(luminance_from_radiance) * deltaRayleighResult,
+    (mat3(luminance_from_radiance) * deltaMie).r);
+
+  imageStore(delta_rayleigh, coord, vec4(deltaRayleighResult, 0));
+  imageStore(delta_mie, coord, vec4(deltaMie, 0));
+  if(cumulate) scatteringResult += imageLoad(scattering, coord);
+  imageStore(scattering, coord, scatteringResult);
+}

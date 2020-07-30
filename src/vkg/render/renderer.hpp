@@ -5,6 +5,7 @@
 
 namespace vkg {
 class Renderer: public Base {
+  friend class Scene;
 
 public:
   Renderer(WindowConfig windowConfig, FeatureConfig featureConfig);

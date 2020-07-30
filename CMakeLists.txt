@@ -76,7 +76,7 @@ set(sources
   src/vkg/render/renderer.cpp
   src/vkg/render/scene.cpp
   src/vkg/render/scene_frame.cpp
-  )
+  src/vkg/render/pass/compute_transf.cpp src/vkg/render/pass/compute_transf.hpp)
 
 set(definitions "")
 if(WIN32)
@@ -94,6 +94,9 @@ if(BUILD_SHARED)
 else()
   add_library(vkg STATIC ${sources})
 endif()
+
+static_res_ns(vkg res ${CMAKE_CURRENT_LIST_DIR}/assets/shaders
+  ${CMAKE_CURRENT_LIST_DIR}/src/resources "*.spv")
 
 target_include_directories(vkg PUBLIC
   ${CMAKE_CURRENT_LIST_DIR}/src)

@@ -18,6 +18,7 @@ struct SceneConfig {
   /** renderArea */
   int32_t offsetX{0}, offsetY{0};
   uint32_t extentW{0}, extentH{0};
+  uint32_t layer{0};
 
   /**max number of vertices and indices*/
   uint32_t maxNumVertices{1000'0000}, maxNumIndices{1000'0000};
@@ -41,24 +42,27 @@ struct SceneConfig {
   uint32_t sampleCount{1};
 };
 
-struct ScenePassOut {
-  FrameGraphResource positions;
-  FrameGraphResource normals;
-  FrameGraphResource uvs;
-  FrameGraphResource indices;
-  FrameGraphResource primitives;
-  FrameGraphResource materials;
-  FrameGraphResource transforms;
-  FrameGraphResource meshInstances;
-  FrameGraphResource matrices;
-  FrameGraphResource lighting;
-  FrameGraphResource lights;
-  FrameGraphResource camera;
-};
+class Renderer;
 
-class Scene: public PassDef {
+class Scene: public Pass {
 public:
-  Scene(Device &device, SceneConfig &sceneConfig, std::string name);
+  struct PassOut {
+    FrameGraphResource positions;
+    FrameGraphResource normals;
+    FrameGraphResource uvs;
+    FrameGraphResource indices;
+    FrameGraphResource primitives;
+    FrameGraphResource materials;
+    FrameGraphResource transforms;
+    FrameGraphResource meshInstances;
+    FrameGraphResource meshInstancesCount;
+    FrameGraphResource matrices;
+    FrameGraphResource lighting;
+    FrameGraphResource lights;
+    FrameGraphResource camera;
+  };
+
+  Scene(Renderer &renderer, SceneConfig sceneConfig, std::string name);
 
   auto newPrimitive(
     std::span<Vertex::Position> positions, std::span<Vertex::Normal> normals,
@@ -108,6 +112,8 @@ public:
 
   auto resize(uint32_t width, uint32_t height) -> void;
 
+  auto addPass(FrameGraph &builder) -> void;
+
   void setup(PassBuilder &builder) override;
   void compile(Resources &resources) override;
   void execute(RenderContext &ctx, Resources &resources) override;
@@ -118,7 +124,8 @@ private:
   auto ensureTextures(uint32_t toAdd) const -> void;
 
   Device &device;
-  SceneConfig &sceneConfig;
+  FeatureConfig &featureConfig;
+  SceneConfig sceneConfig;
   std::string name;
 
   struct {
@@ -158,7 +165,7 @@ private:
 
   vk::Rect2D renderArea;
 
-  ScenePassOut out;
+  PassOut out;
   bool boundPassData{false};
 };
 }

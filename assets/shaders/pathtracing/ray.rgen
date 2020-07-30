@@ -1,0 +1,123 @@
+#version 460
+#extension GL_NV_ray_tracing : require
+#extension GL_GOOGLE_include_directive : require
+
+#include "resources.h"
+#include "../sampling.h"
+
+layout(location = 0) rayPayloadNV PathTracingRayPayload prd;
+
+vec3 d(uint x, uint y, vec3 r, vec3 u, vec3 v, vec2 jitter) {
+  vec2 p = (vec2(x, y) + jitter) / gl_LaunchSizeNV.xy;
+  vec2 c = p * 2.0 - 1.0;
+  return normalize(v + c.x * r + c.y * u);
+}
+
+void main() {
+  vec3 origin = vec3(cam.eye);
+  float a = cam.w / cam.h;
+  float f = tan(cam.fov / 2);
+  vec3 r = cam.zNear * a * f * cam.r.xyz;
+  vec3 u = -f * cam.zNear * normalize(cross(cam.r.xyz, cam.v.xyz));
+  vec3 v = cam.zNear * cam.v.xyz;
+  vec3 direction = d(gl_LaunchIDNV.x, gl_LaunchIDNV.y, r, u, v, vec2(0.5));
+
+  const uint rayFlags = gl_RayFlagsOpaqueNV;
+  const uint cullMask = 0xFF;
+  const float tmin = cam.zNear;
+  const float tmax = cam.zFar;
+
+  vec3 hitValue = vec3(0);
+
+  origin = vec3(cam.eye);
+  direction = d(gl_LaunchIDNV.x, gl_LaunchIDNV.y, r, u, v, vec2(0.5, 0.5));
+
+  prd.flags = FLAG_PRIMARY_TEST;
+  prd.rayOrigin = origin.xyz;
+  prd.rayDir = direction.xyz;
+  prd.contribution = vec3(0., 0., 0.);
+  prd.weight = vec3(1., 1., 1.);
+  prd.last_pdf = -1.f;
+  prd.hitT = 0;
+
+  traceNV(
+    Scene,               // acceleration structure
+    gl_RayFlagsOpaqueNV, // rayFlags
+    0xFF,                // cullMask
+    0,                   // sbtRecordOffset
+    1,                   // sbtRecordStride
+    0,                   // missIndex
+    origin.xyz,          // ray origin
+    tmin,                // ray min range
+    direction.xyz,       // ray direction
+    tmax,                // ray max range
+    0                    // payload layout(location = 0)
+  );
+
+  hitValue += prd.contribution;
+  vec3 albedo = prd.contribution;
+  vec3 normal = prd.rayDir;
+
+  if(prd.hitT == 0) prd.hitT = cam.zFar;
+  vec4 pos = cam.projView * vec4(origin + prd.hitT * direction, 1.0);
+  imageStore(depthImg, ivec2(gl_LaunchIDNV.xy), vec4(pos.z, 0, 0, 0.0f));
+
+  imageStore(albedoImg, ivec2(gl_LaunchIDNV.xy), vec4(albedo, 1.f));
+  imageStore(normalImg, ivec2(gl_LaunchIDNV.xy), vec4(normal, 1.f));
+
+  for(int smpl = 0; smpl < NBSamples; ++smpl) {
+    uint seed =
+      tea(gl_LaunchIDNV.y * gl_LaunchSizeNV.x + gl_LaunchIDNV.x, cam.frame + smpl);
+    float r1 = rnd(seed);
+    float r2 = rnd(seed);
+
+    origin = vec3(cam.eye);
+    direction = d(gl_LaunchIDNV.x, gl_LaunchIDNV.y, r, u, v, vec2(r1, r2));
+
+    prd.flags = FLAG_FIRST_PATH_SEGMENT;
+    prd.rayOrigin = origin.xyz;
+    prd.rayDir = direction.xyz;
+    prd.contribution = vec3(0., 0., 0.);
+    prd.weight = vec3(1., 1., 1.);
+    prd.last_pdf = -1.f;
+    prd.seed = seed;
+
+    for(int depth = 0; depth < MAX_RECURSION; depth++) {
+      traceNV(
+        Scene,               // acceleration structure
+        gl_RayFlagsOpaqueNV, // rayFlags
+        0xFF,                // cullMask
+        0,                   // sbtRecordOffset
+        1,                   // sbtRecordStride
+        0,                   // missIndex
+        origin.xyz,          // ray origin
+        tmin,                // ray min range
+        direction.xyz,       // ray direction
+        tmax,                // ray max range
+        0                    // payload layout(location = 0)
+      );
+
+      hitValue += prd.contribution;
+
+      {
+        float lum = dot(hitValue, vec3(0.212671f, 0.715160f, 0.072169f));
+        if(lum > fireflyClampThreshold) hitValue *= fireflyClampThreshold / lum;
+      }
+
+      // Russian roulette termination
+      if(!has_flag(prd.flags, FLAG_FIRST_PATH_SEGMENT)) {
+        float pcont = max(prd.weight.x, max(prd.weight.y, prd.weight.z));
+        if(rnd(seed) >= pcont) break;
+        prd.weight /= pcont;
+      }
+
+      if(has_flag(prd.flags, FLAG_DONE)) break;
+
+      origin.xyz = prd.rayOrigin;
+      direction.xyz = prd.rayDir;
+      remove_flag(prd.flags, FLAG_FIRST_PATH_SEGMENT);
+    }
+  }
+  hitValue = hitValue / NBSamples;
+  imageStore(colorImg, ivec2(gl_LaunchIDNV.xy), vec4(hitValue, 1.f));
+}
