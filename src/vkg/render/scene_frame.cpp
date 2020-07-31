@@ -2,6 +2,7 @@
 
 #include "scene.hpp"
 #include "pass/compute_transf.hpp"
+#include "pass/compute_cull_drawcmd.hpp"
 
 namespace vkg {
 
@@ -11,6 +12,10 @@ auto Scene::addPass(FrameGraph &builder, PassIn in) -> void {
 
   auto transfPassOut = addComputeTransfPass(
     builder, {out.transforms, out.meshInstances, out.meshInstancesCount, out.matrices});
+  auto cullPassOut = addComputeCullDrawCMDPass(
+    builder, {out.camFrustum, out.meshInstances, out.meshInstancesCount, out.primitives,
+              transfPassOut.matrices, out.drawCMDBuffer, out.drawCMDCountBuffer,
+              out.drawGroupCount});
 }
 
 void Scene::setup(PassBuilder &builder) {
@@ -30,7 +35,7 @@ void Scene::setup(PassBuilder &builder) {
   out.lighting = builder.create(toString(name, "_lighting"), ty::eBuffer);
   out.lights = builder.create(toString(name, "_lights"), ty::eBuffer);
   out.camera = builder.create(toString(name, "_camera"), ty::eBuffer);
-
+  out.camFrustum = builder.create(toString(name, "_camFrustum"), ty::eBuffer);
   out.drawCMDBuffer = builder.create(toString(name, "_drawCMDBuffer"), ty::eBuffer);
   out.drawCMDCountBuffer =
     builder.create(toString(name, "_drawCMDCountBuffer"), ty::eBuffer);
@@ -54,6 +59,7 @@ void Scene::compile(Resources &resources) {
     resources.set(out.lighting, Dev.lighting->buffer());
     resources.set(out.lights, Dev.lights->buffer());
     resources.set(out.camera, Dev.camera->buffer());
+    resources.set(out.camFrustum, Dev.camFrustum->buffer());
     resources.set(out.drawCMDBuffer, Dev.drawCMD->buffer());
     resources.set(out.drawCMDCountBuffer, Dev.drawCMDCount->buffer());
   }
@@ -61,15 +67,30 @@ void Scene::compile(Resources &resources) {
   auto extent = resources.get<vk::Extent2D>(passIn.swapchainExtent);
   Host.camera_->resize(extent.width, extent.height);
   Host.camera_->updateUBO();
+  *Dev.camFrustum->ptr<Frustum>() = Frustum{Host.camera_->proj() * Host.camera_->view()};
 
   resources.set(out.meshInstancesCount, Dev.meshInstances->count());
 
   for(int i = 0; i < Host.drawGroupInstCount.size(); ++i)
     resources.set(out.drawGroupCount[i], Host.drawGroupInstCount[i]);
-
-  memset(Dev.drawCMDCount->ptr<uint32_t>(), 0, Dev.drawCMDCount->size());
 }
-void Scene::execute(RenderContext &ctx, Resources &resources) {}
+void Scene::execute(RenderContext &ctx, Resources &resources) {
+  auto cb = ctx.compute;
+
+  /**
+   * TODO It seems that we have to use cb.fillBuffer to initialize Dev.drawCMDCount instead
+   * of memset the host persistent mapped buffer pointer, otherwise atomicAdd operation in
+   * shader will not work as expected. Need to fully inspect the real reason of this. And
+   * this may invalidate other host coherent memories that will be accessed by compute shader.
+   */
+  cb.fillBuffer(Dev.drawCMDCount->buffer(), 0, VK_WHOLE_SIZE, 0u);
+
+  vk::MemoryBarrier barrier{
+    vk::AccessFlagBits::eTransferWrite, vk::AccessFlagBits::eShaderRead};
+  cb.pipelineBarrier(
+    vk::PipelineStageFlagBits::eTransfer, vk::PipelineStageFlagBits::eComputeShader, {},
+    barrier, nullptr, nullptr);
+}
 
 auto Scene::render() -> void {}
 }

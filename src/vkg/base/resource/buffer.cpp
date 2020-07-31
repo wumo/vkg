@@ -3,28 +3,29 @@
 
 namespace vkg {
 Buffer::Buffer(
-  Device &vkezDevice, vk::BufferCreateInfo info, VmaAllocationCreateInfo allocInfo,
+  Device &device, vk::BufferCreateInfo info, VmaAllocationCreateInfo allocInfo,
   const std::string &name) {
   this->info = info;
-  vmaBuffer = UniquePtr(new VmaBuffer{vkezDevice}, [](VmaBuffer *ptr) {
+  vmaBuffer = UniquePtr(new VmaBuffer{device}, [](VmaBuffer *ptr) {
     debugLog("deallocate buffer:", ptr->buffer);
     vmaDestroyBuffer(ptr->vkezDevice.allocator(), ptr->buffer, ptr->allocation);
     delete ptr;
   });
   auto result = vmaCreateBuffer(
-    vkezDevice.allocator(), (VkBufferCreateInfo *)&info, &allocInfo,
+    device.allocator(), (VkBufferCreateInfo *)&info, &allocInfo,
     reinterpret_cast<VkBuffer *>(&(vmaBuffer->buffer)), &vmaBuffer->allocation, &alloc);
   errorIf(result != VK_SUCCESS, "failed to allocate buffer!");
   debugLog(
     "allocate buffer:", name, " ", vmaBuffer->buffer, "[", alloc.deviceMemory, "+",
     alloc.offset, "]");
   VkMemoryPropertyFlags memFlags;
-  vmaGetMemoryTypeProperties(vkezDevice.allocator(), alloc.memoryType, &memFlags);
+  vmaGetMemoryTypeProperties(device.allocator(), alloc.memoryType, &memFlags);
   if(
     (memFlags & VK_MEMORY_PROPERTY_HOST_VISIBLE_BIT) &&
     (memFlags & VK_MEMORY_PROPERTY_HOST_COHERENT_BIT)) {
     mappable = true;
   }
+  device.name(buffer(), name);
 }
 
 void Buffer::barrier(
@@ -44,5 +45,5 @@ auto Buffer::device() const -> Device & { return vmaBuffer->vkezDevice; }
 auto Buffer::devMem() const -> std::pair<vk::DeviceMemory, vk::DeviceSize> {
   return {alloc.deviceMemory, alloc.offset};
 }
-auto Buffer::size() const -> vk::DeviceSize { return alloc.size; }
+auto Buffer::size() const -> vk::DeviceSize { return info.size; }
 }

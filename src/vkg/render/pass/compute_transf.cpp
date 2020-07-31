@@ -1,7 +1,7 @@
 #include "compute_transf.hpp"
 
 #include <utility>
-#include "resources/deferred/comp/transform_comp_spv.h"
+#include "deferred/comp/transform_comp_spv.hpp"
 
 namespace vkg {
 

@@ -6,7 +6,7 @@ namespace vkg {
 class Buffer {
 public:
   Buffer(
-    Device &vkezDevice, vk::BufferCreateInfo info, VmaAllocationCreateInfo allocInfo,
+    Device &device, vk::BufferCreateInfo info, VmaAllocationCreateInfo allocInfo,
     const std::string &name = "");
 
   void barrier(
@@ -18,7 +18,7 @@ public:
     uint32_t dstQueueFamilyIndex = VK_QUEUE_FAMILY_IGNORED);
 
   template<class T = void>
-  T *ptr() {
+  auto ptr() -> T * {
     if(!mappable) throw std::runtime_error("this buffer is not mappable");
     return static_cast<T *>(alloc.pMappedData);
   }

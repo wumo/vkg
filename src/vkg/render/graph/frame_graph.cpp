@@ -132,13 +132,13 @@ auto FrameGraph::build() -> void {
   for(auto i = 0u; i < n; ++i)
     if(visited[i] == State::eUnVisited && passes[i]->inputs.empty()) dfs(i);
 
-  for(int i = 0; i < n; ++i) {
+  for(auto i = 0u; i < n; ++i) {
     auto passId = sortedPassIds[i];
     auto &pass = passes[passId];
     pass->order = i;
   }
 
-  for(int i = 0; i < n; ++i) {
+  for(auto i = 0u; i < n; ++i) {
     auto passId = sortedPassIds[i];
     auto &pass = passes[passId];
     std::map<uint32_t, std::vector<FrameGraphResource>> nextPasses;

@@ -10,8 +10,8 @@
 
 namespace vkg {
 
-using BufferAllocator =
-  std::function<std::unique_ptr<Buffer>(Device &device, vk::DeviceSize sizeInBYtes)>;
+using BufferAllocator = std::function<std::unique_ptr<Buffer>(
+  Device &device, vk::DeviceSize sizeInBYtes, const std::string &name)>;
 
 template<typename T>
 class ContiguousAllocation {
@@ -20,7 +20,7 @@ public:
   ContiguousAllocation(
     const BufferAllocator &allocator, Device &device, uint32_t maxNum, std::string name)
     : maxNum_{maxNum}, count_{0}, name{std::move(name)} {
-    buffer_ = allocator(device, maxNum * sizeof(T));
+    buffer_ = allocator(device, maxNum * sizeof(T), this->name);
     device.name(buffer_->buffer(), this->name);
   }
 
@@ -63,11 +63,10 @@ public:
   RandomHostAllocation(
     const BufferAllocator &allocator, Device &device, uint32_t maxNum, std::string name)
     : maxNum(maxNum), name{std::move(name)} {
-    buffer_ = allocator(device, maxNum * sizeof(T));
+    buffer_ = allocator(device, maxNum * sizeof(T), this->name);
     freeSlots.reserve(maxNum);
     for(int32_t i = maxNum; i > 0; --i)
       freeSlots.emplace_back(i - 1);
-    device.name(buffer_->buffer(), this->name);
   }
 
   auto allocate() -> Allocation<T> {
@@ -106,9 +105,8 @@ public:
   RandomHostAllocation2(
     const BufferAllocator &allocator, Device &device, uint32_t maxNum, std::string name)
     : maxNum_(maxNum), name{std::move(name)} {
-    buffer_ = allocator(device, maxNum * sizeof(T));
+    buffer_ = allocator(device, maxNum * sizeof(T), this->name);
     hostBuffer.resize(maxNum_);
-    device.name(buffer_->buffer(), this->name);
   }
 
   auto allocate() -> Allocation<T> {

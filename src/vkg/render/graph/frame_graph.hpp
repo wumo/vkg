@@ -109,7 +109,7 @@ private:
 
 class Resources {
 public:
-  explicit Resources(Device &device,uint32_t numResources);
+  explicit Resources(Device &device, uint32_t numResources);
 
   template<typename T>
   auto set(FrameGraphResource &resource, T res) -> Resources & {
@@ -121,8 +121,9 @@ public:
   auto get(FrameGraphResource &resource) -> T {
     return std::any_cast<T>(physicalResources.at(resource.id));
   }
-  
+
   Device &device;
+
 private:
   std::vector<std::any> physicalResources;
 };
@@ -143,8 +144,9 @@ public:
   explicit FrameGraph(Device &device);
 
   auto addPass(
-    std::string name, PassSetup setup = PassSetup{}, PassCompile compile = PassCompile{},
-    PassExec execute = PassExec{}) -> std::span<FrameGraphResource>;
+    std::string name, PassSetup setup = [](auto &) {},
+    PassCompile compile = [](auto &) {}, PassExec execute = [](auto &, auto &) {})
+    -> std::span<FrameGraphResource>;
   auto addPass(std::string name, Pass &pass) -> std::span<FrameGraphResource>;
   template<DerivedPass T, typename... Args>
   auto addPass(std::string name, Args &&... args) -> std::span<FrameGraphResource> {
@@ -159,7 +161,8 @@ public:
   auto onFrame(vk::CommandBuffer graphicsCB, vk::CommandBuffer computeCB) -> void;
 
 private:
-  auto create(const std::string& name, uint32_t passId, ResourceType type) -> FrameGraphResource;
+  auto create(const std::string &name, uint32_t passId, ResourceType type)
+    -> FrameGraphResource;
   auto read(FrameGraphResource &input, uint32_t passId) -> void;
   auto write(FrameGraphResource &input, uint32_t passId) -> FrameGraphResource;
   auto check(FrameGraphResource &resource) -> void;
@@ -170,7 +173,7 @@ private:
   std::vector<uint32_t> sortedPassIds;
   std::vector<std::unique_ptr<Pass>> allocated;
 
-  std::map<std::string_view, uint32_t> resourceIds;
+  std::map<std::string, uint32_t> resourceIds;
   std::vector<FrameGraphResources> resRevisions;
 
   std::unique_ptr<Resources> resources;

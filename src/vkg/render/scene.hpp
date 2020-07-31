@@ -11,6 +11,7 @@
 #include "builder/primitive_builder.hpp"
 #include "buffer_allocation.hpp"
 #include "vkg/render/graph/frame_graph.hpp"
+#include "vkg/math/frustum.hpp"
 #include <span>
 
 namespace vkg {
@@ -63,6 +64,7 @@ public:
     FrameGraphResource lighting;
     FrameGraphResource lights;
     FrameGraphResource camera;
+    FrameGraphResource camFrustum;
     FrameGraphResource drawCMDBuffer;
     FrameGraphResource drawCMDCountBuffer;
     std::vector<FrameGraphResource> drawGroupCount;
@@ -151,6 +153,7 @@ private:
     std::unique_ptr<RandomHostAllocation<Light::Desc>> lights;
 
     std::unique_ptr<RandomHostAllocation<Camera::Desc>> camera;
+    std::unique_ptr<Buffer> camFrustum;
 
     std::vector<std::unique_ptr<Texture>> textures;
     std::vector<vk::DescriptorImageInfo> sampler2Ds;

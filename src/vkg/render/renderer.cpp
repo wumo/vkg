@@ -6,12 +6,6 @@ namespace vkg {
 Renderer::Renderer(WindowConfig windowConfig, FeatureConfig featureConfig)
   : Base(std::move(windowConfig), featureConfig) {}
 
-void Renderer::resize() {
-  Base::resize();
-  for(auto &[_, scene]: scenes)
-    scene->resize(swapchain->width(), swapchain->height());
-}
-
 auto Renderer::addScene(SceneConfig sceneConfig, const std::string &name) -> Scene & {
   scenes[name] = std::make_unique<Scene>(*this, sceneConfig, name);
   return *scenes[name];
@@ -20,7 +14,6 @@ auto Renderer::addScene(SceneConfig sceneConfig, const std::string &name) -> Sce
 void Renderer::onInit() {
   frameGraph = std::make_unique<FrameGraph>(*device);
 
-  FrameGraphResource extent;
   frameGraph->addPass(
     "Renderer",
     [&](PassBuilder &builder) {

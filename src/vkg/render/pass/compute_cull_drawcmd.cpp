@@ -1,5 +1,5 @@
 #include "compute_cull_drawcmd.hpp"
-#include "resources/common/cull_draw_group_comp_spv.h"
+#include "common/cull_draw_group_comp_spv.hpp"
 #include <utility>
 
 namespace vkg {
@@ -23,15 +23,15 @@ void ComputeCullDrawCMD::setup(PassBuilder &builder) {
   builder.read(passIn.meshInstancesCount);
   builder.read(passIn.primitives);
   builder.read(passIn.matrices);
-  for(auto &drawGroupCount: passIn.drawGroupCount)
-    builder.read(drawGroupCount);
   builder.write(passIn.drawCMDBuffer);
   builder.write(passIn.drawCMDCountBuffer);
+  for(auto &drawGroupCount: passIn.drawGroupCount)
+    builder.read(drawGroupCount);
 }
 void ComputeCullDrawCMD::compile(Resources &resources) {
   if(!set) {
     drawCMDOffset = buffer::hostStorageBuffer(
-      resources.device, sizeof(uint32_t) * passIn.drawGroupCount.size());
+      resources.device, sizeof(uint32_t) * passIn.drawGroupCount.size(), "drawCMDOffset");
     set = setDef.createSet(*descriptorPool);
     setDef.frustum(resources.get<vk::Buffer>(passIn.frustum));
     setDef.meshInstances(resources.get<vk::Buffer>(passIn.meshInstances));
@@ -61,7 +61,19 @@ void ComputeCullDrawCMD::execute(RenderContext &ctx, Resources &resources) {
   auto dz = std::min(std::max(totalGroup, 1u), maxCG[1]);
 
   auto cb = ctx.compute;
-  ctx.device.begin(cb, "compute transform");
+  vk::BufferMemoryBarrier barrier{
+    vk::AccessFlagBits::eTransferWrite,
+    vk::AccessFlagBits::eShaderRead,
+    VK_QUEUE_FAMILY_IGNORED,
+    VK_QUEUE_FAMILY_IGNORED,
+    resources.get<vk::Buffer>(passIn.drawCMDCountBuffer),
+    0,
+    VK_WHOLE_SIZE};
+  cb.pipelineBarrier(
+    vk::PipelineStageFlagBits::eTransfer, vk::PipelineStageFlagBits::eComputeShader, {},
+    nullptr, barrier, nullptr);
+
+  ctx.device.begin(cb, "compute cull drawGroup");
   cb.bindPipeline(vk::PipelineBindPoint::eCompute, *pipe);
   cb.bindDescriptorSets(
     vk::PipelineBindPoint::eCompute, pipeDef.layout(), pipeDef.transf.set(), set,

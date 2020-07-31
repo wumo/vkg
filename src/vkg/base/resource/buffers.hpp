@@ -3,81 +3,108 @@
 
 namespace vkg::buffer {
 auto devBuffer(
-  Device &device, const vk::BufferUsageFlags &usage, vk::DeviceSize sizeInBytes)
-  -> std::unique_ptr<Buffer>;
+  Device &device, const vk::BufferUsageFlags &usage, vk::DeviceSize sizeInBytes,
+  const std::string &name = "buffer") -> std::unique_ptr<Buffer>;
 
 auto hostCoherentBuffer(
   Device &device, const vk::BufferUsageFlags &usage, vk::DeviceSize sizeInBytes,
-  VmaMemoryUsage memoryUsage) -> std::unique_ptr<Buffer>;
+  VmaMemoryUsage memoryUsage, const std::string &name = "buffer")
+  -> std::unique_ptr<Buffer>;
 auto hostOnlyBuffer(
-  Device &device, const vk::BufferUsageFlags &usage, vk::DeviceSize sizeInBytes)
-  -> std::unique_ptr<Buffer>;
+  Device &device, const vk::BufferUsageFlags &usage, vk::DeviceSize sizeInBytes,
+  const std::string &name = "buffer") -> std::unique_ptr<Buffer>;
 auto readbackBuffer(
-  Device &device, const vk::BufferUsageFlags &usage, vk::DeviceSize sizeInBytes)
-  -> std::unique_ptr<Buffer>;
+  Device &device, const vk::BufferUsageFlags &usage, vk::DeviceSize sizeInBytes,
+  const std::string &name = "buffer") -> std::unique_ptr<Buffer>;
 auto hostBuffer(
-  Device &device, const vk::BufferUsageFlags &usage, vk::DeviceSize sizeInBytes)
+  Device &device, const vk::BufferUsageFlags &usage, vk::DeviceSize sizeInBytes,
+  const std::string &name = "buffer") -> std::unique_ptr<Buffer>;
+
+auto devIndexBuffer(
+  Device &device, vk::DeviceSize sizeInBytes, const std::string &name = "buffer")
+  -> std::unique_ptr<Buffer>;
+auto hostIndexBuffer(
+  Device &device, vk::DeviceSize sizeInBytes, const std::string &name = "buffer")
+  -> std::unique_ptr<Buffer>;
+auto hostOnlyIndexBuffer(
+  Device &device, vk::DeviceSize sizeInBytes, const std::string &name = "buffer")
+  -> std::unique_ptr<Buffer>;
+auto devIndexStorageBuffer(
+  Device &device, vk::DeviceSize sizeInBytes, const std::string &name = "buffer")
+  -> std::unique_ptr<Buffer>;
+auto hostIndexStorageBuffer(
+  Device &device, vk::DeviceSize sizeInBytes, const std::string &name = "buffer")
+  -> std::unique_ptr<Buffer>;
+auto hostOnlyIndexStorageBuffer(
+  Device &device, vk::DeviceSize sizeInBytes, const std::string &name = "buffer")
   -> std::unique_ptr<Buffer>;
 
-auto devIndexBuffer(Device &device, vk::DeviceSize sizeInBytes)
+auto devVertexBuffer(
+  Device &device, vk::DeviceSize sizeInBytes, const std::string &name = "buffer")
   -> std::unique_ptr<Buffer>;
-auto hostIndexBuffer(Device &device, vk::DeviceSize sizeInBytes)
+auto hostVertexBuffer(
+  Device &device, vk::DeviceSize sizeInBytes, const std::string &name = "buffer")
   -> std::unique_ptr<Buffer>;
-auto hostOnlyIndexBuffer(Device &device, vk::DeviceSize sizeInBytes)
+auto hostOnlyVertexBuffer(
+  Device &device, vk::DeviceSize sizeInBytes, const std::string &name = "buffer")
   -> std::unique_ptr<Buffer>;
-auto devIndexStorageBuffer(Device &device, vk::DeviceSize sizeInBytes)
+auto devVertexStorageBuffer(
+  Device &device, vk::DeviceSize sizeInBytes, const std::string &name = "buffer")
   -> std::unique_ptr<Buffer>;
-auto hostIndexStorageBuffer(Device &device, vk::DeviceSize sizeInBytes)
+auto hostVertexStorageBuffer(
+  Device &device, vk::DeviceSize sizeInBytes, const std::string &name = "buffer")
   -> std::unique_ptr<Buffer>;
-auto hostOnlyIndexStorageBuffer(Device &device, vk::DeviceSize sizeInBytes)
-  -> std::unique_ptr<Buffer>;
-
-auto devVertexBuffer(Device &device, vk::DeviceSize sizeInBytes)
-  -> std::unique_ptr<Buffer>;
-auto hostVertexBuffer(Device &device, vk::DeviceSize sizeInBytes)
-  -> std::unique_ptr<Buffer>;
-auto hostOnlyVertexBuffer(Device &device, vk::DeviceSize sizeInBytes)
-  -> std::unique_ptr<Buffer>;
-auto devVertexStorageBuffer(Device &device, vk::DeviceSize sizeInBytes)
-  -> std::unique_ptr<Buffer>;
-auto hostVertexStorageBuffer(Device &device, vk::DeviceSize sizeInBytes)
-  -> std::unique_ptr<Buffer>;
-auto hostOnlyVertexStorageBuffer(Device &device, vk::DeviceSize sizeInBytes)
+auto hostOnlyVertexStorageBuffer(
+  Device &device, vk::DeviceSize sizeInBytes, const std::string &name = "buffer")
   -> std::unique_ptr<Buffer>;
 
-auto devUniformBuffer(Device &device, vk::DeviceSize sizeInBytes)
+auto devUniformBuffer(
+  Device &device, vk::DeviceSize sizeInBytes, const std::string &name = "buffer")
   -> std::unique_ptr<Buffer>;
-auto hostUniformBuffer(Device &device, vk::DeviceSize sizeInBytes)
+auto hostUniformBuffer(
+  Device &device, vk::DeviceSize sizeInBytes, const std::string &name = "buffer")
   -> std::unique_ptr<Buffer>;
-auto hostOnlyUniformBuffer(Device &device, vk::DeviceSize sizeInBytes)
-  -> std::unique_ptr<Buffer>;
-
-auto devStorageBuffer(Device &device, vk::DeviceSize sizeInBytes)
-  -> std::unique_ptr<Buffer>;
-auto hostStorageBuffer(Device &device, vk::DeviceSize sizeInBytes)
-  -> std::unique_ptr<Buffer>;
-auto hostOnlyStorageBuffer(Device &device, vk::DeviceSize sizeInBytes)
+auto hostOnlyUniformBuffer(
+  Device &device, vk::DeviceSize sizeInBytes, const std::string &name = "buffer")
   -> std::unique_ptr<Buffer>;
 
-auto devIndirectBuffer(Device &device, vk::DeviceSize sizeInBytes)
+auto devStorageBuffer(
+  Device &device, vk::DeviceSize sizeInBytes, const std::string &name = "buffer")
   -> std::unique_ptr<Buffer>;
-auto devIndirectStorageBuffer(Device &device, vk::DeviceSize sizeInBytes)
+auto hostStorageBuffer(
+  Device &device, vk::DeviceSize sizeInBytes, const std::string &name = "buffer")
   -> std::unique_ptr<Buffer>;
-auto hostIndirectBuffer(Device &device, vk::DeviceSize sizeInBytes)
+auto hostOnlyStorageBuffer(
+  Device &device, vk::DeviceSize sizeInBytes, const std::string &name = "buffer")
   -> std::unique_ptr<Buffer>;
-auto hostIndirectStorageBuffer(Device &device, vk::DeviceSize sizeInBytes)
+
+auto devIndirectBuffer(
+  Device &device, vk::DeviceSize sizeInBytes, const std::string &name = "buffer")
   -> std::unique_ptr<Buffer>;
-auto hostOnlyIndirectBuffer(Device &device, vk::DeviceSize sizeInBytes)
+auto devIndirectStorageBuffer(
+  Device &device, vk::DeviceSize sizeInBytes, const std::string &name = "buffer")
+  -> std::unique_ptr<Buffer>;
+auto hostIndirectBuffer(
+  Device &device, vk::DeviceSize sizeInBytes, const std::string &name = "buffer")
+  -> std::unique_ptr<Buffer>;
+auto hostIndirectStorageBuffer(
+  Device &device, vk::DeviceSize sizeInBytes, const std::string &name = "buffer")
+  -> std::unique_ptr<Buffer>;
+auto hostOnlyIndirectBuffer(
+  Device &device, vk::DeviceSize sizeInBytes, const std::string &name = "buffer")
   -> std::unique_ptr<Buffer>;
 
 auto devRayTracingBuffer(
-  Device &device, vk::DeviceSize sizeInBytes, uint32_t memoryTypeBits)
+  Device &device, vk::DeviceSize sizeInBytes, uint32_t memoryTypeBits,
+  const std::string &name = "buffer") -> std::unique_ptr<Buffer>;
+auto devRayTracingBuffer2(
+  Device &device, vk::DeviceSize sizeInBytes, const std::string &name = "buffer")
   -> std::unique_ptr<Buffer>;
-auto devRayTracingBuffer2(Device &device, vk::DeviceSize sizeInBytes)
+auto hostRayTracingBuffer(
+  Device &device, vk::DeviceSize sizeInBytes, const std::string &name = "buffer")
   -> std::unique_ptr<Buffer>;
-auto hostRayTracingBuffer(Device &device, vk::DeviceSize sizeInBytes)
-  -> std::unique_ptr<Buffer>;
-auto hostOnlyRayTracingBuffer(Device &device, vk::DeviceSize sizeInBytes)
+auto hostOnlyRayTracingBuffer(
+  Device &device, vk::DeviceSize sizeInBytes, const std::string &name = "buffer")
   -> std::unique_ptr<Buffer>;
 
 void upload(

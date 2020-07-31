@@ -56,6 +56,8 @@ set(sources
   src/vkg/base/pipeline/raytracing_pipeline.cpp
   
   src/vkg/math/matrices.cpp
+  src/vkg/math/frustum.cpp
+  
   src/vkg/render/model/aabb.cpp
   src/vkg/render/model/transform.cpp
   src/vkg/render/model/animation.cpp
@@ -76,7 +78,9 @@ set(sources
   src/vkg/render/renderer.cpp
   src/vkg/render/scene.cpp
   src/vkg/render/scene_frame.cpp
-  src/vkg/render/pass/compute_transf.cpp src/vkg/render/pass/compute_transf.hpp src/vkg/render/pass/compute_cull_drawcmd.cpp src/vkg/render/pass/compute_cull_drawcmd.hpp)
+  src/vkg/render/pass/compute_transf.cpp
+  src/vkg/render/pass/compute_cull_drawcmd.cpp
+  )
 
 set(definitions "")
 if(WIN32)
@@ -96,7 +100,7 @@ else()
 endif()
 
 static_res_ns(vkg res ${CMAKE_CURRENT_LIST_DIR}/assets/shaders
-  ${CMAKE_CURRENT_LIST_DIR}/src/resources "*.spv")
+  ${CMAKE_CURRENT_BINARY_DIR}/resources "*.spv")
 
 target_include_directories(vkg PUBLIC
   ${CMAKE_CURRENT_LIST_DIR}/src)

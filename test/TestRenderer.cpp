@@ -21,22 +21,18 @@ auto main() -> int {
   auto texMat = scene.newMaterial(MaterialType::eBRDF);
   scene.material(texMat).setColorTex(colorTex).setPbrFactor({0, 0.3, 0.4, 0});
 
-  { // axis
-    auto primitives = scene.newPrimitives(
-      PrimitiveBuilder().axis({}, 10.f, 0.1f, 0.5f, 50).newPrimitive());
+  auto primitives =
+    scene.newPrimitives(PrimitiveBuilder().axis({}, 10.f, 0.1f, 0.5f, 50).newPrimitive());
 
-    auto originMesh = scene.newMesh(primitives[0], yellowMat);
-    auto xMesh = scene.newMesh(primitives[1], redMat);
-    auto yMesh = scene.newMesh(primitives[2], greenMat);
-    auto zMesh = scene.newMesh(primitives[3], blueMat);
-    auto axisNode = scene.newNode();
-    scene.node(axisNode).addMeshes({originMesh, xMesh, yMesh, zMesh});
-    auto axisModel = scene.newModel({axisNode});
-    scene.newModelInstance(axisModel);
-  }
+  auto originMesh = scene.newMesh(primitives[0], yellowMat);
+  auto xMesh = scene.newMesh(primitives[1], redMat);
+  auto yMesh = scene.newMesh(primitives[2], greenMat);
+  auto zMesh = scene.newMesh(primitives[3], blueMat);
+  auto axisNode = scene.newNode();
+  scene.node(axisNode).addMeshes({originMesh, xMesh, yMesh, zMesh});
+  auto axisModel = scene.newModel({axisNode});
+  scene.newModelInstance(axisModel);
 
-  app.loop([&](double elapsed) {
-
-  });
+  app.loop([&](double elapsed) {});
   return 0;
 }

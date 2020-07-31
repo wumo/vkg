@@ -41,6 +41,7 @@ Scene::Scene(Renderer &renderer, SceneConfig sceneConfig, std::string name)
     buffer::hostStorageBuffer, device, sceneConfig.maxNumLights, "lights");
   Dev.camera = std::make_unique<RandomHostAllocation<Camera::Desc>>(
     buffer::hostUniformBuffer, device, 1, "camera");
+  Dev.camFrustum = buffer::hostUniformBuffer(device, sizeof(Frustum), "camFrustum");
   Host.camera_ = std::make_unique<Camera>(
     Dev.camera->allocate(), glm::vec3{10, 10, 10}, glm::vec3{0, 0, 0}, glm::vec3{0, 1, 0},
     glm::radians(45.f), 0.1f, 1000.f, 1, 1);
@@ -68,9 +69,10 @@ Scene::Scene(Renderer &renderer, SceneConfig sceneConfig, std::string name)
   newMaterial(MaterialType::eNone);
 
   Dev.drawCMD = buffer::devIndirectStorageBuffer(
-    device, sizeof(vk::DrawIndexedIndirectCommand) * sceneConfig.maxNumMeshInstances);
-  Dev.drawCMD =
-    buffer::devIndirectStorageBuffer(device, sizeof(uint32_t) * Host.numDrawGroup);
+    device, sizeof(vk::DrawIndexedIndirectCommand) * sceneConfig.maxNumMeshInstances,
+    "drawCMD");
+  Dev.drawCMDCount = buffer::devIndirectStorageBuffer(
+    device, sizeof(uint32_t) * Host.numDrawGroup, "drawCMDCount");
   Host.drawGroupInstCount.resize(Host.numDrawGroup);
 }
 

@@ -49,26 +49,26 @@ public:
   auto transferQueue() const -> vk::Queue;
   auto rayTracingProperties() -> const vk::PhysicalDeviceRayTracingPropertiesNV &;
   auto multiviewProperties() -> const vk::PhysicalDeviceMultiviewProperties &;
-  
-  void name(vk::Buffer object, std::string_view markerName);
-  void name(vk::Image object, std::string_view markerName);
-  void name(vk::ImageView object, std::string_view markerName);
-  void name(vk::Pipeline object, std::string_view markerName);
-  void name(vk::DescriptorSet object, std::string_view markerName);
+
+  void name(vk::Buffer object, const std::string &markerName);
+  void name(vk::Image object, const std::string &markerName);
+  void name(vk::ImageView object, const std::string &markerName);
+  void name(vk::Pipeline object, const std::string &markerName);
+  void name(vk::DescriptorSet object, const std::string &markerName);
   void name(
     uint64_t object, vk::DebugReportObjectTypeEXT objectType,
-    std::string_view markerName);
+    const std::string &markerName);
   void tag(
     uint64_t object, vk::DebugReportObjectTypeEXT objectType, uint64_t name,
     size_t tagSize, const void *tag);
   void begin(
-    vk::CommandBuffer commandBuffer, std::string_view markerName,
+    vk::CommandBuffer commandBuffer, const std::string &markerName,
     std::array<float, 4> color = {1, 1, 1, 1});
   void insert(
-    vk::CommandBuffer commandBuffer, std::string_view markerName,
+    vk::CommandBuffer commandBuffer, const std::string &markerName,
     std::array<float, 4> color = {1, 1, 1, 1});
   void end(vk::CommandBuffer commandBuffer);
-  
+
 private:
   FeatureConfig featureConfig_;
   Instance &instance;

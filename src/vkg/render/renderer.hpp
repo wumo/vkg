@@ -14,7 +14,6 @@ public:
     -> Scene &;
 
 protected:
-  auto resize() -> void override;
   auto onInit() -> void override;
   void onFrame(uint32_t imageIndex, float elapsed) override;
 
@@ -22,5 +21,6 @@ private:
   std::map<std::string_view, std::unique_ptr<Scene>> scenes;
 
   std::unique_ptr<FrameGraph> frameGraph;
+  FrameGraphResource extent;
 };
 }

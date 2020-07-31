@@ -30,7 +30,7 @@ private:
   PassIn passIn;
 
   struct ComputeTransfSetDef: DescriptorSetDef {
-    __buffer__(frustum, vk::ShaderStageFlagBits::eCompute);
+    __uniform__(frustum, vk::ShaderStageFlagBits::eCompute);
     __buffer__(meshInstances, vk::ShaderStageFlagBits::eCompute);
     __buffer__(primitives, vk::ShaderStageFlagBits::eCompute);
     __buffer__(matrices, vk::ShaderStageFlagBits::eCompute);
