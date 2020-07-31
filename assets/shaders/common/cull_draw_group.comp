@@ -63,11 +63,10 @@ void transformAABB(inout AABB aabb, mat4 m) {
 }
 
 void main() {
-  ivec3 coord = ivec3(gl_GlobalInvocationID.xyz);
-  uint dx = gl_WorkGroupSize.y * gl_WorkGroupSize.z * ly * lz;
-  uint dy = gl_WorkGroupSize.z * lz;
-  uint dz = 1;
-  uint id = coord.x * dx + coord.y * dy + coord.z * dz;
+  uint NX = gl_NumWorkGroups.x * gl_WorkGroupSize.x;
+  uint NY = gl_NumWorkGroups.y * gl_WorkGroupSize.y;
+  uint id = gl_GlobalInvocationID.z * (NX * NY) + gl_GlobalInvocationID.y * NX +
+            gl_GlobalInvocationID.x;
 
   if(id >= total) return;
 
