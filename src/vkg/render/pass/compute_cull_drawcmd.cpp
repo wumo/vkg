@@ -61,17 +61,6 @@ void ComputeCullDrawCMD::execute(RenderContext &ctx, Resources &resources) {
   auto dz = std::min(std::max(totalGroup, 1u), maxCG[1]);
 
   auto cb = ctx.compute;
-  vk::BufferMemoryBarrier barrier{
-    vk::AccessFlagBits::eTransferWrite,
-    vk::AccessFlagBits::eShaderRead,
-    VK_QUEUE_FAMILY_IGNORED,
-    VK_QUEUE_FAMILY_IGNORED,
-    resources.get<vk::Buffer>(passIn.drawCMDCountBuffer),
-    0,
-    VK_WHOLE_SIZE};
-  cb.pipelineBarrier(
-    vk::PipelineStageFlagBits::eTransfer, vk::PipelineStageFlagBits::eComputeShader, {},
-    nullptr, barrier, nullptr);
 
   ctx.device.begin(cb, "compute cull drawGroup");
   cb.bindPipeline(vk::PipelineBindPoint::eCompute, *pipe);
@@ -82,18 +71,11 @@ void ComputeCullDrawCMD::execute(RenderContext &ctx, Resources &resources) {
     pipeDef.layout(), vk::ShaderStageFlagBits::eCompute, 0, total);
   cb.dispatch(dx, dy, dz);
 
-  std::array<vk::BufferMemoryBarrier, 2> barriers{
-    vk::BufferMemoryBarrier{
-      vk::AccessFlagBits::eShaderWrite, vk::AccessFlagBits::eShaderRead,
-      VK_QUEUE_FAMILY_IGNORED, VK_QUEUE_FAMILY_IGNORED,
-      resources.get<vk::Buffer>(passIn.drawCMDBuffer), 0, VK_WHOLE_SIZE},
-    vk::BufferMemoryBarrier{
-      vk::AccessFlagBits::eShaderWrite, vk::AccessFlagBits::eShaderRead,
-      VK_QUEUE_FAMILY_IGNORED, VK_QUEUE_FAMILY_IGNORED,
-      resources.get<vk::Buffer>(passIn.drawCMDCountBuffer), 0, VK_WHOLE_SIZE}};
+  vk::MemoryBarrier barrier{
+    vk::AccessFlagBits::eShaderWrite, vk::AccessFlagBits::eShaderRead};
   cb.pipelineBarrier(
     vk::PipelineStageFlagBits::eComputeShader, vk::PipelineStageFlagBits::eAllCommands,
-    {}, nullptr, barriers, nullptr);
+    {}, barrier, nullptr, nullptr);
   ctx.device.end(cb);
 }
 
