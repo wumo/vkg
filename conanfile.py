@@ -7,14 +7,14 @@ class vkgConan(ConanFile):
     requires = (
         "vulkan-headers/1.2.148@wumo/stable",
         "vma/2.3.0@wumo/stable",
-        "glfw/3.4@wumo/stable",
+        "glfw/3.5@wumo/stable",
         "spirv-cross/20200519",
         "glm/0.9.9.8",
         "stb/20200203",
         "tinygltf/2.2.0",
         "par_lib/master@wumo/stable",
     )
-    build_requires = ("file2header/1.0.7@wumo/stable")
+    build_requires = ("glslvk/0.0.1@wumo/stable")
     generators = "cmake"
     scm = {
         "type": "git",
@@ -26,7 +26,8 @@ class vkgConan(ConanFile):
         "shared": [True, False],
     }
     default_options = {
-        "shared": True
+        "shared": True,
+        "glfw:shared": True,
     }
 
     def configure_cmake(self):

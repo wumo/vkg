@@ -1,5 +1,5 @@
 #include "compute_cull_drawcmd.hpp"
-#include "common/cull_draw_group_comp_spv.hpp"
+#include "common/cull_draw_group_comp.hpp"
 #include <utility>
 
 namespace vkg {
@@ -15,7 +15,7 @@ void ComputeCullDrawCMD::setup(PassBuilder &builder) {
 
   pipe = ComputePipelineMaker(builder.device())
            .layout(pipeDef.layout())
-           .shader(Shader{res::common::cull_draw_group_comp_spv_span, local_size, 1, 1})
+           .shader(Shader{shader::common::cull_draw_group_comp_span, local_size, 1, 1})
            .createUnique();
 
   builder.read(passIn.frustum);

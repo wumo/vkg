@@ -27,19 +27,19 @@ void getVertexState(
   const vec3 barycentrics = vec3(1.0f - hit.x - hit.y, hit.x, hit.y);
 
   const uint faceIndex = gl_PrimitiveID;
-  const uint indexOffset = primitive.index.x + 3 * faceIndex;
+  const uint indexOffset = primitive.index.start + 3 * faceIndex;
   const uint i0 = indices[indexOffset];
   const uint i1 = indices[indexOffset + 1];
   const uint i2 = indices[indexOffset + 2];
-  const vec3 pos0 = positions[primitive.position.x + i0];
-  const vec3 pos1 = positions[primitive.position.x + i1];
-  const vec3 pos2 = positions[primitive.position.x + i2];
+  const vec3 pos0 = positions[primitive.position.start + i0];
+  const vec3 pos1 = positions[primitive.position.start + i1];
+  const vec3 pos2 = positions[primitive.position.start + i2];
   const vec3 position = BaryLerp(pos0, pos1, pos2, barycentrics);
   const vec3 world_position = vec3(gl_ObjectToWorldNV * vec4(position, 1.0));
 
-  const vec3 n0 = normals[primitive.normal.x + i0];
-  const vec3 n1 = normals[primitive.normal.x + i1];
-  const vec3 n2 = normals[primitive.normal.x + i2];
+  const vec3 n0 = normals[primitive.normal.start + i0];
+  const vec3 n1 = normals[primitive.normal.start + i1];
+  const vec3 n2 = normals[primitive.normal.start + i2];
   const vec3 normal = normalize(BaryLerp(n0, n1, n2, barycentrics));
   const vec3 world_normal = normalize(vec3(normal * gl_WorldToObjectNV));
   const vec3 geom_normal = normalize(cross(pos1 - pos0, pos2 - pos0));
@@ -48,9 +48,9 @@ void getVertexState(
   // flip geometry normal to the side of the incident ray
   if(dot(world_geom_normal, gl_WorldRayDirectionNV) > 0.0) world_geom_normal *= -1.0f;
 
-  const vec2 uv0 = uvs[primitive.uv.x + i0];
-  const vec2 uv1 = uvs[primitive.uv.x + i1];
-  const vec2 uv2 = uvs[primitive.uv.x + i2];
+  const vec2 uv0 = uvs[primitive.uv.start + i0];
+  const vec2 uv1 = uvs[primitive.uv.start + i1];
+  const vec2 uv2 = uvs[primitive.uv.start + i2];
   vec2 uv = BaryLerp(uv0, uv1, uv2, barycentrics);
 
   state.pos = world_position;

@@ -99,8 +99,8 @@ else()
   add_library(vkg STATIC ${sources})
 endif()
 
-static_res_ns(vkg res ${CMAKE_CURRENT_LIST_DIR}/assets/shaders
-  ${CMAKE_CURRENT_BINARY_DIR}/resources "*.spv")
+static_shader_ns(vkg shader ${CMAKE_CURRENT_LIST_DIR}/assets/shaders
+  ${CMAKE_CURRENT_BINARY_DIR}/shaders)
 
 target_include_directories(vkg PUBLIC
   ${CMAKE_CURRENT_LIST_DIR}/src)

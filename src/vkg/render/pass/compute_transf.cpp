@@ -1,7 +1,7 @@
 #include "compute_transf.hpp"
 
 #include <utility>
-#include "deferred/comp/transform_comp_spv.hpp"
+#include "deferred/comp/transform_comp.hpp"
 
 namespace vkg {
 
@@ -14,7 +14,7 @@ void ComputeTransf::setup(PassBuilder &builder) {
 
   pipe = ComputePipelineMaker(builder.device())
            .layout(pipeDef.layout())
-           .shader(Shader{res::deferred::comp::transform_comp_spv_span, local_size, 1, 1})
+           .shader(Shader{shader::deferred::comp::transform_comp_span, local_size, 1, 1})
            .createUnique();
 
   builder.read(in.transforms);
