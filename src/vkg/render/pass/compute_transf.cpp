@@ -27,19 +27,19 @@ auto ComputeTransf::setup(PassBuilder &builder, const ComputeTransfPassIn &input
 }
 void ComputeTransf::compile(Resources &resources) {
   if(!set) {
-    auto maxNumMeshInstances = resources.get<uint32_t>(passIn.maxNumMeshInstances);
+    auto maxNumMeshInstances = resources.get(passIn.maxNumMeshInstances);
     matrices = buffer::devStorageBuffer(
       resources.device, sizeof(glm::mat4) * maxNumMeshInstances, name + "_matrices");
     set = setDef.createSet(*descriptorPool);
-    setDef.transforms(resources.get<vk::Buffer>(passIn.transforms));
-    setDef.meshInstances(resources.get<vk::Buffer>(passIn.meshInstances));
+    setDef.transforms(resources.get(passIn.transforms));
+    setDef.meshInstances(resources.get(passIn.meshInstances));
     setDef.matrices(matrices->buffer());
     setDef.update(set);
     resources.set(passOut.matrices, matrices->buffer());
   }
 }
 void ComputeTransf::execute(RenderContext &ctx, Resources &resources) {
-  auto total = resources.get<uint32_t>(passIn.meshInstancesCount);
+  auto total = resources.get(passIn.meshInstancesCount);
   if(total == 0) return;
   auto maxCG = ctx.device.limits().maxComputeWorkGroupCount;
   auto totalGroup = uint32_t(std::ceil(total / double(local_size)));

@@ -33,7 +33,7 @@ auto Scene::setup(PassBuilder &builder, const ScenePassIn &inputs) -> ScenePassO
   auto deferredPassOut = builder.newPass<DeferredPass>(
     "Deferred",
     DeferredPassIn{
-      passOut.camera, passOut.cameraBuffer, passOut.meshInstances,
+      passIn.swapchainExtent, passOut.camera, passOut.cameraBuffer, passOut.meshInstances,
       passOut.meshInstancesCount, passOut.maxNumMeshInstances, passOut.primitives,
       transfPassOut.matrices, passOut.materials, passOut.textures, passOut.lighting,
       passOut.lights, passOut.drawGroupCount});

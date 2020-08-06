@@ -4,6 +4,7 @@
 #include "vkg/render/model/camera.hpp"
 namespace vkg {
 struct DeferredPassIn {
+  FrameGraphResource<vk::Extent2D> swapchainExtent;
   FrameGraphResource<Camera *> camera;
   FrameGraphResource<vk::Buffer> cameraBuffer;
   FrameGraphResource<vk::Buffer> meshInstances;

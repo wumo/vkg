@@ -10,6 +10,7 @@ auto DeferredPass::setup(PassBuilder &builder, const DeferredPassIn &inputs)
   -> DeferredPassOut {
   passIn = inputs;
 
+  builder.read(passIn.swapchainExtent);
   builder.read(passIn.camera);
   builder.read(passIn.maxNumMeshInstances);
   builder.read(passIn.drawGroupCount);
@@ -26,11 +27,12 @@ auto DeferredPass::setup(PassBuilder &builder, const DeferredPassIn &inputs)
   return passOut;
 }
 void DeferredPass::compile(Resources &resources) {
+  auto extent = resources.get(passIn.swapchainExtent);
   if(!init) {
     init = true;
 
-    auto maxNumMeshInstances = resources.get<uint32_t>(passIn.maxNumMeshInstances);
-    auto drawGroupCount = resources.get<std::vector<uint32_t>>(passIn.drawGroupCount);
+    auto maxNumMeshInstances = resources.get(passIn.maxNumMeshInstances);
+    auto drawGroupCount = resources.get(passIn.drawGroupCount);
     camFrustum =
       buffer::hostUniformBuffer(resources.device, sizeof(Frustum), name + "_camFrustum");
     drawCMD = buffer::devIndirectStorageBuffer(
@@ -42,7 +44,7 @@ void DeferredPass::compile(Resources &resources) {
     resources.set(passOut.drawCMDCountBuffer, drawCMDCount->buffer());
     resources.set(passOut.camFrustum, camFrustum->buffer());
   }
-  auto *camera = resources.get<Camera *>(passIn.camera);
+  auto *camera = resources.get(passIn.camera);
   *camFrustum->ptr<Frustum>() = Frustum{camera->proj() * camera->view()};
 }
 void DeferredPass::execute(RenderContext &ctx, Resources &resources) {

@@ -31,18 +31,18 @@ auto ComputeCullDrawCMD::setup(
   return passOut;
 }
 void ComputeCullDrawCMD::compile(Resources &resources) {
-  auto drawGroupCount = resources.get<std::vector<uint32_t>>(passIn.drawGroupCount);
+  auto drawGroupCount = resources.get(passIn.drawGroupCount);
   if(!set) {
     drawCMDOffset = buffer::hostStorageBuffer(
       resources.device, sizeof(uint32_t) * drawGroupCount.size(), "drawCMDOffset");
     set = setDef.createSet(*descriptorPool);
-    setDef.frustum(resources.get<vk::Buffer>(passIn.frustum));
-    setDef.meshInstances(resources.get<vk::Buffer>(passIn.meshInstances));
-    setDef.primitives(resources.get<vk::Buffer>(passIn.primitives));
-    setDef.matrices(resources.get<vk::Buffer>(passIn.matrices));
+    setDef.frustum(resources.get(passIn.frustum));
+    setDef.meshInstances(resources.get(passIn.meshInstances));
+    setDef.primitives(resources.get(passIn.primitives));
+    setDef.matrices(resources.get(passIn.matrices));
     setDef.drawCMDOffset(drawCMDOffset->buffer());
-    setDef.drawCMD(resources.get<vk::Buffer>(passIn.drawCMDBuffer));
-    setDef.drawCMDCount(resources.get<vk::Buffer>(passIn.drawCMDCountBuffer));
+    setDef.drawCMD(resources.get(passIn.drawCMDBuffer));
+    setDef.drawCMDCount(resources.get(passIn.drawCMDCountBuffer));
     setDef.update(set);
   }
   uint32_t offset = 0;
@@ -53,7 +53,7 @@ void ComputeCullDrawCMD::compile(Resources &resources) {
   }
 }
 void ComputeCullDrawCMD::execute(RenderContext &ctx, Resources &resources) {
-  auto total = resources.get<uint32_t>(passIn.meshInstancesCount);
+  auto total = resources.get(passIn.meshInstancesCount);
   if(total == 0) return;
   auto maxCG = ctx.device.limits().maxComputeWorkGroupCount;
   auto totalGroup = uint32_t(std::ceil(total / double(local_size)));
