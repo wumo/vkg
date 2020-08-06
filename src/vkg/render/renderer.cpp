@@ -21,7 +21,7 @@ void Renderer::onInit() {
 
 auto Renderer::setup(PassBuilder &builder, const RendererPassIn &inputs)
   -> RendererPassOut {
-  extent = builder.create("SwapchainExtent", ResourceType::eValue);
+  extent = builder.create<vk::Extent2D>( "swapchainExtent");
 
   for(auto &[name, scene]: scenes)
     frameGraph->addPass(name, *scene, {extent});

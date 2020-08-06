@@ -4,7 +4,8 @@
 
 namespace vkg {
 
-auto ComputeCullDrawCMD::setup(PassBuilder &builder, const ComputeCullDrawCMDPassIn &inputs)
+auto ComputeCullDrawCMD::setup(
+  PassBuilder &builder, const ComputeCullDrawCMDPassIn &inputs)
   -> ComputeCullDrawCMDPassOut {
   passIn = inputs;
 

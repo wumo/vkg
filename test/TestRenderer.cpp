@@ -32,7 +32,7 @@ auto main() -> int {
   scene.node(axisNode).addMeshes({originMesh, xMesh, yMesh, zMesh});
   auto axisModel = scene.newModel({axisNode});
 
-  for(int i = 0; i < 20000; ++i) {
+  for(int i = 0; i < 1; ++i) {
     scene.newModelInstance(axisModel);
   }
 

@@ -6,7 +6,7 @@
 namespace vkg {
 struct RendererPassIn {};
 struct RendererPassOut {
-  FrameGraphResource swapchainExtent;
+  FrameGraphResource<vk::Extent2D> swapchainExtent;
 };
 class Renderer: public Base, public Pass<RendererPassIn, RendererPassOut> {
   friend class Scene;
@@ -14,7 +14,7 @@ class Renderer: public Base, public Pass<RendererPassIn, RendererPassOut> {
 public:
   Renderer(WindowConfig windowConfig, FeatureConfig featureConfig);
 
-  auto addScene(SceneConfig sceneConfig = {}, const std::string &name = "DefaultScene")
+  auto addScene(SceneConfig sceneConfig = {}, const std::string &name = "Scene")
     -> Scene &;
 
 protected:
@@ -32,6 +32,6 @@ private:
   std::map<std::string, std::unique_ptr<Scene>> scenes;
 
   std::unique_ptr<FrameGraph> frameGraph;
-  FrameGraphResource extent;
+  FrameGraphResource<vk::Extent2D> extent;
 };
 }

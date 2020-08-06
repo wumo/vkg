@@ -1,26 +1,27 @@
 #pragma once
 #include "vkg/base/base.hpp"
 #include "vkg/render/graph/frame_graph.hpp"
+#include "vkg/render/model/camera.hpp"
 namespace vkg {
 struct DeferredPassIn {
-  FrameGraphResource camera;
-  FrameGraphResource cameraBuffer;
-  FrameGraphResource meshInstances;
-  FrameGraphResource meshInstancesCount;
-  FrameGraphResource maxNumMeshInstances;
-  FrameGraphResource primitives;
-  FrameGraphResource matrices;
-  FrameGraphResource materials;
-  FrameGraphResource textures;
-  FrameGraphResource lighting;
-  FrameGraphResource lights;
+  FrameGraphResource<Camera *> camera;
+  FrameGraphResource<vk::Buffer> cameraBuffer;
+  FrameGraphResource<vk::Buffer> meshInstances;
+  FrameGraphResource<uint32_t> meshInstancesCount;
+  FrameGraphResource<uint32_t> maxNumMeshInstances;
+  FrameGraphResource<vk::Buffer> primitives;
+  FrameGraphResource<vk::Buffer> matrices;
+  FrameGraphResource<vk::Buffer> materials;
+  FrameGraphResource<std::vector<vk::DescriptorImageInfo> *> textures;
+  FrameGraphResource<vk::Buffer> lighting;
+  FrameGraphResource<vk::Buffer> lights;
 
-  FrameGraphResource drawGroupCount;
+  FrameGraphResource<std::vector<uint32_t>> drawGroupCount;
 };
 struct DeferredPassOut {
-  FrameGraphResource camFrustum;
-  FrameGraphResource drawCMDBuffer;
-  FrameGraphResource drawCMDCountBuffer;
+  FrameGraphResource<vk::Buffer> camFrustum;
+  FrameGraphResource<vk::Buffer> drawCMDBuffer;
+  FrameGraphResource<vk::Buffer> drawCMDCountBuffer;
 };
 class DeferredPass: public Pass<DeferredPassIn, DeferredPassOut> {
 public:

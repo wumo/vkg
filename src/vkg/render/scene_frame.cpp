@@ -7,36 +7,36 @@ namespace vkg {
 auto Scene::setup(PassBuilder &builder, const ScenePassIn &inputs) -> ScenePassOut {
   passIn = inputs;
 
-  using ty = ResourceType;
   builder.read(passIn.swapchainExtent);
-  passOut.positions = builder.create("_positions", ty::eBuffer);
-  passOut.normals = builder.create("_normals", ty::eBuffer);
-  passOut.uvs = builder.create("_uvs", ty::eBuffer);
-  passOut.indices = builder.create("_indices", ty::eBuffer);
-  passOut.primitives = builder.create("_primitives", ty::eBuffer);
-  passOut.materials = builder.create("_materials", ty::eBuffer);
-  passOut.transforms = builder.create("_transforms", ty::eBuffer);
-  passOut.meshInstances = builder.create("_meshInstances", ty::eBuffer);
-  passOut.meshInstancesCount = builder.create("_meshInstancesCount", ty::eValue);
-  passOut.maxNumMeshInstances = builder.create("_maxNumMeshInstances", ty::eValue);
-  passOut.lighting = builder.create("_lighting", ty::eBuffer);
-  passOut.lights = builder.create("_lights", ty::eBuffer);
-  passOut.textures = builder.create("_textures", ty::eValue);
-  passOut.camera = builder.create("_camera", ty::eBuffer);
-  passOut.cameraBuffer = builder.create("_cameraBuffer", ty::eValue);
-  passOut.drawGroupCount = builder.create("_drawGroupCount", ty::eValue);
+  passOut.positions = builder.create<vk::Buffer>("positions");
+  passOut.normals = builder.create<vk::Buffer>("normals");
+  passOut.uvs = builder.create<vk::Buffer>("uvs");
+  passOut.indices = builder.create<vk::Buffer>("indices");
+  passOut.primitives = builder.create<vk::Buffer>("primitives");
+  passOut.materials = builder.create<vk::Buffer>("materials");
+  passOut.transforms = builder.create<vk::Buffer>("transforms");
+  passOut.meshInstances = builder.create<vk::Buffer>("meshInstances");
+  passOut.meshInstancesCount = builder.create<uint32_t>("meshInstancesCount");
+  passOut.maxNumMeshInstances = builder.create<uint32_t>("maxNumMeshInstances");
+  passOut.lighting = builder.create<vk::Buffer>("lighting");
+  passOut.lights = builder.create<vk::Buffer>("lights");
+  passOut.textures = builder.create<std::vector<vk::DescriptorImageInfo> *>("textures");
+  passOut.camera = builder.create<Camera *>("camera");
+  passOut.cameraBuffer = builder.create<vk::Buffer>("cameraBuffer");
+  passOut.drawGroupCount = builder.create<std::vector<uint32_t>>("drawGroupCount");
 
-  auto transfPassOut =
-    builder.newPass<ComputeTransf, ComputeTransfPassIn, ComputeTransfPassOut>(
-      "ComputeTransf", {passOut.transforms, passOut.meshInstances,
-                        passOut.meshInstancesCount, passOut.maxNumMeshInstances});
+  auto transfPassOut = builder.newPass<ComputeTransf>(
+    "Transf", ComputeTransfPassIn{
+                passOut.transforms, passOut.meshInstances, passOut.meshInstancesCount,
+                passOut.maxNumMeshInstances});
 
-  auto deferredPassOut = builder.newPass<DeferredPass, DeferredPassIn, DeferredPassOut>(
-    "DeferredPass",
-    {passOut.camera, passOut.cameraBuffer, passOut.meshInstances,
-     passOut.meshInstancesCount, passOut.maxNumMeshInstances, passOut.primitives,
-     transfPassOut.matrices, passOut.materials, passOut.textures, passOut.lighting,
-     passOut.lights, passOut.drawGroupCount});
+  auto deferredPassOut = builder.newPass<DeferredPass>(
+    "Deferred",
+    DeferredPassIn{
+      passOut.camera, passOut.cameraBuffer, passOut.meshInstances,
+      passOut.meshInstancesCount, passOut.maxNumMeshInstances, passOut.primitives,
+      transfPassOut.matrices, passOut.materials, passOut.textures, passOut.lighting,
+      passOut.lights, passOut.drawGroupCount});
   return passOut;
 }
 

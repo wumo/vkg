@@ -4,18 +4,18 @@
 
 namespace vkg {
 struct ComputeCullDrawCMDPassIn {
-  FrameGraphResource frustum;
-  FrameGraphResource meshInstances;
-  FrameGraphResource meshInstancesCount;
-  FrameGraphResource primitives;
-  FrameGraphResource matrices;
-  FrameGraphResource drawCMDBuffer;
-  FrameGraphResource drawCMDCountBuffer;
-  FrameGraphResource drawGroupCount;
+  FrameGraphResource<vk::Buffer> frustum;
+  FrameGraphResource<vk::Buffer> meshInstances;
+  FrameGraphResource<uint32_t> meshInstancesCount;
+  FrameGraphResource<vk::Buffer> primitives;
+  FrameGraphResource<vk::Buffer> matrices;
+  FrameGraphResource<vk::Buffer> drawCMDBuffer;
+  FrameGraphResource<vk::Buffer> drawCMDCountBuffer;
+  FrameGraphResource<std::vector<uint32_t>> drawGroupCount;
 };
 struct ComputeCullDrawCMDPassOut {
-  FrameGraphResource drawCMDBuffer;
-  FrameGraphResource drawCMDCountBuffer;
+  FrameGraphResource<vk::Buffer> drawCMDBuffer;
+  FrameGraphResource<vk::Buffer> drawCMDCountBuffer;
 };
 class ComputeCullDrawCMD
   : public Pass<ComputeCullDrawCMDPassIn, ComputeCullDrawCMDPassOut> {

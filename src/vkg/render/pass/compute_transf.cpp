@@ -22,7 +22,7 @@ auto ComputeTransf::setup(PassBuilder &builder, const ComputeTransfPassIn &input
   builder.read(passIn.meshInstances);
   builder.read(passIn.meshInstancesCount);
   builder.read(passIn.maxNumMeshInstances);
-  passOut.matrices = builder.create("_matrices", ResourceType::eBuffer);
+  passOut.matrices = builder.create<vk::Buffer>("matrices");
   return passOut;
 }
 void ComputeTransf::compile(Resources &resources) {

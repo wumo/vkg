@@ -3,7 +3,6 @@
 #include <utility>
 #include "vkg/math/frustum.hpp"
 #include "compute_cull_drawcmd.hpp"
-#include "vkg/render/model/camera.hpp"
 
 namespace vkg {
 
@@ -14,18 +13,15 @@ auto DeferredPass::setup(PassBuilder &builder, const DeferredPassIn &inputs)
   builder.read(passIn.camera);
   builder.read(passIn.maxNumMeshInstances);
   builder.read(passIn.drawGroupCount);
-  passOut.camFrustum = builder.create("_camFrustum", ResourceType::eBuffer);
-  passOut.drawCMDBuffer = builder.create("_drawCMDBuffer", ResourceType::eBuffer);
-  passOut.drawCMDCountBuffer =
-    builder.create("_drawCMDCountBuffer", ResourceType::eBuffer);
+  passOut.camFrustum = builder.create<vk::Buffer>("camFrustum");
+  passOut.drawCMDBuffer = builder.create<vk::Buffer>("drawCMDBuffer");
+  passOut.drawCMDCountBuffer = builder.create<vk::Buffer>("drawCMDCountBuffer");
 
-  auto cullCMDOut =
-    builder
-      .newPass<ComputeCullDrawCMD, ComputeCullDrawCMDPassIn, ComputeCullDrawCMDPassOut>(
-        "ComputeCullDrawCMD",
-        {passOut.camFrustum, passIn.meshInstances, passIn.meshInstancesCount,
-         passIn.primitives, passIn.matrices, passOut.drawCMDBuffer,
-         passOut.drawCMDCountBuffer, passIn.drawGroupCount});
+  auto cullCMDOut = builder.newPass<ComputeCullDrawCMD>(
+    "Cull", ComputeCullDrawCMDPassIn{
+              passOut.camFrustum, passIn.meshInstances, passIn.meshInstancesCount,
+              passIn.primitives, passIn.matrices, passOut.drawCMDBuffer,
+              passOut.drawCMDCountBuffer, passIn.drawGroupCount});
 
   return passOut;
 }
@@ -42,6 +38,9 @@ void DeferredPass::compile(Resources &resources) {
       "drawCMD");
     drawCMDCount = buffer::devIndirectStorageBuffer(
       resources.device, sizeof(uint32_t) * drawGroupCount.size(), name + "_drawCMDCount");
+    resources.set(passOut.drawCMDBuffer, drawCMD->buffer());
+    resources.set(passOut.drawCMDCountBuffer, drawCMDCount->buffer());
+    resources.set(passOut.camFrustum, camFrustum->buffer());
   }
   auto *camera = resources.get<Camera *>(passIn.camera);
   *camFrustum->ptr<Frustum>() = Frustum{camera->proj() * camera->view()};

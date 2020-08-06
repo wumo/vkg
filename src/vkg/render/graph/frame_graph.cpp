@@ -5,29 +5,8 @@ namespace vkg {
 PassBuilder::PassBuilder(FrameGraph &frameGraph, uint32_t id, BasePass &pass)
   : frameGraph(frameGraph), id{id}, pass_{pass} {}
 auto PassBuilder::device() -> Device & { return frameGraph.device(); }
-auto PassBuilder::create(const std::string &name, ResourceType type)
-  -> FrameGraphResource {
-  auto output = frameGraph.create(pass_.name + name, id, type);
-  outputs_.push_back(output);
-  return output;
-}
-auto PassBuilder::read(FrameGraphResource &input) -> void {
-  frameGraph.read(input, id);
-  errorIf(
-    uniqueInputs.contains(input.id), pass_.name, " already read resource ", input.id,
-    " as input");
-  uniqueInputs.insert(input.id);
-  inputs_.push_back(input);
-}
-auto PassBuilder::write(FrameGraphResource &input) -> FrameGraphResource {
-  auto output = frameGraph.write(input, id);
-  errorIf(
-    uniqueInputs.contains(input.id), pass_.name, " already read resource ", input.id,
-    " as input");
-  uniqueInputs.insert(input.id);
-  inputs_.push_back(input);
-  outputs_.push_back(output);
-  return output;
+auto PassBuilder::nameMangling(std::string name) -> std::string {
+  return pass_.name + "/" + name;
 }
 
 Resources::Resources(Device &device, uint32_t numResources): device{device} {
@@ -36,30 +15,7 @@ Resources::Resources(Device &device, uint32_t numResources): device{device} {
 
 FrameGraph::FrameGraph(Device &device): device_(device) {}
 auto FrameGraph::device() -> Device & { return device_; }
-auto FrameGraph::create(const std::string &name, uint32_t passId, ResourceType type)
-  -> FrameGraphResource {
-  errorIf(resourceIds.contains(name), "resource with name: ", name, " already exists");
-  auto id_ = uint32_t(resRevisions.size());
-  resourceIds[name] = id_;
-  resRevisions.push_back({name, id_, type, {{passId, {}}}});
-  return {name, id_, 0, type};
-}
-auto FrameGraph::read(FrameGraphResource &input, uint32_t passId) -> void {
-  check(input);
-  auto &revision = resRevisions[input.id].revisions[input.revision];
-  revision.readerPasses.push_back(passId);
-}
-auto FrameGraph::write(FrameGraphResource &input, uint32_t passId) -> FrameGraphResource {
-  check(input);
-  auto &revisions = resRevisions[input.id].revisions;
-  errorIf(
-    input.revision != revisions.size() - 1,
-    "write to resource should be the latest, latest revision:", revisions.size() - 1,
-    ", this revision:", input.revision);
-  revisions.push_back({passId});
-  return {input.name, input.id, uint32_t(revisions.size() - 1)};
-}
-auto FrameGraph::check(FrameGraphResource &resource) -> void {
+auto FrameGraph::check(FrameGraphBaseResource &resource) -> void {
   errorIf(resource.id >= resRevisions.size(), "resource's id is invalid: ", resource.id);
   errorIf(
     resource.revision >= resRevisions[resource.id].revisions.size(),
@@ -111,17 +67,17 @@ auto FrameGraph::build() -> void {
   for(auto i = 0u; i < n; ++i) {
     auto passId = sortedPassIds[i];
     auto &pass = passes[passId];
-    std::map<uint32_t, std::vector<FrameGraphResource>> nextPasses;
+    std::map<uint32_t, std::vector<FrameGraphBaseResource>> nextPasses;
     for(auto &output: pass->outputs_)
       for(auto &p: resRevisions[output.id].revisions[output.revision].readerPasses)
         nextPasses[p].push_back(output);
 
     for(auto &[nextPassId, res]: nextPasses) {
       auto &nextPass = passes[nextPassId];
-      print("[", pass->name, "-", passId, ":", pass->order, "] -> [");
-      println(nextPass->name, "-", nextPassId, ":", nextPass->order, "]:");
+      print("[", pass->name, "$", passId, ":", pass->order, "] -> [");
+      println(nextPass->name, "$", nextPassId, ":", nextPass->order, "]:");
       for(auto &r: res)
-        println("\t", r.name, "-", r.id, ":", r.revision);
+        println("\t(", resRevisions[r.id].name, "$", r.id, ":", r.revision, ")");
     }
   }
 

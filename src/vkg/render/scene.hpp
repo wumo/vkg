@@ -46,25 +46,25 @@ struct SceneConfig {
 class Renderer;
 
 struct ScenePassIn {
-  FrameGraphResource swapchainExtent;
+  FrameGraphResource<vk::Extent2D> swapchainExtent;
 };
 struct ScenePassOut {
-  FrameGraphResource positions;
-  FrameGraphResource normals;
-  FrameGraphResource uvs;
-  FrameGraphResource indices;
-  FrameGraphResource primitives;
-  FrameGraphResource materials;
-  FrameGraphResource transforms;
-  FrameGraphResource meshInstances;
-  FrameGraphResource meshInstancesCount;
-  FrameGraphResource maxNumMeshInstances;
-  FrameGraphResource lighting;
-  FrameGraphResource lights;
-  FrameGraphResource textures;
-  FrameGraphResource camera;
-  FrameGraphResource cameraBuffer;
-  FrameGraphResource drawGroupCount;
+  FrameGraphResource<vk::Buffer> positions;
+  FrameGraphResource<vk::Buffer> normals;
+  FrameGraphResource<vk::Buffer> uvs;
+  FrameGraphResource<vk::Buffer> indices;
+  FrameGraphResource<vk::Buffer> primitives;
+  FrameGraphResource<vk::Buffer> materials;
+  FrameGraphResource<vk::Buffer> transforms;
+  FrameGraphResource<vk::Buffer> meshInstances;
+  FrameGraphResource<uint32_t> meshInstancesCount;
+  FrameGraphResource<uint32_t> maxNumMeshInstances;
+  FrameGraphResource<vk::Buffer> lighting;
+  FrameGraphResource<vk::Buffer> lights;
+  FrameGraphResource<std::vector<vk::DescriptorImageInfo> *> textures;
+  FrameGraphResource<Camera *> camera;
+  FrameGraphResource<vk::Buffer> cameraBuffer;
+  FrameGraphResource<std::vector<uint32_t>> drawGroupCount;
 };
 
 class Scene: public Pass<ScenePassIn, ScenePassOut> {
