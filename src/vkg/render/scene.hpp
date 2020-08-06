@@ -45,31 +45,30 @@ struct SceneConfig {
 
 class Renderer;
 
-class Scene: public Pass {
-public:
-  struct PassIn {
-    FrameGraphResource swapchainExtent;
-  };
-  struct PassOut {
-    FrameGraphResource positions;
-    FrameGraphResource normals;
-    FrameGraphResource uvs;
-    FrameGraphResource indices;
-    FrameGraphResource primitives;
-    FrameGraphResource materials;
-    FrameGraphResource transforms;
-    FrameGraphResource meshInstances;
-    FrameGraphResource meshInstancesCount;
-    FrameGraphResource matrices;
-    FrameGraphResource lighting;
-    FrameGraphResource lights;
-    FrameGraphResource camera;
-    FrameGraphResource camFrustum;
-    FrameGraphResource drawCMDBuffer;
-    FrameGraphResource drawCMDCountBuffer;
-    std::vector<FrameGraphResource> drawGroupCount;
-  };
+struct ScenePassIn {
+  FrameGraphResource swapchainExtent;
+};
+struct ScenePassOut {
+  FrameGraphResource positions;
+  FrameGraphResource normals;
+  FrameGraphResource uvs;
+  FrameGraphResource indices;
+  FrameGraphResource primitives;
+  FrameGraphResource materials;
+  FrameGraphResource transforms;
+  FrameGraphResource meshInstances;
+  FrameGraphResource meshInstancesCount;
+  FrameGraphResource maxNumMeshInstances;
+  FrameGraphResource lighting;
+  FrameGraphResource lights;
+  FrameGraphResource textures;
+  FrameGraphResource camera;
+  FrameGraphResource cameraBuffer;
+  FrameGraphResource drawGroupCount;
+};
 
+class Scene: public Pass<ScenePassIn, ScenePassOut> {
+public:
   Scene(Renderer &renderer, SceneConfig sceneConfig, std::string name);
 
   auto newPrimitive(
@@ -120,13 +119,9 @@ public:
 
   auto addToDrawGroup(uint32_t meshId, uint32_t oldGroupID = nullIdx) -> uint32_t;
 
-  auto addPass(FrameGraph &builder, PassIn in) -> void;
-
-  void setup(PassBuilder &builder) override;
+  auto setup(PassBuilder &builder, const ScenePassIn &inputs) -> ScenePassOut override;
   void compile(Resources &resources) override;
   void execute(RenderContext &ctx, Resources &resources) override;
-
-  auto render() -> void;
 
 private:
   auto ensureTextures(uint32_t toAdd) const -> void;
@@ -147,20 +142,15 @@ private:
     std::unique_ptr<RandomHostAllocation<Material::Desc>> materials;
     std::unique_ptr<RandomHostAllocation<Transform>> transforms;
     std::unique_ptr<RandomHostAllocation<ModelInstance::MeshInstanceDesc>> meshInstances;
-    std::unique_ptr<RandomHostAllocation<glm::mat4>> matrices;
 
     std::unique_ptr<RandomHostAllocation<Lighting::Desc>> lighting;
     std::unique_ptr<RandomHostAllocation<Light::Desc>> lights;
 
     std::unique_ptr<RandomHostAllocation<Camera::Desc>> camera;
-    std::unique_ptr<Buffer> camFrustum;
 
     std::vector<std::unique_ptr<Texture>> textures;
     std::vector<vk::DescriptorImageInfo> sampler2Ds;
     uint32_t lastUsedSampler2DIndex{};
-
-    std::unique_ptr<Buffer> drawCMD;
-    std::unique_ptr<Buffer> drawCMDCount;
   } Dev;
 
   struct {
@@ -180,8 +170,8 @@ private:
 
   vk::Rect2D renderArea;
 
-  PassOut out;
-  PassIn passIn;
+  ScenePassOut passOut;
+  ScenePassIn passIn;
   bool boundPassData{false};
 };
 }

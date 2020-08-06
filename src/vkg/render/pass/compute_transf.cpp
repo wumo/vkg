@@ -5,8 +5,9 @@
 
 namespace vkg {
 
-ComputeTransf::ComputeTransf(ComputeTransf::PassIn in): in(std::move(in)) {}
-void ComputeTransf::setup(PassBuilder &builder) {
+auto ComputeTransf::setup(PassBuilder &builder, const ComputeTransfPassIn &inputs)
+  -> ComputeTransfPassOut {
+  passIn = inputs;
   setDef.init(builder.device());
   pipeDef.transf(setDef);
   pipeDef.init(builder.device());
@@ -17,22 +18,28 @@ void ComputeTransf::setup(PassBuilder &builder) {
            .shader(Shader{shader::deferred::comp::transform_comp_span, local_size, 1, 1})
            .createUnique();
 
-  builder.read(in.transforms);
-  builder.read(in.meshInstances);
-  builder.read(in.meshInstancesCount);
-  builder.write(in.matrices);
+  builder.read(passIn.transforms);
+  builder.read(passIn.meshInstances);
+  builder.read(passIn.meshInstancesCount);
+  builder.read(passIn.maxNumMeshInstances);
+  passOut.matrices = builder.create("_matrices", ResourceType::eBuffer);
+  return passOut;
 }
 void ComputeTransf::compile(Resources &resources) {
   if(!set) {
+    auto maxNumMeshInstances = resources.get<uint32_t>(passIn.maxNumMeshInstances);
+    matrices = buffer::devStorageBuffer(
+      resources.device, sizeof(glm::mat4) * maxNumMeshInstances, name + "_matrices");
     set = setDef.createSet(*descriptorPool);
-    setDef.transforms(resources.get<vk::Buffer>(in.transforms));
-    setDef.meshInstances(resources.get<vk::Buffer>(in.meshInstances));
-    setDef.matrices(resources.get<vk::Buffer>(in.matrices));
+    setDef.transforms(resources.get<vk::Buffer>(passIn.transforms));
+    setDef.meshInstances(resources.get<vk::Buffer>(passIn.meshInstances));
+    setDef.matrices(matrices->buffer());
     setDef.update(set);
+    resources.set(passOut.matrices, matrices->buffer());
   }
 }
 void ComputeTransf::execute(RenderContext &ctx, Resources &resources) {
-  auto total = resources.get<uint32_t>(in.meshInstancesCount);
+  auto total = resources.get<uint32_t>(passIn.meshInstancesCount);
   if(total == 0) return;
   auto maxCG = ctx.device.limits().maxComputeWorkGroupCount;
   auto totalGroup = uint32_t(std::ceil(total / double(local_size)));
@@ -57,7 +64,7 @@ void ComputeTransf::execute(RenderContext &ctx, Resources &resources) {
     vk::AccessFlagBits::eShaderRead,
     VK_QUEUE_FAMILY_IGNORED,
     VK_QUEUE_FAMILY_IGNORED,
-    resources.get<vk::Buffer>(in.matrices),
+    matrices->buffer(),
     0,
     VK_WHOLE_SIZE};
   cb.pipelineBarrier(
@@ -66,11 +73,4 @@ void ComputeTransf::execute(RenderContext &ctx, Resources &resources) {
   ctx.device.end(cb);
 }
 
-auto addComputeTransfPass(FrameGraph &builder, const ComputeTransf::PassIn &passIn)
-  -> ComputeTransf::PassOut {
-  auto out = builder.addPass<ComputeTransf>("ComputeTransfPass", passIn);
-  ComputeTransf::PassOut passOut;
-  passOut.matrices = out[0];
-  return passOut;
-}
 }

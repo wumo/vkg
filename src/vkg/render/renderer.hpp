@@ -4,21 +4,32 @@
 #include <map>
 
 namespace vkg {
-class Renderer: public Base {
+struct RendererPassIn {};
+struct RendererPassOut {
+  FrameGraphResource swapchainExtent;
+};
+class Renderer: public Base, public Pass<RendererPassIn, RendererPassOut> {
   friend class Scene;
 
 public:
   Renderer(WindowConfig windowConfig, FeatureConfig featureConfig);
 
-  auto addScene(SceneConfig sceneConfig = {}, const std::string& name = "DefaultScene")
+  auto addScene(SceneConfig sceneConfig = {}, const std::string &name = "DefaultScene")
     -> Scene &;
 
 protected:
   auto onInit() -> void override;
+
+public:
+  auto setup(PassBuilder &builder, const RendererPassIn &inputs)
+    -> RendererPassOut override;
+  void compile(Resources &resources) override;
+
+protected:
   void onFrame(uint32_t imageIndex, float elapsed) override;
 
 private:
-  std::map<std::string_view, std::unique_ptr<Scene>> scenes;
+  std::map<std::string, std::unique_ptr<Scene>> scenes;
 
   std::unique_ptr<FrameGraph> frameGraph;
   FrameGraphResource extent;

@@ -1,0 +1,102 @@
+#pragma once
+#include "vkg/base/base.hpp"
+#include "vkg/render/graph/frame_graph.hpp"
+namespace vkg {
+struct DeferredPassIn {
+  FrameGraphResource camera;
+  FrameGraphResource cameraBuffer;
+  FrameGraphResource meshInstances;
+  FrameGraphResource meshInstancesCount;
+  FrameGraphResource maxNumMeshInstances;
+  FrameGraphResource primitives;
+  FrameGraphResource matrices;
+  FrameGraphResource materials;
+  FrameGraphResource textures;
+  FrameGraphResource lighting;
+  FrameGraphResource lights;
+
+  FrameGraphResource drawGroupCount;
+};
+struct DeferredPassOut {
+  FrameGraphResource camFrustum;
+  FrameGraphResource drawCMDBuffer;
+  FrameGraphResource drawCMDCountBuffer;
+};
+class DeferredPass: public Pass<DeferredPassIn, DeferredPassOut> {
+public:
+  auto setup(PassBuilder &builder, const DeferredPassIn &inputs)
+    -> DeferredPassOut override;
+  void compile(Resources &resources) override;
+  void execute(RenderContext &ctx, Resources &resources) override;
+
+private:
+  DeferredPassIn passIn;
+  DeferredPassOut passOut;
+
+  struct SceneSetDef: DescriptorSetDef {
+    __uniform__(cam, vkStage::eVertex | vkStage::eFragment);
+    __buffer__(meshInstances, vkStage::eVertex);
+    __buffer__(primitives, vkStage::eVertex);
+    __buffer__(matrices, vkStage::eVertex);
+    __buffer__(materials, vkStage::eFragment);
+    __sampler2D__(textures, vkStage::eFragment);
+
+    __uniform__(lighting, vkStage::eFragment);
+    __buffer__(lights, vkStage::eFragment);
+  } sceneSetDef;
+
+  struct GBufferSetDef: DescriptorSetDef {
+    __input__(position, vkStage::eFragment);
+    __input__(normal, vkStage::eFragment);
+    __input__(diffuse, vkStage::eFragment);
+    __input__(specular, vkStage::eFragment);
+    __input__(emissive, vkStage::eFragment);
+    __input__(depth, vkStage::eFragment);
+  } gbufferSetDef;
+
+  struct CSMSetDef: DescriptorSetDef {
+    __uniform__(setting, vk::ShaderStageFlagBits::eFragment);
+    __uniform__(cascades, vk::ShaderStageFlagBits::eFragment);
+    __sampler2DArray__(shadowMaps, vk::ShaderStageFlagBits::eFragment);
+  } csmSetDef;
+
+  struct AtmosphereSetDef: DescriptorSetDef {
+    __uniform__(atmosphere, vkStage::eFragment);
+    __uniform__(sun, vkStage::eFragment);
+    __sampler3D__(transmittance, vkStage::eFragment);
+    __sampler3D__(scattering, vkStage::eFragment);
+    __sampler2D__(irradiance, vkStage::eFragment);
+  } atmosphereSetDef;
+
+  struct DeferredPipeDef: PipelineLayoutDef {
+    __set__(basic, SceneSetDef);
+    __set__(gbuffer, GBufferSetDef);
+    __set__(atmosphere, AtmosphereSetDef);
+    __set__(shadowMap, CSMSetDef);
+  } deferredPipeDef;
+
+  std::unique_ptr<Buffer> camFrustum;
+  std::unique_ptr<Buffer> drawCMD;
+  std::unique_ptr<Buffer> drawCMDCount;
+
+  vk::SampleCountFlagBits sampleCount{vk::SampleCountFlagBits ::e1};
+  bool enableSampleShading{true};
+  float minSampleShading{1};
+  bool wireframe_{false};
+  float lineWidth_{1.f};
+
+  bool init{false};
+
+  std::unique_ptr<Texture> colorAtt, depthAtt, positionAtt, normalAtt, diffuseAtt,
+    specularAtt, emissiveAtt;
+
+  vk::UniqueDescriptorPool descriptorPool;
+  vk::DescriptorSet sceneSet, gbufferSet, shadowMapSet, atmosphereSet;
+
+  uint32_t gbufferPass{}, lightingPass{}, transPass{}, resolvePass{};
+  vk::UniqueRenderPass renderPass;
+  vk::UniquePipeline gbTriPipe, gbLinePipe, gbWireFramePipe, lightingPipe, transTriPipe,
+    transLinePipe;
+  std::vector<vk::UniqueFramebuffer> framebuffers;
+};
+}

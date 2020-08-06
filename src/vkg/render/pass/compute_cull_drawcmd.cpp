@@ -4,10 +4,19 @@
 
 namespace vkg {
 
-ComputeCullDrawCMD::ComputeCullDrawCMD(ComputeCullDrawCMD::PassIn passIn)
-  : passIn(std::move(passIn)) {}
+auto ComputeCullDrawCMD::setup(PassBuilder &builder, const ComputeCullDrawCMDPassIn &inputs)
+  -> ComputeCullDrawCMDPassOut {
+  passIn = inputs;
 
-void ComputeCullDrawCMD::setup(PassBuilder &builder) {
+  builder.read(passIn.frustum);
+  builder.read(passIn.meshInstances);
+  builder.read(passIn.meshInstancesCount);
+  builder.read(passIn.primitives);
+  builder.read(passIn.matrices);
+  builder.read(passIn.drawGroupCount);
+  passOut.drawCMDBuffer = builder.write(passIn.drawCMDBuffer);
+  passOut.drawCMDCountBuffer = builder.write(passIn.drawCMDCountBuffer);
+
   setDef.init(builder.device());
   pipeDef.transf(setDef);
   pipeDef.init(builder.device());
@@ -18,20 +27,13 @@ void ComputeCullDrawCMD::setup(PassBuilder &builder) {
            .shader(Shader{shader::common::cull_draw_group_comp_span, local_size, 1, 1})
            .createUnique();
 
-  builder.read(passIn.frustum);
-  builder.read(passIn.meshInstances);
-  builder.read(passIn.meshInstancesCount);
-  builder.read(passIn.primitives);
-  builder.read(passIn.matrices);
-  builder.write(passIn.drawCMDBuffer);
-  builder.write(passIn.drawCMDCountBuffer);
-  for(auto &drawGroupCount: passIn.drawGroupCount)
-    builder.read(drawGroupCount);
+  return passOut;
 }
 void ComputeCullDrawCMD::compile(Resources &resources) {
+  auto drawGroupCount = resources.get<std::vector<uint32_t>>(passIn.drawGroupCount);
   if(!set) {
     drawCMDOffset = buffer::hostStorageBuffer(
-      resources.device, sizeof(uint32_t) * passIn.drawGroupCount.size(), "drawCMDOffset");
+      resources.device, sizeof(uint32_t) * drawGroupCount.size(), "drawCMDOffset");
     set = setDef.createSet(*descriptorPool);
     setDef.frustum(resources.get<vk::Buffer>(passIn.frustum));
     setDef.meshInstances(resources.get<vk::Buffer>(passIn.meshInstances));
@@ -43,9 +45,9 @@ void ComputeCullDrawCMD::compile(Resources &resources) {
     setDef.update(set);
   }
   uint32_t offset = 0;
-  for(int i = 0; i < passIn.drawGroupCount.size(); ++i) {
+  for(int i = 0; i < drawGroupCount.size(); ++i) {
     drawCMDOffset->ptr<uint32_t>()[i] = offset;
-    auto count = resources.get<uint32_t>(passIn.drawGroupCount[i]);
+    auto count = drawGroupCount[i];
     offset += count;
   }
 }
@@ -79,13 +81,4 @@ void ComputeCullDrawCMD::execute(RenderContext &ctx, Resources &resources) {
   ctx.device.end(cb);
 }
 
-auto addComputeCullDrawCMDPass(
-  FrameGraph &builder, const ComputeCullDrawCMD::PassIn &passIn)
-  -> ComputeCullDrawCMD::PassOut {
-  auto out = builder.addPass<ComputeCullDrawCMD>("ComputeCullDrawCMDPass", passIn);
-  ComputeCullDrawCMD::PassOut passOut;
-  passOut.drawCMDBuffer = out[0];
-  passOut.drawCMDCountBuffer = out[1];
-  return passOut;
-}
 }

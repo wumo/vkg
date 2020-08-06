@@ -3,31 +3,31 @@
 #include "vkg/render/graph/frame_graph.hpp"
 
 namespace vkg {
-class ComputeCullDrawCMD: public Pass {
+struct ComputeCullDrawCMDPassIn {
+  FrameGraphResource frustum;
+  FrameGraphResource meshInstances;
+  FrameGraphResource meshInstancesCount;
+  FrameGraphResource primitives;
+  FrameGraphResource matrices;
+  FrameGraphResource drawCMDBuffer;
+  FrameGraphResource drawCMDCountBuffer;
+  FrameGraphResource drawGroupCount;
+};
+struct ComputeCullDrawCMDPassOut {
+  FrameGraphResource drawCMDBuffer;
+  FrameGraphResource drawCMDCountBuffer;
+};
+class ComputeCullDrawCMD
+  : public Pass<ComputeCullDrawCMDPassIn, ComputeCullDrawCMDPassOut> {
 public:
-  struct PassIn {
-    FrameGraphResource frustum;
-    FrameGraphResource meshInstances;
-    FrameGraphResource meshInstancesCount;
-    FrameGraphResource primitives;
-    FrameGraphResource matrices;
-    FrameGraphResource drawCMDBuffer;
-    FrameGraphResource drawCMDCountBuffer;
-    std::vector<FrameGraphResource> drawGroupCount;
-  };
-  struct PassOut {
-    FrameGraphResource drawCMDBuffer;
-    FrameGraphResource drawCMDCountBuffer;
-  };
-
-  explicit ComputeCullDrawCMD(PassIn passIn);
-
-  void setup(PassBuilder &builder) override;
+  auto setup(PassBuilder &builder, const ComputeCullDrawCMDPassIn &inputs)
+    -> ComputeCullDrawCMDPassOut override;
   void compile(Resources &resources) override;
   void execute(RenderContext &ctx, Resources &resources) override;
 
 private:
-  PassIn passIn;
+  ComputeCullDrawCMDPassIn passIn;
+  ComputeCullDrawCMDPassOut passOut;
 
   struct ComputeTransfSetDef: DescriptorSetDef {
     __uniform__(frustum, vk::ShaderStageFlagBits::eCompute);
@@ -49,8 +49,4 @@ private:
 
   std::unique_ptr<Buffer> drawCMDOffset;
 };
-
-auto addComputeCullDrawCMDPass(
-  FrameGraph &builder, const ComputeCullDrawCMD::PassIn &passIn)
-  -> ComputeCullDrawCMD::PassOut;
 }

@@ -1,96 +1,70 @@
-#include <utility>
-
 #include "scene.hpp"
 #include "pass/compute_transf.hpp"
-#include "pass/compute_cull_drawcmd.hpp"
+#include "pass/deferred.hpp"
 
 namespace vkg {
 
-auto Scene::addPass(FrameGraph &builder, PassIn in) -> void {
-  passIn = std::move(in);
-  builder.addPass(name + "Pass", *this);
+auto Scene::setup(PassBuilder &builder, const ScenePassIn &inputs) -> ScenePassOut {
+  passIn = inputs;
 
-  auto transfPassOut = addComputeTransfPass(
-    builder, {out.transforms, out.meshInstances, out.meshInstancesCount, out.matrices});
-  auto cullPassOut = addComputeCullDrawCMDPass(
-    builder, {out.camFrustum, out.meshInstances, out.meshInstancesCount, out.primitives,
-              transfPassOut.matrices, out.drawCMDBuffer, out.drawCMDCountBuffer,
-              out.drawGroupCount});
-}
-
-void Scene::setup(PassBuilder &builder) {
   using ty = ResourceType;
   builder.read(passIn.swapchainExtent);
-  out.positions = builder.create(toString(name, "_positions"), ty::eBuffer);
-  out.normals = builder.create(toString(name, "_normals"), ty::eBuffer);
-  out.uvs = builder.create(toString(name, "_uvs"), ty::eBuffer);
-  out.indices = builder.create(toString(name, "_indices"), ty::eBuffer);
-  out.primitives = builder.create(toString(name, "_primitives"), ty::eBuffer);
-  out.materials = builder.create(toString(name, "_materials"), ty::eBuffer);
-  out.transforms = builder.create(toString(name, "_transforms"), ty::eBuffer);
-  out.meshInstances = builder.create(toString(name, "_meshInstances"), ty::eBuffer);
-  out.meshInstancesCount =
-    builder.create(toString(name, "_meshInstancesCount"), ty::eValue);
-  out.matrices = builder.create(toString(name, "_matrices"), ty::eBuffer);
-  out.lighting = builder.create(toString(name, "_lighting"), ty::eBuffer);
-  out.lights = builder.create(toString(name, "_lights"), ty::eBuffer);
-  out.camera = builder.create(toString(name, "_camera"), ty::eBuffer);
-  out.camFrustum = builder.create(toString(name, "_camFrustum"), ty::eBuffer);
-  out.drawCMDBuffer = builder.create(toString(name, "_drawCMDBuffer"), ty::eBuffer);
-  out.drawCMDCountBuffer =
-    builder.create(toString(name, "_drawCMDCountBuffer"), ty::eBuffer);
-  for(int i = 0; i < Host.drawGroupInstCount.size(); ++i)
-    out.drawGroupCount.push_back(
-      builder.create(toString(name, "_drawGroupCount_", i), ty::eValue));
+  passOut.positions = builder.create("_positions", ty::eBuffer);
+  passOut.normals = builder.create("_normals", ty::eBuffer);
+  passOut.uvs = builder.create("_uvs", ty::eBuffer);
+  passOut.indices = builder.create("_indices", ty::eBuffer);
+  passOut.primitives = builder.create("_primitives", ty::eBuffer);
+  passOut.materials = builder.create("_materials", ty::eBuffer);
+  passOut.transforms = builder.create("_transforms", ty::eBuffer);
+  passOut.meshInstances = builder.create("_meshInstances", ty::eBuffer);
+  passOut.meshInstancesCount = builder.create("_meshInstancesCount", ty::eValue);
+  passOut.maxNumMeshInstances = builder.create("_maxNumMeshInstances", ty::eValue);
+  passOut.lighting = builder.create("_lighting", ty::eBuffer);
+  passOut.lights = builder.create("_lights", ty::eBuffer);
+  passOut.textures = builder.create("_textures", ty::eValue);
+  passOut.camera = builder.create("_camera", ty::eBuffer);
+  passOut.cameraBuffer = builder.create("_cameraBuffer", ty::eValue);
+  passOut.drawGroupCount = builder.create("_drawGroupCount", ty::eValue);
+
+  auto transfPassOut =
+    builder.newPass<ComputeTransf, ComputeTransfPassIn, ComputeTransfPassOut>(
+      "ComputeTransf", {passOut.transforms, passOut.meshInstances,
+                        passOut.meshInstancesCount, passOut.maxNumMeshInstances});
+
+  auto deferredPassOut = builder.newPass<DeferredPass, DeferredPassIn, DeferredPassOut>(
+    "DeferredPass",
+    {passOut.camera, passOut.cameraBuffer, passOut.meshInstances,
+     passOut.meshInstancesCount, passOut.maxNumMeshInstances, passOut.primitives,
+     transfPassOut.matrices, passOut.materials, passOut.textures, passOut.lighting,
+     passOut.lights, passOut.drawGroupCount});
+  return passOut;
 }
 
 void Scene::compile(Resources &resources) {
   if(!boundPassData) {
     boundPassData = true;
-    resources.set(out.positions, Dev.positions->buffer());
-    resources.set(out.normals, Dev.normals->buffer());
-    resources.set(out.uvs, Dev.uvs->buffer());
-    resources.set(out.indices, Dev.indices->buffer());
-    resources.set(out.primitives, Dev.primitives->buffer());
-    resources.set(out.materials, Dev.materials->buffer());
-    resources.set(out.transforms, Dev.transforms->buffer());
-    resources.set(out.meshInstances, Dev.meshInstances->buffer());
-    resources.set(out.matrices, Dev.matrices->buffer());
-    resources.set(out.lighting, Dev.lighting->buffer());
-    resources.set(out.lights, Dev.lights->buffer());
-    resources.set(out.camera, Dev.camera->buffer());
-    resources.set(out.camFrustum, Dev.camFrustum->buffer());
-    resources.set(out.drawCMDBuffer, Dev.drawCMD->buffer());
-    resources.set(out.drawCMDCountBuffer, Dev.drawCMDCount->buffer());
+    resources.set(passOut.positions, Dev.positions->buffer());
+    resources.set(passOut.normals, Dev.normals->buffer());
+    resources.set(passOut.uvs, Dev.uvs->buffer());
+    resources.set(passOut.indices, Dev.indices->buffer());
+    resources.set(passOut.primitives, Dev.primitives->buffer());
+    resources.set(passOut.materials, Dev.materials->buffer());
+    resources.set(passOut.transforms, Dev.transforms->buffer());
+    resources.set(passOut.meshInstances, Dev.meshInstances->buffer());
+    resources.set(passOut.lighting, Dev.lighting->buffer());
+    resources.set(passOut.lights, Dev.lights->buffer());
+    resources.set(passOut.camera, Host.camera_.get());
+    resources.set(passOut.cameraBuffer, Dev.camera->buffer());
+    resources.set(passOut.maxNumMeshInstances, sceneConfig.maxNumMeshInstances);
+    resources.set(passOut.textures, &Dev.sampler2Ds);
   }
 
   auto extent = resources.get<vk::Extent2D>(passIn.swapchainExtent);
   Host.camera_->resize(extent.width, extent.height);
   Host.camera_->updateUBO();
-  *Dev.camFrustum->ptr<Frustum>() = Frustum{Host.camera_->proj() * Host.camera_->view()};
 
-  resources.set(out.meshInstancesCount, Dev.meshInstances->count());
-
-  for(int i = 0; i < Host.drawGroupInstCount.size(); ++i)
-    resources.set(out.drawGroupCount[i], Host.drawGroupInstCount[i]);
+  resources.set(passOut.meshInstancesCount, Dev.meshInstances->count());
+  resources.set(passOut.drawGroupCount, Host.drawGroupInstCount);
 }
-void Scene::execute(RenderContext &ctx, Resources &resources) {
-  auto cb = ctx.compute;
-
-  /**
-   * TODO It seems that we have to use cb.fillBuffer to initialize Dev.drawCMDCount instead
-   * of memset the host persistent mapped buffer pointer, otherwise atomicAdd operation in
-   * shader will not work as expected. Need to fully inspect the real reason of this. And
-   * this may invalidate other host coherent memories that will be accessed by compute shader.
-   */
-  cb.fillBuffer(Dev.drawCMDCount->buffer(), 0, VK_WHOLE_SIZE, 0u);
-
-  vk::MemoryBarrier barrier{
-    vk::AccessFlagBits::eTransferWrite, vk::AccessFlagBits::eShaderRead};
-  cb.pipelineBarrier(
-    vk::PipelineStageFlagBits::eTransfer, vk::PipelineStageFlagBits::eComputeShader, {},
-    barrier, nullptr, nullptr);
-}
-
-auto Scene::render() -> void {}
+void Scene::execute(RenderContext &ctx, Resources &resources) {}
 }

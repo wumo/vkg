@@ -16,5 +16,6 @@ protected:
   DescriptorSetUpdater setUpdater{};
   vk::Device device_;
   vk::UniqueDescriptorSetLayout setLayout_{};
+  using vkStage = vk::ShaderStageFlagBits;
 };
 }

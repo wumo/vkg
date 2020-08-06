@@ -14,16 +14,22 @@ auto Renderer::addScene(SceneConfig sceneConfig, const std::string &name) -> Sce
 void Renderer::onInit() {
   frameGraph = std::make_unique<FrameGraph>(*device);
 
-  frameGraph->addPass(
-    "Renderer",
-    [&](PassBuilder &builder) {
-      extent = builder.create("SwapchainExtent", ResourceType::eValue);
-    },
-    [&](Resources &resources) { resources.set(extent, swapchain->imageExtent()); });
-  for(auto &[_, scene]: scenes)
-    scene->addPass(*frameGraph, {extent});
+  frameGraph->addPass("Renderer", *this, {});
 
   frameGraph->build();
+}
+
+auto Renderer::setup(PassBuilder &builder, const RendererPassIn &inputs)
+  -> RendererPassOut {
+  extent = builder.create("SwapchainExtent", ResourceType::eValue);
+
+  for(auto &[name, scene]: scenes)
+    frameGraph->addPass(name, *scene, {extent});
+
+  return {extent};
+}
+void Renderer::compile(Resources &resources) {
+  resources.set(extent, swapchain->imageExtent());
 }
 
 void Renderer::onFrame(uint32_t imageIndex, float elapsed) {

@@ -1,29 +1,31 @@
 #pragma once
 #include "vkg/base/base.hpp"
 #include "vkg/render/graph/frame_graph.hpp"
+#include "vkg/math/glm_common.hpp"
 
 namespace vkg {
+struct ComputeTransfPassIn {
+  FrameGraphResource transforms;
+  FrameGraphResource meshInstances;
+  FrameGraphResource meshInstancesCount;
+  FrameGraphResource maxNumMeshInstances;
+};
+struct ComputeTransfPassOut {
+  FrameGraphResource matrices;
+};
 
-class ComputeTransf: public Pass {
+class ComputeTransf: public Pass<ComputeTransfPassIn, ComputeTransfPassOut> {
 public:
-  struct PassIn {
-    FrameGraphResource transforms;
-    FrameGraphResource meshInstances;
-    FrameGraphResource meshInstancesCount;
-    FrameGraphResource matrices;
-  };
-  struct PassOut {
-    FrameGraphResource matrices;
-  };
-
-  explicit ComputeTransf(PassIn in);
-
-  void setup(PassBuilder &builder) override;
+  auto setup(PassBuilder &builder, const ComputeTransfPassIn &inputs)
+    -> ComputeTransfPassOut override;
   void compile(Resources &resources) override;
   void execute(RenderContext &ctx, Resources &resources) override;
 
 private:
-  PassIn in;
+  ComputeTransfPassIn passIn;
+  ComputeTransfPassOut passOut;
+
+  std::unique_ptr<Buffer> matrices;
 
   struct ComputeTransfSetDef: DescriptorSetDef {
     __buffer__(meshInstances, vk::ShaderStageFlagBits::eCompute);
@@ -40,6 +42,4 @@ private:
   const uint32_t local_size = 64;
 };
 
-auto addComputeTransfPass(FrameGraph &builder, const ComputeTransf::PassIn& passIn)
-  -> ComputeTransf::PassOut;
 }
