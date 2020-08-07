@@ -27,7 +27,13 @@ struct FrameGraphBaseResource {
 };
 
 template<typename T>
-struct FrameGraphResource: FrameGraphBaseResource {};
+struct FrameGraphResource: FrameGraphBaseResource {
+
+  // TODO don't know why, have to write this constructor to make the conversion between
+  // different template parameter T an error
+  FrameGraphResource(uint32_t id = ~0u, uint32_t revision = 0)
+    : FrameGraphBaseResource{id, revision} {}
+};
 
 struct FrameGraphResourcePass {
   uint32_t writerPass;
