@@ -33,7 +33,7 @@ auto ComputeCullDrawCMD::setup(
 void ComputeCullDrawCMD::compile(Resources &resources) {
   if(!set) {
     auto drawGroupCount = resources.get(passIn.drawGroupCount);
-    drawCMDOffset = buffer::hostStorageBuffer(
+    drawCMDOffset = buffer::devStorageBuffer(
       resources.device, sizeof(uint32_t) * drawGroupCount.size(), "drawCMDOffset");
     set = setDef.createSet(*descriptorPool);
     setDef.frustum(resources.get(passIn.frustum));

@@ -44,11 +44,13 @@ void DeferredPass::compile(Resources &resources) {
     resources.set(passOut.drawCMDCountBuffer, drawCMDCount->buffer());
     resources.set(passOut.camFrustum, camFrustum->buffer());
   }
-  auto *camera = resources.get(passIn.camera);
-  *camFrustum->ptr<Frustum>() = Frustum{camera->proj() * camera->view()};
 }
 void DeferredPass::execute(RenderContext &ctx, Resources &resources) {
   auto cb = ctx.compute;
+
+  auto *camera = resources.get(passIn.camera);
+  Frustum frustum{camera->proj() * camera->view()};
+  cb.updateBuffer(camFrustum->buffer(), 0, sizeof(Frustum), &frustum);
 
   /**
      * TODO It seems that we have to use cb.fillBuffer to initialize Dev.drawCMDCount instead
