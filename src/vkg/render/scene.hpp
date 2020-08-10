@@ -1,5 +1,6 @@
 #pragma once
 #include "vkg/base/base.hpp"
+#include "scene_config.hpp"
 #include "model/primitive.hpp"
 #include "model/material.hpp"
 #include "model/mesh.hpp"
@@ -15,40 +16,18 @@
 #include <span>
 
 namespace vkg {
-struct SceneConfig {
-  /** renderArea */
-  int32_t offsetX{0}, offsetY{0};
-  uint32_t extentW{0}, extentH{0};
-  uint32_t layer{0};
-
-  /**max number of vertices and indices*/
-  uint32_t maxNumVertices{1000'0000}, maxNumIndices{1000'0000};
-  /**max number of model instances*/
-  uint32_t maxNumTransforms{10'0000};
-  /**max number of materials*/
-  uint32_t maxNumMaterials{1'0000};
-  /**max number of mesh instances*/
-  uint32_t maxNumPrimitives{100'0000};
-  uint32_t maxNumMeshInstances{100'0000};
-  uint32_t maxNumOpaqueTriangles{100'0000};
-  uint32_t maxNumOpaqueLines{1000};
-  uint32_t maxNumTransparentTriangles{1000};
-  uint32_t maxNumTransparentLines{1000};
-  /**max number of texture including 2d and cube map.*/
-  uint32_t maxNumTextures{1000};
-  /**max number of lights*/
-  uint32_t maxNumLights{1};
-  uint32_t numCascades{4};
-
-  uint32_t sampleCount{1};
-};
 
 class Renderer;
 
 struct ScenePassIn {
   FrameGraphResource<vk::Extent2D> swapchainExtent;
+  FrameGraphResource<vk::Format> swapchainFormat;
+  FrameGraphResource<uint64_t> swapchainVersion;
 };
 struct ScenePassOut {
+  FrameGraphResource<Texture *> backImg;
+  FrameGraphResource<uint64_t> backImgVersion;
+  FrameGraphResource<SceneConfig> sceneConfig;
   FrameGraphResource<vk::Buffer> positions;
   FrameGraphResource<vk::Buffer> normals;
   FrameGraphResource<vk::Buffer> uvs;
@@ -58,10 +37,10 @@ struct ScenePassOut {
   FrameGraphResource<vk::Buffer> transforms;
   FrameGraphResource<vk::Buffer> meshInstances;
   FrameGraphResource<uint32_t> meshInstancesCount;
-  FrameGraphResource<uint32_t> maxNumMeshInstances;
   FrameGraphResource<vk::Buffer> lighting;
   FrameGraphResource<vk::Buffer> lights;
-  FrameGraphResource<std::vector<vk::DescriptorImageInfo> *> textures;
+  FrameGraphResource<std::vector<vk::DescriptorImageInfo> *> samplers;
+  FrameGraphResource<uint32_t> numValidSampler;
   FrameGraphResource<Camera *> camera;
   FrameGraphResource<vk::Buffer> cameraBuffer;
   FrameGraphResource<std::vector<uint32_t>> drawGroupCount;
@@ -81,13 +60,13 @@ public:
   auto newTexture(
     const std::string &imagePath, bool mipmap = true,
     vk::SamplerCreateInfo sampler =
-      {{}, vk::Filter::eLinear, vk::Filter::eLinear, vk::SamplerMipmapMode::eLinear})
-    -> uint32_t;
+      {{}, vk::Filter::eLinear, vk::Filter::eLinear, vk::SamplerMipmapMode::eLinear},
+    const std::string &name = "") -> uint32_t;
   auto newTexture(
     std::span<std::byte> bytes, uint32_t width, uint32_t height, bool mipmap = true,
     vk::SamplerCreateInfo sampler =
-      {{}, vk::Filter::eLinear, vk::Filter::eLinear, vk::SamplerMipmapMode::eLinear})
-    -> uint32_t;
+      {{}, vk::Filter::eLinear, vk::Filter::eLinear, vk::SamplerMipmapMode::eLinear},
+    const std::string &name = "") -> uint32_t;
   auto newMesh(uint32_t primitive, uint32_t material) -> uint32_t;
   auto newNode(const Transform &transform = Transform{}, const std::string &name = "")
     -> uint32_t;
@@ -151,6 +130,8 @@ private:
     std::vector<std::unique_ptr<Texture>> textures;
     std::vector<vk::DescriptorImageInfo> sampler2Ds;
     uint32_t lastUsedSampler2DIndex{};
+
+    std::unique_ptr<Texture> backImg;
   } Dev;
 
   struct {
@@ -173,5 +154,6 @@ private:
   ScenePassOut passOut;
   ScenePassIn passIn;
   bool boundPassData{false};
+  uint64_t swapchainVersion{0};
 };
 }

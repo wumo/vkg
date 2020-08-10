@@ -1,16 +1,16 @@
 #pragma once
 #include "vkg/base/base.hpp"
 #include "vkg/render/graph/frame_graph.hpp"
+#include "vkg/render/scene_config.hpp"
 
 namespace vkg {
 struct ComputeCullDrawCMDPassIn {
   FrameGraphResource<vk::Buffer> frustum;
   FrameGraphResource<vk::Buffer> meshInstances;
   FrameGraphResource<uint32_t> meshInstancesCount;
+  FrameGraphResource<SceneConfig> sceneConfig;
   FrameGraphResource<vk::Buffer> primitives;
   FrameGraphResource<vk::Buffer> matrices;
-  FrameGraphResource<vk::Buffer> drawCMDBuffer;
-  FrameGraphResource<vk::Buffer> drawCMDCountBuffer;
   FrameGraphResource<std::vector<uint32_t>> drawGroupCount;
 };
 struct ComputeCullDrawCMDPassOut {
@@ -47,6 +47,10 @@ private:
   vk::UniquePipeline pipe;
   const uint32_t local_size = 64;
 
+  std::unique_ptr<Buffer> drawCMD;
+  std::unique_ptr<Buffer> drawCMDCount;
   std::unique_ptr<Buffer> drawCMDOffset;
+  
+  bool init{false};
 };
 }

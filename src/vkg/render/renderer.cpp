@@ -14,22 +14,28 @@ auto Renderer::addScene(SceneConfig sceneConfig, const std::string &name) -> Sce
 void Renderer::onInit() {
   frameGraph = std::make_unique<FrameGraph>(*device);
 
-  frameGraph->addPass("Renderer", *this, {});
+  frameGraph->addPass("Renderer", {}, *this);
 
   frameGraph->build();
 }
 
 auto Renderer::setup(PassBuilder &builder, const RendererPassIn &inputs)
   -> RendererPassOut {
-  extent = builder.create<vk::Extent2D>( "swapchainExtent");
+  passOut.swapchainExtent = builder.create<vk::Extent2D>("swapchainExtent");
+  passOut.swapchainFormat = builder.create<vk::Format>("swapchainFormat");
+  passOut.swapchainVersion = builder.create<uint64_t>("swapchainVersion");
 
   for(auto &[name, scene]: scenes)
-    frameGraph->addPass(name, *scene, {extent});
+    frameGraph->addPass(
+      name, {passOut.swapchainExtent, passOut.swapchainFormat, passOut.swapchainVersion},
+      *scene);
 
-  return {extent};
+  return passOut;
 }
 void Renderer::compile(Resources &resources) {
-  resources.set(extent, swapchain->imageExtent());
+  resources.set(passOut.swapchainExtent, swapchain->imageExtent());
+  resources.set(passOut.swapchainFormat, swapchain->format());
+  resources.set(passOut.swapchainVersion, swapchain->version());
 }
 
 void Renderer::onFrame(uint32_t imageIndex, float elapsed) {

@@ -20,6 +20,7 @@ public:
   auto width() const -> uint32_t;
   auto height() const -> uint32_t;
   auto format() const -> vk::Format;
+  auto version() const -> uint64_t;
 
 private:
   vk::PhysicalDevice physicalDevice;
@@ -38,5 +39,7 @@ private:
   vk::Extent2D extent_;
   std::vector<vk::Image> images;
   std::vector<vk::UniqueImageView> imageViews;
+
+  uint64_t version_{0};
 };
 }

@@ -99,6 +99,7 @@ auto Swapchain::resize(uint32_t width, uint32_t height, bool vsync) -> void {
     imageViewInfo.subresourceRange = {vk::ImageAspectFlagBits::eColor, 0, 1, 0, 1};
     imageViews[i] = vkDevice.createImageViewUnique(imageViewInfo);
   }
+  version_++;
 }
 
 auto Swapchain::acquireNextImage(vk::Semaphore imageAvailable, uint32_t &imageIndex)
@@ -127,4 +128,5 @@ auto Swapchain::format() const -> vk::Format { return surfaceFormat.format; }
 auto Swapchain::imageExtent() const -> vk::Extent2D { return extent_; }
 auto Swapchain::width() const -> uint32_t { return extent_.width; }
 auto Swapchain::height() const -> uint32_t { return extent_.height; }
+auto Swapchain::version() const -> uint64_t { return version_; }
 }

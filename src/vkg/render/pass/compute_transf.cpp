@@ -20,15 +20,16 @@ auto ComputeTransf::setup(PassBuilder &builder, const ComputeTransfPassIn &input
   builder.read(passIn.transforms);
   builder.read(passIn.meshInstances);
   builder.read(passIn.meshInstancesCount);
-  builder.read(passIn.maxNumMeshInstances);
+  builder.read(passIn.sceneConfig);
   passOut.matrices = builder.create<vk::Buffer>("matrices");
   return passOut;
 }
 void ComputeTransf::compile(Resources &resources) {
   if(!set) {
-    auto maxNumMeshInstances = resources.get(passIn.maxNumMeshInstances);
+    auto sceneConfig = resources.get(passIn.sceneConfig);
     matrices = buffer::devStorageBuffer(
-      resources.device, sizeof(glm::mat4) * maxNumMeshInstances, name + "_matrices");
+      resources.device, sizeof(glm::mat4) * sceneConfig.maxNumMeshInstances,
+      name + "_matrices");
     set = setDef.createSet(*descriptorPool);
     setDef.transforms(resources.get(passIn.transforms));
     setDef.meshInstances(resources.get(passIn.meshInstances));

@@ -15,7 +15,7 @@ Resources::Resources(Device &device, uint32_t numResources): device{device} {
 
 FrameGraph::FrameGraph(Device &device): device_(device) {}
 auto FrameGraph::device() -> Device & { return device_; }
-auto FrameGraph::check(FrameGraphBaseResource &resource) -> void {
+auto FrameGraph::check(const FrameGraphBaseResource &resource) -> void {
   errorIf(resource.id >= resRevisions.size(), "resource's id is invalid: ", resource.id);
   errorIf(
     resource.revision >= resRevisions[resource.id].revisions.size(),

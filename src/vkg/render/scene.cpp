@@ -43,7 +43,7 @@ Scene::Scene(Renderer &renderer, SceneConfig sceneConfig, std::string name)
     Dev.camera->allocate(), glm::vec3{10, 10, 10}, glm::vec3{0, 0, 0}, glm::vec3{0, 1, 0},
     glm::radians(45.f), 0.1f, 1000.f, 1, 1);
 
-  Dev.textures.push_back(image::makeSampler2DTex(device, 1, 1));
+  Dev.textures.push_back(image::makeSampler2DTex("empty tex", device, 1, 1));
   glm::vec4 color{1.f, 1.f, 1.f, 1.f};
   image::upload(
     *Dev.textures.back(), {reinterpret_cast<std::byte *>(&color), sizeof(color)});
@@ -105,18 +105,26 @@ auto Scene::ensureTextures(uint32_t toAdd) const -> void {
     "exceeding maximum number of textures!");
 }
 auto Scene::newTexture(
-  const std::string &imagePath, bool mipmap, vk::SamplerCreateInfo sampler) -> uint32_t {
+  const std::string &imagePath, bool mipmap, vk::SamplerCreateInfo sampler,
+  const std::string &name) -> uint32_t {
   ensureTextures(1);
-  Dev.textures.push_back(image::load2DFromFile(device, imagePath, mipmap));
+  Dev.textures.push_back(image::load2DFromFile(name, device, imagePath, mipmap));
   Dev.textures.back()->setSampler(sampler);
+  Dev.sampler2Ds[Dev.textures.size() - 1] = {
+    Dev.textures.back()->sampler(), Dev.textures.back()->imageView(),
+    Dev.textures.back()->layout()};
   return uint32_t(Dev.textures.size() - 1);
 }
 auto Scene::newTexture(
   std::span<std::byte> bytes, uint32_t width, uint32_t height, bool mipmap,
-  vk::SamplerCreateInfo sampler) -> uint32_t {
+  vk::SamplerCreateInfo sampler, const std::string &name) -> uint32_t {
   ensureTextures(1);
-  Dev.textures.push_back(image::load2DFromBytes(device, bytes, width, height, mipmap));
+  Dev.textures.push_back(
+    image::load2DFromBytes(name, device, bytes, width, height, mipmap));
   Dev.textures.back()->setSampler(sampler);
+  Dev.sampler2Ds[Dev.textures.size() - 1] = {
+    Dev.textures.back()->sampler(), Dev.textures.back()->imageView(),
+    Dev.textures.back()->layout()};
   return uint32_t(Dev.textures.size() - 1);
 }
 auto Scene::newMesh(uint32_t primitive, uint32_t material) -> uint32_t {

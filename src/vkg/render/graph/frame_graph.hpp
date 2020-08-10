@@ -17,7 +17,8 @@ class Resources;
 class PassBuilder;
 
 template<typename PassInType, typename PassOutType>
-using PassSetup = std::function<PassOutType(PassBuilder &builder, PassInType &inputs)>;
+using PassSetup =
+  std::function<PassOutType(PassBuilder &builder, const PassInType &inputs)>;
 using PassCompile = std::function<void(Resources &resources)>;
 using PassExec = std::function<void(RenderContext &ctx, Resources &resources)>;
 
@@ -72,6 +73,27 @@ public:
   virtual auto setup(PassBuilder &builder, const PassInType &inputs) -> PassOutType = 0;
 };
 
+template<typename PassInType, typename PassOutType>
+class LambdaPass: public Pass<PassInType, PassOutType> {
+public:
+  LambdaPass(
+    PassSetup<PassInType, PassOutType> &&setup, PassCompile &&compile, PassExec &&exec)
+    : setup_(std::move(setup)), compile_(std::move(compile)), exec_(std::move(exec)) {}
+
+  auto setup(PassBuilder &builder, const PassInType &inputs) -> PassOutType override {
+    return setup_(builder, inputs);
+  }
+  void compile(Resources &resources) override { compile_(resources); }
+  void execute(RenderContext &ctx, Resources &resources) override {
+    exec_(ctx, resources);
+  }
+
+private:
+  PassSetup<PassInType, PassOutType> setup_;
+  PassCompile compile_;
+  PassExec exec_;
+};
+
 //template<class T, typename PassInType, typename PassOutType>
 //concept DerivedPass = std::is_base_of<Pass<PassInType,PassOutType>, T>::value;
 
@@ -95,22 +117,28 @@ public:
    * Read the resource as the input of this pass.
    */
   template<typename T>
-  auto read(FrameGraphResource<T> &input) -> void;
+  auto read(const FrameGraphResource<T> &input) -> void;
   /**
    * Write to the resoruce as one of the output of this pass. Resource's revision will increment by 1.
    *
    * Error will be thrown when multiple passes write to the same version of resource.
    */
   template<typename T>
-  auto write(FrameGraphResource<T> &input) -> FrameGraphResource<T>;
+  auto write(const FrameGraphResource<T> &input) -> FrameGraphResource<T>;
 
   template<typename PassInType, typename PassOutType>
   auto addPass(
-    const std::string &name, Pass<PassInType, PassOutType> &pass,
-    const PassInType &inputs = {}) -> PassOutType;
+    const std::string &name, const PassInType &inputs,
+    Pass<PassInType, PassOutType> &pass) -> PassOutType;
 
   template<typename T, typename PassInType, typename... Args>
   auto newPass(const std::string &name, const PassInType &inputs, Args &&... args);
+
+  template<typename PassInType, typename PassOutType>
+  auto newLambdaPass(
+    const std::string &name, const PassInType &inputs,
+    PassSetup<PassInType, PassOutType> &&setup, PassCompile &&compile, PassExec &&exec)
+    -> PassOutType;
 
 private:
   template<typename PassInType, typename PassOutType>
@@ -167,20 +195,31 @@ public:
 
   template<typename PassInType, typename PassOutType>
   auto addPass(
-    std::string name, Pass<PassInType, PassOutType> &pass, const PassInType &inputs)
-    -> PassOutType {
+    const std::string &name, const PassInType &inputs,
+    Pass<PassInType, PassOutType> &pass) -> PassOutType {
     errorIf(frozen, "frame graph already frozen");
     auto passId = uint32_t(passes.size());
-    pass.name = std::move(name);
+    pass.name = name;
     pass.id = passId;
     passes.push_back(&pass);
     PassBuilder builder(*this, passId, pass);
     return builder.build<PassInType, PassOutType>(pass, inputs);
   };
   template<typename T, typename PassInType, typename... Args>
-  auto newPass(std::string name, const PassInType &inputs, Args &&... args) {
+  auto newPass(const std::string &name, const PassInType &inputs, Args &&... args) {
     allocated.push_back(std::make_unique<T>(std::forward<Args>(args)...));
-    return addPass(std::move(name), (T &)*allocated.back(), inputs);
+    return addPass(name, inputs, (T &)*allocated.back());
+  }
+
+  template<typename PassInType, typename PassOutType>
+  auto newLambdaPass(
+    const std::string &name, const PassInType &inputs,
+    PassSetup<PassInType, PassOutType> &&setup, PassCompile &&compile, PassExec &&exec)
+    -> PassOutType {
+    allocated.push_back(std::make_unique<LambdaPass<PassInType, PassOutType>>(
+      std::move(setup), std::move(compile), std::move(exec)));
+    return addPass(
+      name, inputs, (LambdaPass<PassInType, PassOutType> &)*allocated.back());
   }
 
   auto device() -> Device &;
@@ -197,13 +236,14 @@ private:
     return {id_, 0};
   }
   template<typename T>
-  auto read(FrameGraphResource<T> &input, uint32_t passId) -> void {
+  auto read(const FrameGraphResource<T> &input, uint32_t passId) -> void {
     check(input);
     auto &revision = resRevisions[input.id].revisions[input.revision];
     revision.readerPasses.push_back(passId);
   }
   template<typename T>
-  auto write(FrameGraphResource<T> &input, uint32_t passId) -> FrameGraphResource<T> {
+  auto write(const FrameGraphResource<T> &input, uint32_t passId)
+    -> FrameGraphResource<T> {
     check(input);
     auto &revisions = resRevisions[input.id].revisions;
     errorIf(
@@ -213,7 +253,7 @@ private:
     revisions.push_back({passId});
     return {input.id, uint32_t(revisions.size() - 1)};
   }
-  auto check(FrameGraphBaseResource &resource) -> void;
+  auto check(const FrameGraphBaseResource &resource) -> void;
 
   Device &device_;
 
@@ -236,7 +276,7 @@ auto PassBuilder::create(const std::string &name) -> FrameGraphResource<T> {
 }
 
 template<typename T>
-auto PassBuilder::read(FrameGraphResource<T> &input) -> void {
+auto PassBuilder::read(const FrameGraphResource<T> &input) -> void {
   frameGraph.read(input, id);
   errorIf(
     uniqueInputs.contains(input.id), pass_.name, " already read resource ", input.id,
@@ -246,7 +286,7 @@ auto PassBuilder::read(FrameGraphResource<T> &input) -> void {
 }
 
 template<typename T>
-auto PassBuilder::write(FrameGraphResource<T> &input) -> FrameGraphResource<T> {
+auto PassBuilder::write(const FrameGraphResource<T> &input) -> FrameGraphResource<T> {
   auto output = frameGraph.write(input, id);
   errorIf(
     uniqueInputs.contains(input.id), pass_.name, " already read resource ", input.id,
@@ -259,9 +299,9 @@ auto PassBuilder::write(FrameGraphResource<T> &input) -> FrameGraphResource<T> {
 
 template<typename PassInType, typename PassOutType>
 auto PassBuilder::addPass(
-  const std::string &name, Pass<PassInType, PassOutType> &pass, const PassInType &inputs)
+  const std::string &name, const PassInType &inputs, Pass<PassInType, PassOutType> &pass)
   -> PassOutType {
-  return frameGraph.addPass(nameMangling(name), pass, inputs);
+  return frameGraph.addPass(nameMangling(name), inputs, pass);
 }
 template<typename T, typename PassInType, typename... Args>
 auto PassBuilder::newPass(
@@ -269,5 +309,11 @@ auto PassBuilder::newPass(
   return frameGraph.newPass<T, PassInType>(
     nameMangling(name), inputs, std::forward<Args>(args)...);
 }
-
+template<typename PassInType, typename PassOutType>
+auto PassBuilder::newLambdaPass(
+  const std::string &name, const PassInType &inputs,
+  PassSetup<PassInType, PassOutType> &&setup, PassCompile &&compile, PassExec &&exec)
+  -> PassOutType {
+  return nullptr;
+}
 }

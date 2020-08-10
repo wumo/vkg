@@ -1,5 +1,6 @@
 #pragma once
 #include "vkg/base/base.hpp"
+#include "vkg/render/scene_config.hpp"
 #include "vkg/render/graph/frame_graph.hpp"
 #include "vkg/math/glm_common.hpp"
 
@@ -8,7 +9,7 @@ struct ComputeTransfPassIn {
   FrameGraphResource<vk::Buffer> transforms;
   FrameGraphResource<vk::Buffer> meshInstances;
   FrameGraphResource<uint32_t> meshInstancesCount;
-  FrameGraphResource<uint32_t> maxNumMeshInstances;
+  FrameGraphResource<SceneConfig> sceneConfig;
 };
 struct ComputeTransfPassOut {
   FrameGraphResource<vk::Buffer> matrices;

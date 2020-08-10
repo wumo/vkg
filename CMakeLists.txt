@@ -77,11 +77,12 @@ set(sources
   
   src/vkg/render/renderer.cpp
   src/vkg/render/scene.cpp
+  src/vkg/render/scene_config.hpp
   src/vkg/render/scene_frame.cpp
   src/vkg/render/pass/compute_transf.cpp
   src/vkg/render/pass/compute_cull_drawcmd.cpp
   src/vkg/render/pass/deferred.cpp
-  )
+  src/vkg/render/pass/deferred_execute.cpp)
 
 set(definitions "")
 if(WIN32)
