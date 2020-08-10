@@ -31,8 +31,8 @@ auto ComputeCullDrawCMD::setup(
   return passOut;
 }
 void ComputeCullDrawCMD::compile(Resources &resources) {
-  auto drawGroupCount = resources.get(passIn.drawGroupCount);
   if(!set) {
+    auto drawGroupCount = resources.get(passIn.drawGroupCount);
     drawCMDOffset = buffer::hostStorageBuffer(
       resources.device, sizeof(uint32_t) * drawGroupCount.size(), "drawCMDOffset");
     set = setDef.createSet(*descriptorPool);
@@ -45,16 +45,23 @@ void ComputeCullDrawCMD::compile(Resources &resources) {
     setDef.drawCMDCount(resources.get(passIn.drawCMDCountBuffer));
     setDef.update(set);
   }
-  uint32_t offset = 0;
-  for(int i = 0; i < drawGroupCount.size(); ++i) {
-    drawCMDOffset->ptr<uint32_t>()[i] = offset;
-    auto count = drawGroupCount[i];
-    offset += count;
-  }
 }
 void ComputeCullDrawCMD::execute(RenderContext &ctx, Resources &resources) {
   auto total = resources.get(passIn.meshInstancesCount);
   if(total == 0) return;
+
+  auto cb = ctx.compute;
+
+  auto drawGroupCount = resources.get(passIn.drawGroupCount);
+  std::vector<uint32_t> offsets(drawGroupCount.size());
+  uint32_t offset = 0;
+  for(int i = 0; i < drawGroupCount.size(); ++i) {
+    offsets[i] = offset;
+    offset += drawGroupCount[i];
+  }
+  cb.updateBuffer(
+    drawCMDOffset->buffer(), 0, sizeof(uint32_t) * offsets.size(), offsets.data());
+
   auto maxCG = ctx.device.limits().maxComputeWorkGroupCount;
   auto totalGroup = uint32_t(std::ceil(total / double(local_size)));
   auto dx = std::min(totalGroup, maxCG[0]);
@@ -62,8 +69,6 @@ void ComputeCullDrawCMD::execute(RenderContext &ctx, Resources &resources) {
   auto dy = std::min(std::max(totalGroup, 1u), maxCG[1]);
   totalGroup = uint32_t(totalGroup / double(dy));
   auto dz = std::min(std::max(totalGroup, 1u), maxCG[1]);
-
-  auto cb = ctx.compute;
 
   ctx.device.begin(cb, "compute cull drawGroup");
   cb.bindPipeline(vk::PipelineBindPoint::eCompute, *pipe);

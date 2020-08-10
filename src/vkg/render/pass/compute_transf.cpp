@@ -67,8 +67,7 @@ void ComputeTransf::execute(RenderContext &ctx, Resources &resources) {
     0,
     VK_WHOLE_SIZE};
   cb.pipelineBarrier(
-    vk::PipelineStageFlagBits::eComputeShader,
-    vk::PipelineStageFlagBits::eComputeShader | vk::PipelineStageFlagBits::eAllGraphics,
+    vk::PipelineStageFlagBits::eComputeShader, vk::PipelineStageFlagBits::eComputeShader,
     {}, nullptr, barrier, nullptr);
   ctx.device.end(cb);
 }
