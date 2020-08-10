@@ -90,39 +90,19 @@ public:
    * Create new resources as the output of this pass. Resource's name shouldn't already exist.
    */
   template<typename T>
-  auto create(const std::string &name = "") -> FrameGraphResource<T> {
-    auto output = frameGraph.create<T>(id, name);
-    outputs_.push_back(output);
-    return output;
-  }
+  auto create(const std::string &name = "") -> FrameGraphResource<T>;
   /**
    * Read the resource as the input of this pass.
    */
   template<typename T>
-  auto read(FrameGraphResource<T> &input) -> void {
-    frameGraph.read(input, id);
-    errorIf(
-      uniqueInputs.contains(input.id), pass_.name, " already read resource ", input.id,
-      " as input");
-    uniqueInputs.insert(input.id);
-    inputs_.push_back(input);
-  }
+  auto read(FrameGraphResource<T> &input) -> void;
   /**
    * Write to the resoruce as one of the output of this pass. Resource's revision will increment by 1.
    *
    * Error will be thrown when multiple passes write to the same version of resource.
    */
   template<typename T>
-  auto write(FrameGraphResource<T> &input) -> FrameGraphResource<T> {
-    auto output = frameGraph.write(input, id);
-    errorIf(
-      uniqueInputs.contains(input.id), pass_.name, " already read resource ", input.id,
-      " as input");
-    uniqueInputs.insert(input.id);
-    inputs_.push_back(input);
-    outputs_.push_back(output);
-    return output;
-  }
+  auto write(FrameGraphResource<T> &input) -> FrameGraphResource<T>;
 
   template<typename PassInType, typename PassOutType>
   auto addPass(
@@ -247,6 +227,35 @@ private:
 
   bool frozen{false};
 };
+
+template<typename T>
+auto PassBuilder::create(const std::string &name) -> FrameGraphResource<T> {
+  auto output = frameGraph.create<T>(id, name);
+  outputs_.push_back(output);
+  return output;
+}
+
+template<typename T>
+auto PassBuilder::read(FrameGraphResource<T> &input) -> void {
+  frameGraph.read(input, id);
+  errorIf(
+    uniqueInputs.contains(input.id), pass_.name, " already read resource ", input.id,
+    " as input");
+  uniqueInputs.insert(input.id);
+  inputs_.push_back(input);
+}
+
+template<typename T>
+auto PassBuilder::write(FrameGraphResource<T> &input) -> FrameGraphResource<T> {
+  auto output = frameGraph.write(input, id);
+  errorIf(
+    uniqueInputs.contains(input.id), pass_.name, " already read resource ", input.id,
+    " as input");
+  uniqueInputs.insert(input.id);
+  inputs_.push_back(input);
+  outputs_.push_back(output);
+  return output;
+}
 
 template<typename PassInType, typename PassOutType>
 auto PassBuilder::addPass(

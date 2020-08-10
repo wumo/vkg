@@ -7,7 +7,7 @@ class vkgConan(ConanFile):
     requires = (
         "vulkan-headers/1.2.148@wumo/stable",
         "vma/2.3.0@wumo/stable",
-        "glfw/3.5@wumo/stable",
+        "glfw/3.4@wumo/stable",
         "spirv-cross/20200519",
         "glm/0.9.9.8",
         "stb/20200203",
