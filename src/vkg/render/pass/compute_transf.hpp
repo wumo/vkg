@@ -28,12 +28,12 @@ private:
   std::unique_ptr<Buffer> matrices;
 
   struct ComputeTransfSetDef: DescriptorSetDef {
-    __buffer__(meshInstances, vk::ShaderStageFlagBits::eCompute);
-    __buffer__(transforms, vk::ShaderStageFlagBits::eCompute);
-    __buffer__(matrices, vk::ShaderStageFlagBits::eCompute);
+    __buffer__(meshInstances, vkStage::eCompute);
+    __buffer__(transforms, vkStage::eCompute);
+    __buffer__(matrices, vkStage::eCompute);
   } setDef;
   struct ComputeTransfPipeDef: PipelineLayoutDef {
-    __push_constant__(instCount, vk::ShaderStageFlagBits::eCompute, uint32_t);
+    __push_constant__(instCount, vkStage::eCompute, uint32_t);
     __set__(transf, ComputeTransfSetDef);
   } pipeDef;
   vk::UniqueDescriptorPool descriptorPool;

@@ -12,5 +12,6 @@ public:
 protected:
   PipelineLayoutMaker layoutMaker{};
   vk::UniquePipelineLayout pipelineLayout{};
+  using vkStage = vk::ShaderStageFlagBits;
 };
 }

@@ -1,6 +1,5 @@
 #include "compute_transf.hpp"
 
-#include <utility>
 #include "deferred/comp/transform_comp.hpp"
 
 namespace vkg {
@@ -68,7 +67,8 @@ void ComputeTransf::execute(RenderContext &ctx, Resources &resources) {
     0,
     VK_WHOLE_SIZE};
   cb.pipelineBarrier(
-    vk::PipelineStageFlagBits::eComputeShader, vk::PipelineStageFlagBits::eAllCommands,
+    vk::PipelineStageFlagBits::eComputeShader,
+    vk::PipelineStageFlagBits::eComputeShader | vk::PipelineStageFlagBits::eAllGraphics,
     {}, nullptr, barrier, nullptr);
   ctx.device.end(cb);
 }

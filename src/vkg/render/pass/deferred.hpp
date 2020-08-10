@@ -57,9 +57,9 @@ private:
   } gbufferSetDef;
 
   struct CSMSetDef: DescriptorSetDef {
-    __uniform__(setting, vk::ShaderStageFlagBits::eFragment);
-    __uniform__(cascades, vk::ShaderStageFlagBits::eFragment);
-    __sampler2DArray__(shadowMaps, vk::ShaderStageFlagBits::eFragment);
+    __uniform__(setting, vkStage::eFragment);
+    __uniform__(cascades, vkStage::eFragment);
+    __sampler2DArray__(shadowMaps, vkStage::eFragment);
   } csmSetDef;
 
   struct AtmosphereSetDef: DescriptorSetDef {
