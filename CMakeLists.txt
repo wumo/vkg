@@ -89,7 +89,8 @@ set(sources
   src/vkg/render/pass/deferred_unlit.cpp
   src/vkg/render/pass/deferred_lighting.cpp
   src/vkg/render/pass/deferred_transparent.cpp
-  src/vkg/render/pass/atmosphere.cpp)
+  src/vkg/render/pass/atmosphere_pass.cpp
+  src/vkg/render/model/atmosphere.cpp)
 
 set(definitions "")
 if(WIN32)

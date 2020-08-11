@@ -14,6 +14,7 @@
 #include "vkg/render/graph/frame_graph.hpp"
 #include "vkg/math/frustum.hpp"
 #include "draw_group.hpp"
+#include "model/atmosphere.hpp"
 #include <span>
 
 namespace vkg {
@@ -131,7 +132,7 @@ private:
     std::unique_ptr<Lighting> lighting;
     std::vector<Light> lights;
     std::unique_ptr<Camera> camera_;
-
+    Atmosphere atmosphere;
     std::vector<uint32_t> drawGroupInstCount;
   } Host;
 
