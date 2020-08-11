@@ -17,6 +17,7 @@ enum class PrimitiveTopology : uint32_t {
 enum class DynamicType : uint32_t { Static = 0u, Dynamic = 1u };
 
 class Scene;
+class PrimitiveBuilder;
 class Primitive {
 public:
   struct Desc {
@@ -39,8 +40,10 @@ public:
 
   auto update(std::span<Vertex::Position> positions, std::span<Vertex::Normal> normals)
     -> void;
+  auto update(PrimitiveBuilder &builder) -> void;
 
 protected:
+  Scene &scene;
   const uint32_t id_;
   const PrimitiveTopology topology_;
   const DynamicType type_;

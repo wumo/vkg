@@ -5,7 +5,8 @@ namespace vkg {
 Primitive::Primitive(
   Scene &scene, uint32_t id, UIntRange index, UIntRange position, UIntRange normal,
   UIntRange uv, PrimitiveTopology topology, DynamicType type)
-  : id_{id},
+  : scene{scene},
+    id_{id},
     index_{index},
     position_{position},
     normal_{normal},
@@ -30,5 +31,28 @@ auto Primitive::setAABB(const AABB &aabb) -> void {
   desc.ptr->aabb = aabb;
 }
 auto Primitive::update(
-  std::span<Vertex::Position> positions, std::span<Vertex::Normal> normals) -> void {}
+  std::span<Vertex::Position> positions, std::span<Vertex::Normal> normals) -> void {
+  errorIf(
+    type_ != DynamicType::Dynamic,
+    "only Dynamic type primitive can be updated using this function");
+  scene.Dev.positions->update(position_, positions);
+  scene.Dev.normals->update(normal_, normals);
+}
+auto Primitive::update(PrimitiveBuilder &builder) -> void {
+  errorIf(
+    builder.primitives().size() != 1, "need only 1 primitive, but got ",
+    builder.primitives().size());
+  auto &p = builder.primitives()[0];
+  errorIf(
+    p.topology != topology_ || p.type != type_,
+    "primitive topology or dynamicType shouldn't change");
+  errorIf(
+    p.position.size != position_.size,
+    "updated positions.size != original.positions.size");
+  errorIf(p.normal.size != normal_.size, "updated normals.size != original.normals.size");
+  update(
+    builder.positions().subspan(p.position.start, p.position.size),
+    builder.normals().subspan(p.normal.start, p.normal.size));
+  setAABB(p.aabb);
+}
 }

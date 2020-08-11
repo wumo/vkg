@@ -31,6 +31,7 @@ struct ScenePassOut {
 };
 
 class Scene: public Pass<ScenePassIn, ScenePassOut> {
+  friend class Primitive;
   friend class SceneSetupPass;
 
 public:

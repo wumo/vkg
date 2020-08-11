@@ -279,7 +279,7 @@ auto main() -> int {
         animation.animateAll(elapsed);
     }
     auto loc = camera.location();
-    println("camera loc:", loc.x, ",", loc.y, ",", loc.z);
+    //    println("camera loc:", loc.x, ",", loc.y, ",", loc.z);
     if(input.keyPressed[KeyW]) {
       pressed = true;
     } else if(pressed) {
@@ -333,8 +333,7 @@ auto main() -> int {
       auto s = glm::abs(10 * glm::sin(totalElapsed));
       p.box({}, glm::vec3{0, 0, s}, glm::vec3{s, 0, 0}, s)
         .newPrimitive(PrimitiveTopology::Triangles, vkg::DynamicType::Dynamic);
-      //      scene.primitive(dynamicPrim2).update()
-      //      scene.updatePrimitive(dynamicPrim2, p);
+      scene.primitive(dynamicPrim2).update(p);
     }
   });
   return 0;
