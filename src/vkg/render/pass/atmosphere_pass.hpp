@@ -1,14 +1,11 @@
 #pragma once
 #include "vkg/base/base.hpp"
 #include "vkg/render/graph/frame_graph.hpp"
-#include "vkg/math/glm_common.hpp"
+#include "vkg/render/model/atmosphere.hpp"
 
 namespace vkg {
 struct AtmospherePassIn {
-  FrameGraphResource<float> exposure;
-  FrameGraphResource<float> intensity;
-  FrameGraphResource<glm::vec3> sunDirection;
-  FrameGraphResource<glm::vec3> earthCenter;
+  FrameGraphResource<Atmosphere> atmosphere;
 };
 struct AtmospherePassOut {
   FrameGraphResource<uint64_t> version;
@@ -19,5 +16,15 @@ struct AtmospherePassOut {
   FrameGraphResource<Texture *> irradiance;
 };
 
-class Atmosphere {};
+class AtmospherePass: public Pass<AtmospherePassIn, AtmospherePassOut> {
+public:
+  auto setup(PassBuilder &builder, const AtmospherePassIn &inputs)
+    -> AtmospherePassOut override;
+  void compile(Resources &resources) override;
+  void execute(RenderContext &ctx, Resources &resources) override;
+
+private:
+  AtmospherePassIn passIn;
+  AtmospherePassOut passOut;
+};
 }

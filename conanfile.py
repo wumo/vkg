@@ -13,6 +13,7 @@ class vkgConan(ConanFile):
         "stb/20200203",
         "tinygltf/2.2.0",
         "par_lib/master@wumo/stable",
+        "magic_get/1.0.1@wumo/stable"
     )
     build_requires = ("glslvk/0.0.1@wumo/stable")
     generators = "cmake"

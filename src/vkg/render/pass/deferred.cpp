@@ -77,13 +77,14 @@ auto DeferredPass::setup(PassBuilder &builder, const DeferredPassIn &inputs)
   builder.read(cullPassOut.drawCMDCountBuffer);
   builder.read(cullPassOut.drawCMDOffsets);
   builder.read(passIn.drawGroupCount);
+  builder.read(passIn.atmosphere);
   passOut.backImg = builder.write(passIn.backImg);
 
   return passOut;
 }
 void DeferredPass::compile(Resources &resources) {
-  auto backImg = resources.get(passIn.backImg);
-  auto samplers = resources.get(passIn.samplers);
+  auto *backImg = resources.get(passIn.backImg);
+  auto *samplers = resources.get(passIn.samplers);
   auto numValidSampler = resources.get(passIn.numValidSampler);
 
   if(!init) {
@@ -137,6 +138,7 @@ void DeferredPass::compile(Resources &resources) {
     sceneSetDef.textures(
       lastNumValidSampler, numValidSampler - lastNumValidSampler,
       samplers->data() + lastNumValidSampler);
+    sceneSetDef.update(sceneSet);
     lastNumValidSampler = numValidSampler;
   }
 }

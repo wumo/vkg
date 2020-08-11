@@ -6,6 +6,7 @@
 #include "compute_cull_drawcmd.hpp"
 #include "vkg/render/model/vertex.hpp"
 #include "vkg/render/draw_group.hpp"
+#include "atmosphere_pass.hpp"
 
 namespace vkg {
 struct DeferredPassIn {
@@ -28,6 +29,8 @@ struct DeferredPassIn {
   FrameGraphResource<vk::Buffer> lights;
 
   FrameGraphResource<std::vector<uint32_t>> drawGroupCount;
+
+  AtmospherePassOut atmosphere;
 };
 struct DeferredPassOut {
   FrameGraphResource<Texture *> backImg;

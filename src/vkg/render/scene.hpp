@@ -76,6 +76,7 @@ public:
   auto texture(uint32_t index) -> Texture &;
   auto light(uint32_t index) -> Light &;
   auto lighting() -> Lighting &;
+  auto atmosphere() -> Atmosphere &;
 
   auto allocateLightingDesc() -> Allocation<Lighting::Desc>;
   auto allocateLightDesc() -> Allocation<Light::Desc>;

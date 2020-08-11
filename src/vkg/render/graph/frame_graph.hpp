@@ -8,6 +8,7 @@
 #include <span>
 #include <utility>
 #include "vkg/util/syntactic_sugar.hpp"
+#include "boost/pfr/precise.hpp"
 
 namespace vkg {
 
@@ -100,6 +101,9 @@ private:
 template<typename T, typename PassInType, typename PassOutType>
 concept DerivedPass = std::is_base_of<Pass<PassInType, PassOutType>, T>::value;
 
+template<typename T>
+concept DerivedResource = std::is_base_of<FrameGraphBaseResource, T>::value;
+
 class PassBuilder {
   friend class FrameGraph;
 
@@ -116,8 +120,14 @@ public:
   /**
    * Read the resource as the input of this pass.
    */
+  template<DerivedResource T>
+  auto read(T &input) -> void;
+  /**
+   * Read the struct resource as the input of this pass. each field of the struct should
+   * be FrameGraphResource.
+   */
   template<typename T>
-  auto read(const FrameGraphResource<T> &input) -> void;
+  auto read(T &input) -> void;
   /**
    * Write to the resoruce as one of the output of this pass. Resource's revision will increment by 1.
    *
@@ -238,12 +248,7 @@ private:
     resRevisions.push_back({name, id_, {{passId, {}}}});
     return {id_, 0};
   }
-  template<typename T>
-  auto read(const FrameGraphResource<T> &input, uint32_t passId) -> void {
-    check(input);
-    auto &revision = resRevisions[input.id].revisions[input.revision];
-    revision.readerPasses.push_back(passId);
-  }
+  auto read(const FrameGraphBaseResource &input, uint32_t passId) -> void;
   template<typename T>
   auto write(const FrameGraphResource<T> &input, uint32_t passId)
     -> FrameGraphResource<T> {
@@ -278,8 +283,8 @@ auto PassBuilder::create(const std::string &name) -> FrameGraphResource<T> {
   return output;
 }
 
-template<typename T>
-auto PassBuilder::read(const FrameGraphResource<T> &input) -> void {
+template<DerivedResource T>
+auto PassBuilder::read(T &input) -> void {
   frameGraph.read(input, id);
   errorIf(
     uniqueInputs.contains(input.id), "[", pass_.name, "$", pass_.id,
@@ -287,6 +292,15 @@ auto PassBuilder::read(const FrameGraphResource<T> &input) -> void {
     ":", input.revision, ")");
   uniqueInputs.insert(input.id);
   inputs_.push_back(input);
+}
+
+template<typename T>
+auto PassBuilder::read(T &input) -> void {
+  boost::pfr::for_each_field(input, [&](auto &res) {
+    using U = std::remove_const_t<std::remove_reference_t<decltype(res)>>;
+    static_assert(DerivedResource<U>);
+    read(res);
+  });
 }
 
 template<typename T>

@@ -8,6 +8,15 @@ auto PassBuilder::device() -> Device & { return frameGraph.device(); }
 auto PassBuilder::nameMangling(std::string name) -> std::string {
   return pass_.name + "/" + name;
 }
+//auto PassBuilder::read(const FrameGraphBaseResource &input) -> void {
+//  frameGraph.read(input, id);
+//  errorIf(
+//    uniqueInputs.contains(input.id), "[", pass_.name, "$", pass_.id,
+//    "] already read resource (", frameGraph.resRevisions[input.id].name, "$", input.id,
+//    ":", input.revision, ")");
+//  uniqueInputs.insert(input.id);
+//  inputs_.push_back(input);
+//}
 
 Resources::Resources(Device &device, uint32_t numResources): device{device} {
   physicalResources.resize(numResources);
@@ -20,6 +29,11 @@ auto FrameGraph::check(const FrameGraphBaseResource &resource) -> void {
   errorIf(
     resource.revision >= resRevisions[resource.id].revisions.size(),
     "resource's revision is invalid: ", resource.revision);
+}
+auto FrameGraph::read(const FrameGraphBaseResource &input, uint32_t passId) -> void {
+  check(input);
+  auto &revision = resRevisions[input.id].revisions[input.revision];
+  revision.readerPasses.push_back(passId);
 }
 
 auto FrameGraph::build() -> void {

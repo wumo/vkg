@@ -10,6 +10,24 @@ auto main() -> int {
 
   auto &scene = app.addScene();
 
+  auto kPi = glm::pi<float>();
+  float seasonAngle = kPi / 4;
+  float sunAngle = 0;
+  float angularVelocity = kPi / 20;
+  auto sunDirection = [&](float dt) {
+    sunAngle += angularVelocity * dt;
+    if(sunAngle > 2 * kPi) sunAngle = 0;
+
+    return -glm::vec3{
+      glm::cos(sunAngle), glm::abs(glm::sin(sunAngle) * glm::sin(seasonAngle)),
+      -glm::sin(sunAngle) * glm::cos(seasonAngle)};
+  };
+  auto sunDir = sunDirection(1);
+  auto &sky = scene.atmosphere();
+  sky.enable(true);
+  sky.setSunIntensity(1);
+  sky.setSunDirection(sunDir);
+
   auto lightId = scene.newLight();
   auto &light = scene.light(lightId);
   light.setColor(White);
@@ -173,7 +191,7 @@ auto main() -> int {
     //  t.translation = -center;
     scene.newModelInstance(animModel, t);
 
-    uint32_t num = 100;
+    uint32_t num = 10;
     insts.reserve(num * num);
     float unit = -5;
     for(int a = 0; a < num; ++a) {
@@ -266,7 +284,7 @@ auto main() -> int {
   auto &camera = scene.camera();
   //  camera.setLocation({20.f, 20.f, 20.f});
   camera.setLocation({22.759, 8.61548, 26.1782});
-  camera.setZFar(1e3);
+  camera.setZFar(1e9);
   PanningCamera panningCamera{camera};
   bool pressed{false};
   app.loop([&](double elapsed) {
@@ -286,10 +304,8 @@ auto main() -> int {
       //      app.setWireFrame(!app.wireframe());
       pressed = false;
     }
-    //    if(app.featureConfig().atmosphere) {
-    //      auto &sky = app.atmosphere();
-    //      sky.setSunDirection(sunDirection(elapsed / 1000));
-    //    }
+    auto &sky = scene.atmosphere();
+    sky.setSunDirection(sunDirection(elapsed / 1000));
     auto tStart = std::chrono::high_resolution_clock::now();
     for(auto insId: insts) {
       auto &ins = scene.modelInstance(insId);

@@ -1,5 +1,6 @@
 #include "scene.hpp"
 #include "pass/compute_transf.hpp"
+#include "pass/atmosphere_pass.hpp"
 #include "pass/deferred.hpp"
 
 namespace vkg {
@@ -28,6 +29,7 @@ struct SceneSetupPassOut {
   FrameGraphResource<Camera *> camera;
   FrameGraphResource<vk::Buffer> cameraBuffer;
   FrameGraphResource<std::vector<uint32_t>> drawGroupCount;
+  FrameGraphResource<Atmosphere> atmosphere;
 };
 
 class SceneSetupPass: public Pass<SceneSetupPassIn, SceneSetupPassOut> {
@@ -58,6 +60,7 @@ public:
     passOut.camera = builder.create<Camera *>("camera");
     passOut.cameraBuffer = builder.create<vk::Buffer>("cameraBuffer");
     passOut.drawGroupCount = builder.create<std::vector<uint32_t>>("drawGroupCount");
+    passOut.atmosphere = builder.create<Atmosphere>("atmosphere");
 
     return passOut;
   }
@@ -80,6 +83,7 @@ public:
       resources.set(passOut.samplers, &scene.Dev.sampler2Ds);
     }
     resources.set(passOut.numValidSampler, uint32_t(scene.Dev.textures.size()));
+    resources.set(passOut.atmosphere, scene.atmosphere());
 
     auto extent = resources.get<vk::Extent2D>(passIn.swapchainExtent);
     auto format = resources.get<vk::Format>(passIn.swapchainFormat);
@@ -124,6 +128,9 @@ auto Scene::setup(PassBuilder &builder, const ScenePassIn &inputs) -> ScenePassO
                 sceneSetupPassOut.transforms, sceneSetupPassOut.meshInstances,
                 sceneSetupPassOut.meshInstancesCount, sceneSetupPassOut.sceneConfig});
 
+  auto atmospherePassOut = builder.newPass<AtmospherePass>(
+    "Atmosphere", AtmospherePassIn{sceneSetupPassOut.atmosphere});
+
   auto deferredPassOut = builder.newPass<DeferredPass>(
     "Deferred",
     DeferredPassIn{
@@ -134,7 +141,7 @@ auto Scene::setup(PassBuilder &builder, const ScenePassIn &inputs) -> ScenePassO
       sceneSetupPassOut.primitives, transfPassOut.matrices, sceneSetupPassOut.materials,
       sceneSetupPassOut.samplers, sceneSetupPassOut.numValidSampler,
       sceneSetupPassOut.lighting, sceneSetupPassOut.lights,
-      sceneSetupPassOut.drawGroupCount});
+      sceneSetupPassOut.drawGroupCount, atmospherePassOut});
 
   builder.read(passIn.swapchainExtent);
   passOut.backImg = deferredPassOut.backImg;
