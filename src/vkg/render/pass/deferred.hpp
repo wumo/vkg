@@ -3,6 +3,9 @@
 #include "vkg/render/scene_config.hpp"
 #include "vkg/render/graph/frame_graph.hpp"
 #include "vkg/render/model/camera.hpp"
+#include "compute_cull_drawcmd.hpp"
+#include "vkg/render/model/vertex.hpp"
+
 namespace vkg {
 struct DeferredPassIn {
   FrameGraphResource<Texture *> backImg;
@@ -11,6 +14,10 @@ struct DeferredPassIn {
   FrameGraphResource<SceneConfig> sceneConfig;
   FrameGraphResource<vk::Buffer> meshInstances;
   FrameGraphResource<uint32_t> meshInstancesCount;
+  FrameGraphResource<vk::Buffer> positions;
+  FrameGraphResource<vk::Buffer> normals;
+  FrameGraphResource<vk::Buffer> uvs;
+  FrameGraphResource<vk::Buffer> indices;
   FrameGraphResource<vk::Buffer> primitives;
   FrameGraphResource<vk::Buffer> matrices;
   FrameGraphResource<vk::Buffer> materials;
@@ -33,13 +40,16 @@ public:
   void execute(RenderContext &ctx, Resources &resources) override;
 
 private:
-  auto createAttachments(Device &device, Texture &backImg) -> void;
-  auto createRenderPass(Device &device, SceneConfig sceneConfig, vk::Format format)
-    -> void;
+  auto createAttachments(Device &device) -> void;
+  auto createRenderPass(Device &device, vk::Format format) -> void;
+  auto createGbufferPass(Device &device, SceneConfig sceneConfig) -> void;
+  auto createLightingPass(Device &device, SceneConfig sceneConfig) -> void;
+  auto createUnlitPass(Device &device, SceneConfig sceneConfig) -> void;
+  auto createTransparentPass(Device &device, SceneConfig sceneConfig) -> void;
 
   DeferredPassIn passIn;
   DeferredPassOut passOut;
-
+  ComputeCullDrawCMDPassOut cullPassOut;
   uint32_t lastNumValidSampler{0};
 
   struct SceneSetDef: DescriptorSetDef {
@@ -84,25 +94,22 @@ private:
     __set__(shadowMap, CSMSetDef);
   } deferredPipeDef;
 
-  vk::SampleCountFlagBits sampleCount{vk::SampleCountFlagBits ::e1};
-  bool enableSampleShading{true};
-  float minSampleShading{1};
   bool wireframe_{false};
   float lineWidth_{1.f};
 
   bool init{false};
 
   Texture *backImg_{nullptr};
-  std::unique_ptr<Texture> backImgAtt, colorAtt, depthAtt, positionAtt, normalAtt,
-    diffuseAtt, specularAtt, emissiveAtt;
+  std::unique_ptr<Texture> backImgAtt, depthAtt, positionAtt, normalAtt, diffuseAtt,
+    specularAtt, emissiveAtt;
 
   vk::UniqueDescriptorPool descriptorPool;
-  vk::DescriptorSet sceneSet, gbufferSet, shadowMapSet, atmosphereSet;
+  vk::DescriptorSet sceneSet, gbSet, shadowMapSet, atmosphereSet;
 
-  uint32_t gbufferPass{}, lightingPass{}, transPass{}, resolvePass{};
+  uint32_t gbPass{}, litPass{}, unlitPass{}, transPass{};
   vk::UniqueRenderPass renderPass;
-  vk::UniquePipeline gbTriPipe, gbLinePipe, gbWireFramePipe, lightingPipe, transTriPipe,
-    transLinePipe;
+  vk::UniquePipeline gbTriPipe, gbLinePipe, gbWireFramePipe, litPipe, unlitTriPipe,
+    unlitLinePipe, transTriPipe, transLinePipe;
   vk::UniqueFramebuffer framebuffer;
 };
 }

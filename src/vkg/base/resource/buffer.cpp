@@ -6,8 +6,8 @@ Buffer::Buffer(
   Device &device, vk::BufferCreateInfo info, VmaAllocationCreateInfo allocInfo,
   const std::string &name) {
   this->info = info;
-  vmaBuffer = UniquePtr(new VmaBuffer{device}, [](VmaBuffer *ptr) {
-    debugLog("deallocate buffer:", ptr->buffer);
+  vmaBuffer = UniquePtr(new VmaBuffer{device}, [=](VmaBuffer *ptr) {
+    debugLog("deallocate buffer:", name, " ", ptr->buffer);
     vmaDestroyBuffer(ptr->vkezDevice.allocator(), ptr->buffer, ptr->allocation);
     delete ptr;
   });

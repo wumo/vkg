@@ -12,14 +12,14 @@ Base::Base(WindowConfig windowConfig, FeatureConfig featureConfig)
   instance = std::make_unique<Instance>(featureConfig);
   window_->createSurface(instance->vkInstance());
   createDebugUtils();
-  device = std::make_unique<Device>(*instance, window_->vkSurface(), featureConfig);
-  swapchain = std::make_unique<Swapchain>(*device, window_->vkSurface(), windowConfig);
+  device_ = std::make_unique<Device>(*instance, window_->vkSurface(), featureConfig);
+  swapchain_ = std::make_unique<Swapchain>(*device_, window_->vkSurface(), windowConfig);
   Base::resize();
   createSyncObjects();
   createCommandBuffers();
 }
 
-auto Base::featureConfig() const -> FeatureConfig { return featureConfig_; }
+auto Base::featureConfig() const -> const FeatureConfig & { return featureConfig_; }
 
 static VKAPI_ATTR VkBool32 VKAPI_CALL debugCallback(
   VkDebugUtilsMessageSeverityFlagBitsEXT messageSeverity,
@@ -45,8 +45,8 @@ auto Base::createDebugUtils() -> void {
 }
 
 auto Base::createSyncObjects() -> void {
-  auto _device = device->vkDevice();
-  auto numFrames = swapchain->imageCount();
+  auto _device = device_->vkDevice();
+  auto numFrames = swapchain_->imageCount();
 
   semaphores.resize(numFrames);
   inFlightFrameFences.resize(numFrames);
@@ -66,18 +66,18 @@ auto Base::createSyncObjects() -> void {
 }
 
 auto Base::createCommandBuffers() -> void {
-  auto _device = device->vkDevice();
+  auto _device = device_->vkDevice();
   vk::CommandBufferAllocateInfo info{
-    device->graphicsCmdPool(), vk::CommandBufferLevel::ePrimary,
-    uint32_t(swapchain->imageCount())};
+    device_->graphicsCmdPool(), vk::CommandBufferLevel::ePrimary,
+    uint32_t(swapchain_->imageCount())};
   graphicsCmdBuffers = _device.allocateCommandBuffers(info);
-  info.commandPool = device->computeCmdPool();
+  info.commandPool = device_->computeCmdPool();
   computeCmdBuffers = _device.allocateCommandBuffers(info);
 }
 
 auto Base::resize() -> void {
-  device->vkDevice().waitIdle();
-  swapchain->resize(window_->width(), window_->height(), window_->isVsync());
+  device_->vkDevice().waitIdle();
+  swapchain_->resize(window_->width(), window_->height(), window_->isVsync());
 }
 
 void Base::onFrame(uint32_t imageIndex, float elapsed) {
@@ -87,7 +87,7 @@ void Base::onFrame(uint32_t imageIndex, float elapsed) {
   computeCB.begin({vk::CommandBufferUsageFlagBits::eSimultaneousUse});
   graphicsCB.begin({vk::CommandBufferUsageFlagBits::eSimultaneousUse});
 
-  auto image = swapchain->image(imageIndex);
+  auto image = swapchain_->image(imageIndex);
   image::setLayout(
     graphicsCB, image, vk::ImageLayout::eUndefined, vk::ImageLayout::ePresentSrcKHR,
     vk::AccessFlagBits::eTransferWrite, vk::AccessFlagBits::eMemoryRead);
@@ -102,7 +102,7 @@ void Base::onFrame(uint32_t imageIndex, float elapsed) {
   submit.pCommandBuffers = &computeCB;
   submit.signalSemaphoreCount = 1;
   submit.pSignalSemaphores = &(*semaphore.computeFinished);
-  device->computeQueue().submit(submit, {});
+  device_->computeQueue().submit(submit, {});
 
   submit.pCommandBuffers = &graphicsCB;
   submit.waitSemaphoreCount = uint32_t(semaphore.renderWaits.size());
@@ -110,7 +110,7 @@ void Base::onFrame(uint32_t imageIndex, float elapsed) {
   submit.pWaitDstStageMask = semaphore.renderWaitStages.data();
   submit.signalSemaphoreCount = 1;
   submit.pSignalSemaphores = &(*semaphore.renderFinished);
-  device->graphicsQueue().submit(submit, {});
+  device_->graphicsQueue().submit(submit, {});
 }
 
 void Base::loop(const std::function<void(double)> &updater) {
@@ -129,7 +129,7 @@ void Base::loop(const std::function<void(double)> &updater) {
     uint32_t imageIndex = 0;
     try {
       auto result =
-        swapchain->acquireNextImage(*semaphores[frameIndex].imageAvailable, imageIndex);
+        swapchain_->acquireNextImage(*semaphores[frameIndex].imageAvailable, imageIndex);
       if(result == vk::Result::eSuboptimalKHR) {
         window_->setResizeWanted(true);
         resize();
@@ -152,7 +152,7 @@ void Base::loop(const std::function<void(double)> &updater) {
 
     auto &semaphore = semaphores[frameIndex];
     try {
-      auto result = swapchain->present(imageIndex, *semaphore.renderFinished);
+      auto result = swapchain_->present(imageIndex, *semaphore.renderFinished);
       if(result == vk::Result::eSuboptimalKHR) {
         window_->setResizeWanted(true);
         resize();
@@ -164,11 +164,11 @@ void Base::loop(const std::function<void(double)> &updater) {
       window_->setResizeWanted(false);
     }
 
-    frameIndex = (frameIndex + 1) % swapchain->imageCount();
-    device->vkDevice().waitIdle();
+    frameIndex = (frameIndex + 1) % swapchain_->imageCount();
+    device_->vkDevice().waitIdle();
   }
 
-  device->vkDevice().waitIdle();
+  device_->vkDevice().waitIdle();
   window_->terminate();
 }
 
@@ -179,5 +179,7 @@ void Base::loop(Updater updater, void *data) {
 void Base::loop(CallFrameUpdater &updater) {
   loop([&](double elapsed) { updater.update(elapsed); });
 }
+auto Base::device() -> Device & { return *device_; }
+auto Base::swapchain() -> Swapchain & { return *swapchain_; }
 
 }

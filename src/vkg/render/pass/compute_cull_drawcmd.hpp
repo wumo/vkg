@@ -16,6 +16,7 @@ struct ComputeCullDrawCMDPassIn {
 struct ComputeCullDrawCMDPassOut {
   FrameGraphResource<vk::Buffer> drawCMDBuffer;
   FrameGraphResource<vk::Buffer> drawCMDCountBuffer;
+  FrameGraphResource<std::vector<uint32_t>> drawCMDOffsets;
 };
 class ComputeCullDrawCMD
   : public Pass<ComputeCullDrawCMDPassIn, ComputeCullDrawCMDPassOut> {
@@ -49,8 +50,8 @@ private:
 
   std::unique_ptr<Buffer> drawCMD;
   std::unique_ptr<Buffer> drawCMDCount;
-  std::unique_ptr<Buffer> drawCMDOffset;
-  
+  std::unique_ptr<Buffer> drawCMDOffsetBuffer;
+
   bool init{false};
 };
 }

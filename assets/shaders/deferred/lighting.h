@@ -10,7 +10,9 @@
 #endif
 #include "../brdf.h"
 #include "../punctual_light.h"
-#include "csm/csm.h"
+#ifdef USE_SHADOW_MAP
+  #include "csm/csm.h"
+#endif
 
 layout(location = 0) out vec4 outColor;
 
@@ -104,7 +106,11 @@ void main() {
 #ifdef USE_ATMOSPHERE
     if(p.useSky) {
       vec3 rayDir = sun_direction.xyz;
+  #ifdef USE_SHADOW_MAP
       bool shadowed = shadowTrace(p.position);
+  #else
+      bool shadowed = false;
+  #endif
       vec3 directLight = brdf(rayDir, materialInfo, p.normal, view, F) *
                          atmosphereLight(p.position, p.normal, cam.eye.xyz);
       color += directLight * (shadowed ? 0.1 : 1);
@@ -116,22 +122,22 @@ void main() {
 
     outColor.rgb = LINEARtoSRGB(color);
 
-//    uint cIdx = cascadeIndex(p.position);
-//    switch(cIdx) {
-//      case 0: outColor.rgb = vec3(1, 0, 0); break;
-//      case 1: outColor.rgb = vec3(0, 1, 0); break;
-//      case 2: outColor.rgb = vec3(0, 0, 1); break;
-//      case 3: outColor.rgb = vec3(1, 1, 0); break;
-//      default: outColor.rgb = vec3(1, 1, 1); break;
-//    }
-//
-//    if(gl_FragCoord.x > cam.w / 2) {
-//      float sZ = shadowCoordDepth(p.position);
-//      outColor.rgb = vec3(sZ, sZ, sZ);
-//    } else {
-//      float smZ = shadowMapDepth(p.position);
-//      outColor.rgb = vec3(smZ, smZ, smZ);
-//    }
+    //    uint cIdx = cascadeIndex(p.position);
+    //    switch(cIdx) {
+    //      case 0: outColor.rgb = vec3(1, 0, 0); break;
+    //      case 1: outColor.rgb = vec3(0, 1, 0); break;
+    //      case 2: outColor.rgb = vec3(0, 0, 1); break;
+    //      case 3: outColor.rgb = vec3(1, 1, 0); break;
+    //      default: outColor.rgb = vec3(1, 1, 1); break;
+    //    }
+    //
+    //    if(gl_FragCoord.x > cam.w / 2) {
+    //      float sZ = shadowCoordDepth(p.position);
+    //      outColor.rgb = vec3(sZ, sZ, sZ);
+    //    } else {
+    //      float smZ = shadowMapDepth(p.position);
+    //      outColor.rgb = vec3(smZ, smZ, smZ);
+    //    }
   }
 }
 

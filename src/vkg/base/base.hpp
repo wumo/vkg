@@ -35,7 +35,10 @@ public:
   void loop(CallFrameUpdater &updater);
 
   auto window() -> Window &;
-  auto featureConfig() const -> FeatureConfig;
+  auto featureConfig() const -> const FeatureConfig &;
+
+  auto device() -> Device &;
+  auto swapchain() -> Swapchain &;
 
 protected:
   virtual auto resize() -> void;
@@ -52,8 +55,8 @@ protected:
   std::unique_ptr<Instance> instance;
   vk::UniqueDebugUtilsMessengerEXT callback;
   std::unique_ptr<Window> window_;
-  std::unique_ptr<Device> device;
-  std::unique_ptr<Swapchain> swapchain;
+  std::unique_ptr<Device> device_;
+  std::unique_ptr<Swapchain> swapchain_;
 
   std::vector<vk::CommandBuffer> graphicsCmdBuffers, computeCmdBuffers;
 

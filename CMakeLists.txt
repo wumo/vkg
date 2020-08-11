@@ -73,6 +73,8 @@ set(sources
   src/vkg/render/builder/primitive_builder.cpp
   src/vkg/render/builder/gltf_loader.cpp
   
+  src/vkg/render/util/panning_camera.cpp
+  
   src/vkg/render/graph/frame_graph.cpp
   
   src/vkg/render/renderer.cpp
@@ -82,7 +84,11 @@ set(sources
   src/vkg/render/pass/compute_transf.cpp
   src/vkg/render/pass/compute_cull_drawcmd.cpp
   src/vkg/render/pass/deferred.cpp
-  src/vkg/render/pass/deferred_execute.cpp)
+  src/vkg/render/pass/deferred_execute.cpp
+  src/vkg/render/pass/deferred_gbuffer.cpp
+  src/vkg/render/pass/deferred_unlit.cpp
+  src/vkg/render/pass/deferred_lighting.cpp
+  src/vkg/render/pass/deferred_transparent.cpp)
 
 set(definitions "")
 if(WIN32)

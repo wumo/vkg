@@ -26,27 +26,12 @@ struct ScenePassIn {
 };
 struct ScenePassOut {
   FrameGraphResource<Texture *> backImg;
-  FrameGraphResource<uint64_t> backImgVersion;
-  FrameGraphResource<SceneConfig> sceneConfig;
-  FrameGraphResource<vk::Buffer> positions;
-  FrameGraphResource<vk::Buffer> normals;
-  FrameGraphResource<vk::Buffer> uvs;
-  FrameGraphResource<vk::Buffer> indices;
-  FrameGraphResource<vk::Buffer> primitives;
-  FrameGraphResource<vk::Buffer> materials;
-  FrameGraphResource<vk::Buffer> transforms;
-  FrameGraphResource<vk::Buffer> meshInstances;
-  FrameGraphResource<uint32_t> meshInstancesCount;
-  FrameGraphResource<vk::Buffer> lighting;
-  FrameGraphResource<vk::Buffer> lights;
-  FrameGraphResource<std::vector<vk::DescriptorImageInfo> *> samplers;
-  FrameGraphResource<uint32_t> numValidSampler;
-  FrameGraphResource<Camera *> camera;
-  FrameGraphResource<vk::Buffer> cameraBuffer;
-  FrameGraphResource<std::vector<uint32_t>> drawGroupCount;
+  FrameGraphResource<vk::Rect2D> renderArea;
 };
 
 class Scene: public Pass<ScenePassIn, ScenePassOut> {
+  friend class SceneSetupPass;
+
 public:
   Scene(Renderer &renderer, SceneConfig sceneConfig, std::string name);
 
@@ -100,13 +85,12 @@ public:
 
   auto setup(PassBuilder &builder, const ScenePassIn &inputs) -> ScenePassOut override;
   void compile(Resources &resources) override;
-  void execute(RenderContext &ctx, Resources &resources) override;
 
 private:
   auto ensureTextures(uint32_t toAdd) const -> void;
 
   Device &device;
-  FeatureConfig &featureConfig;
+  const FeatureConfig &featureConfig;
   SceneConfig sceneConfig;
   std::string name;
 

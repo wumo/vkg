@@ -84,11 +84,12 @@ auto FrameGraph::build() -> void {
   resources = std::make_unique<Resources>(device_, uint32_t(resRevisions.size()));
 }
 
-auto FrameGraph::onFrame(vk::CommandBuffer graphicsCB, vk::CommandBuffer computeCB)
+auto FrameGraph::onFrame(
+  uint32_t imageIndex, vk::CommandBuffer graphicsCB, vk::CommandBuffer computeCB)
   -> void {
   for(auto &id: sortedPassIds)
     passes[id]->compile(*resources);
-  RenderContext ctx{device_, graphicsCB, computeCB};
+  RenderContext ctx{device_, imageIndex, graphicsCB, computeCB};
   for(auto &id: sortedPassIds)
     passes[id]->execute(ctx, *resources);
 }

@@ -183,6 +183,7 @@ private:
 
 struct RenderContext {
   Device &device;
+  uint32_t swapchainIndex{};
   vk::CommandBuffer graphics;
   vk::CommandBuffer compute;
 };
@@ -226,7 +227,9 @@ public:
 
   auto build() -> void;
 
-  auto onFrame(vk::CommandBuffer graphicsCB, vk::CommandBuffer computeCB) -> void;
+  auto onFrame(
+    uint32_t imageIndex, vk::CommandBuffer graphicsCB, vk::CommandBuffer computeCB)
+    -> void;
 
 private:
   template<typename T>
@@ -279,8 +282,9 @@ template<typename T>
 auto PassBuilder::read(const FrameGraphResource<T> &input) -> void {
   frameGraph.read(input, id);
   errorIf(
-    uniqueInputs.contains(input.id), pass_.name, " already read resource ", input.id,
-    " as input");
+    uniqueInputs.contains(input.id), "[", pass_.name, "$", pass_.id,
+    "] already read resource (", frameGraph.resRevisions[input.id].name, "$", input.id,
+    ":", input.revision, ")");
   uniqueInputs.insert(input.id);
   inputs_.push_back(input);
 }
@@ -289,8 +293,9 @@ template<typename T>
 auto PassBuilder::write(const FrameGraphResource<T> &input) -> FrameGraphResource<T> {
   auto output = frameGraph.write(input, id);
   errorIf(
-    uniqueInputs.contains(input.id), pass_.name, " already read resource ", input.id,
-    " as input");
+    uniqueInputs.contains(input.id), "[", pass_.name, "$", pass_.id,
+    "] already write resource (", frameGraph.resRevisions[input.id].name, "$", input.id,
+    ":", input.revision, ")");
   uniqueInputs.insert(input.id);
   inputs_.push_back(input);
   outputs_.push_back(output);

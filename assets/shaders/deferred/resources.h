@@ -50,12 +50,12 @@ layout(set = 1, binding = 5,input_attachment_index = 5) uniform SUBPASS_INPUT sa
   #include "../atmosphere/resources.h"
 #endif
 
-//#ifdef USE_SHADOW_MAP
+#ifdef USE_SHADOW_MAP
 layout(set = 3, binding = 0) uniform ShadowMapSettingUBO {
   ShadowMapSetting shadowMapSeting;
 };
 layout(set = 3, binding = 1) uniform Cascades { CascadeDesc cascades[numCascades]; };
 layout(set = 3, binding = 2) uniform sampler2DArray shadowMap;
-//#endif
+#endif
 
 #endif //VKG_RESOURCES_H

@@ -7,8 +7,8 @@ Texture::Texture(
   const std::string &name) {
   currentLayout = info.initialLayout;
   this->info = info;
-  vmaImage = UniquePtr(new VmaImage{device}, [](VmaImage *ptr) {
-    debugLog("deallocate image:", ptr->image);
+  vmaImage = UniquePtr(new VmaImage{device}, [=](VmaImage *ptr) {
+    debugLog("deallocate image:", name, " ", ptr->image);
     vmaDestroyImage(ptr->vkezDevice.allocator(), ptr->image, ptr->allocation);
     delete ptr;
   });

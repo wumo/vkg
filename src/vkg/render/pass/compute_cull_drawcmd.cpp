@@ -1,6 +1,5 @@
 #include "compute_cull_drawcmd.hpp"
 #include "common/cull_draw_group_comp.hpp"
-#include <utility>
 
 namespace vkg {
 
@@ -8,16 +7,6 @@ auto ComputeCullDrawCMD::setup(
   PassBuilder &builder, const ComputeCullDrawCMDPassIn &inputs)
   -> ComputeCullDrawCMDPassOut {
   passIn = inputs;
-
-  builder.read(passIn.frustum);
-  builder.read(passIn.meshInstances);
-  builder.read(passIn.meshInstancesCount);
-  builder.read(passIn.sceneConfig);
-  builder.read(passIn.primitives);
-  builder.read(passIn.matrices);
-  builder.read(passIn.drawGroupCount);
-  passOut.drawCMDBuffer = builder.create<vk::Buffer>("drawCMDBuffer");
-  passOut.drawCMDCountBuffer = builder.create<vk::Buffer>("drawCMDCountBuffer");
 
   setDef.init(builder.device());
   pipeDef.transf(setDef);
@@ -29,6 +18,17 @@ auto ComputeCullDrawCMD::setup(
            .shader(Shader{shader::common::cull_draw_group_comp_span, local_size, 1, 1})
            .createUnique();
 
+  builder.read(passIn.frustum);
+  builder.read(passIn.meshInstances);
+  builder.read(passIn.meshInstancesCount);
+  builder.read(passIn.sceneConfig);
+  builder.read(passIn.primitives);
+  builder.read(passIn.matrices);
+  builder.read(passIn.drawGroupCount);
+  passOut.drawCMDBuffer = builder.create<vk::Buffer>("drawCMDBuffer");
+  passOut.drawCMDCountBuffer = builder.create<vk::Buffer>("drawCMDCountBuffer");
+  passOut.drawCMDOffsets = builder.create<std::vector<uint32_t>>("drawCMDOffsets");
+
   return passOut;
 }
 void ComputeCullDrawCMD::compile(Resources &resources) {
@@ -36,7 +36,7 @@ void ComputeCullDrawCMD::compile(Resources &resources) {
     init = true;
     auto sceneConfig = resources.get(passIn.sceneConfig);
     auto drawGroupCount = resources.get(passIn.drawGroupCount);
-    drawCMDOffset = buffer::devStorageBuffer(
+    drawCMDOffsetBuffer = buffer::devStorageBuffer(
       resources.device, sizeof(uint32_t) * drawGroupCount.size(), "drawCMDOffset");
     drawCMD = buffer::devIndirectStorageBuffer(
       resources.device,
@@ -53,18 +53,11 @@ void ComputeCullDrawCMD::compile(Resources &resources) {
     setDef.meshInstances(resources.get(passIn.meshInstances));
     setDef.primitives(resources.get(passIn.primitives));
     setDef.matrices(resources.get(passIn.matrices));
-    setDef.drawCMDOffset(drawCMDOffset->buffer());
+    setDef.drawCMDOffset(drawCMDOffsetBuffer->buffer());
     setDef.drawCMD(drawCMD->buffer());
     setDef.drawCMDCount(drawCMDCount->buffer());
     setDef.update(set);
   }
-}
-void ComputeCullDrawCMD::execute(RenderContext &ctx, Resources &resources) {
-  auto total = resources.get(passIn.meshInstancesCount);
-  if(total == 0) return;
-
-  auto cb = ctx.compute;
-
   auto drawGroupCount = resources.get(passIn.drawGroupCount);
   std::vector<uint32_t> offsets(drawGroupCount.size());
   uint32_t offset = 0;
@@ -72,8 +65,17 @@ void ComputeCullDrawCMD::execute(RenderContext &ctx, Resources &resources) {
     offsets[i] = offset;
     offset += drawGroupCount[i];
   }
+  resources.set(passOut.drawCMDOffsets, offsets);
+}
+void ComputeCullDrawCMD::execute(RenderContext &ctx, Resources &resources) {
+  auto total = resources.get(passIn.meshInstancesCount);
+  if(total == 0) return;
+
+  auto cb = ctx.compute;
+
+  std::vector<uint32_t> offsets = resources.get(passOut.drawCMDOffsets);
   cb.updateBuffer(
-    drawCMDOffset->buffer(), 0, sizeof(uint32_t) * offsets.size(), offsets.data());
+    drawCMDOffsetBuffer->buffer(), 0, sizeof(uint32_t) * offsets.size(), offsets.data());
 
   /**
        * TODO It seems that we have to use cb.fillBuffer to initialize Dev.drawCMDCount instead

@@ -1,5 +1,6 @@
 #include "vkg/render/renderer.hpp"
 #include "vkg/util/colors.hpp"
+#include "vkg/render/util/panning_camera.hpp"
 using namespace vkg;
 
 auto main() -> int {
@@ -8,6 +9,14 @@ auto main() -> int {
   Renderer app{windowConfig, featureConfig};
 
   auto &scene = app.addScene();
+
+  auto lightId = scene.newLight();
+  auto &light = scene.light(lightId);
+  light.setColor(White);
+  glm::vec3 loc{100, 200, 200};
+  loc = glm::angleAxis(glm::radians(-60.f), glm::vec3{0, 1, 0}) * loc;
+  light.setLocation(loc);
+  light.setIntensity(1);
 
   auto yellowMat = scene.newMaterial();
   scene.material(yellowMat).setColorFactor({Yellow, 1.f});
@@ -36,6 +45,25 @@ auto main() -> int {
     scene.newModelInstance(axisModel);
   }
 
-  app.loop([&](double elapsed) {});
+  { // texture
+    auto primitive =
+      scene.newPrimitives(PrimitiveBuilder()
+                            .rectangle({}, {5.f, 0.f, -5.f}, {0.f, 10.f, 0.f})
+                            .newPrimitive())[0];
+    auto mesh = scene.newMesh(primitive, texMat);
+    auto node = scene.newNode();
+    scene.node(node).addMeshes({mesh});
+    auto model = scene.newModel({node});
+    scene.newModelInstance(model);
+  }
+
+  auto &input = app.window().input();
+  auto &camera = scene.camera();
+  //  camera.setLocation({20.f, 20.f, 20.f});
+  camera.setLocation({22.759, 8.61548, 26.1782});
+  camera.setZFar(1e3);
+  PanningCamera panningCamera{camera};
+  bool pressed{false};
+  app.loop([&](double elapsed) { panningCamera.update(input); });
   return 0;
 }

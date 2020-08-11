@@ -5,8 +5,8 @@
 
 namespace vkg {
 Scene::Scene(Renderer &renderer, SceneConfig sceneConfig, std::string name)
-  : device{*renderer.device},
-    featureConfig{renderer.featureConfig_},
+  : device{renderer.device()},
+    featureConfig{renderer.featureConfig()},
     sceneConfig{sceneConfig},
     name{std::move(name)} {
 

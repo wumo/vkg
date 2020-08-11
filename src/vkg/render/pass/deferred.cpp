@@ -1,7 +1,6 @@
 #include "deferred.hpp"
 
 #include "vkg/math/frustum.hpp"
-#include "compute_cull_drawcmd.hpp"
 
 namespace vkg {
 
@@ -56,6 +55,15 @@ auto DeferredPass::setup(PassBuilder &builder, const DeferredPassIn &inputs)
   -> DeferredPassOut {
   passIn = inputs;
 
+  auto camPassOut =
+    builder.newPass<CamFrustumPass>("CamFrustum", CamFrustumPassIn{passIn.camera});
+
+  cullPassOut = builder.newPass<ComputeCullDrawCMD>(
+    "Cull",
+    ComputeCullDrawCMDPassIn{
+      camPassOut.camFrustum, passIn.meshInstances, passIn.meshInstancesCount,
+      passIn.sceneConfig, passIn.primitives, passIn.matrices, passIn.drawGroupCount});
+
   builder.read(passIn.sceneConfig);
   builder.read(passIn.cameraBuffer);
   builder.read(passIn.meshInstances);
@@ -65,19 +73,11 @@ auto DeferredPass::setup(PassBuilder &builder, const DeferredPassIn &inputs)
   builder.read(passIn.samplers);
   builder.read(passIn.lighting);
   builder.read(passIn.lights);
+  builder.read(cullPassOut.drawCMDBuffer);
+  builder.read(cullPassOut.drawCMDCountBuffer);
+  builder.read(cullPassOut.drawCMDOffsets);
+  builder.read(passIn.drawGroupCount);
   passOut.backImg = builder.write(passIn.backImg);
-
-  auto camPassOut =
-    builder.newPass<CamFrustumPass>("CamFrustum", CamFrustumPassIn{passIn.camera});
-
-  auto cullCMDOut = builder.newPass<ComputeCullDrawCMD>(
-    "Cull",
-    ComputeCullDrawCMDPassIn{
-      camPassOut.camFrustum, passIn.meshInstances, passIn.meshInstancesCount,
-      passIn.sceneConfig, passIn.primitives, passIn.matrices, passIn.drawGroupCount});
-
-  builder.read(cullCMDOut.drawCMDBuffer);
-  builder.read(cullCMDOut.drawCMDCountBuffer);
 
   return passOut;
 }
@@ -106,7 +106,7 @@ void DeferredPass::compile(Resources &resources) {
                        .createUnique(resources.device);
 
     sceneSet = sceneSetDef.createSet(*descriptorPool);
-    gbufferSet = gbufferSetDef.createSet(*descriptorPool);
+    gbSet = gbufferSetDef.createSet(*descriptorPool);
     shadowMapSet = csmSetDef.createSet(*descriptorPool);
     atmosphereSet = atmosphereSetDef.createSet(*descriptorPool);
 
@@ -122,12 +122,16 @@ void DeferredPass::compile(Resources &resources) {
     sceneSetDef.lights(resources.get(passIn.lights));
     sceneSetDef.update(sceneSet);
 
-    createRenderPass(resources.device, sceneConfig, backImg->format());
+    createRenderPass(resources.device, backImg->format());
+    createGbufferPass(resources.device, sceneConfig);
+    createLightingPass(resources.device, sceneConfig);
+    createUnlitPass(resources.device, sceneConfig);
+    createTransparentPass(resources.device, sceneConfig);
   }
 
   if(backImg != backImg_) {
     backImg_ = backImg;
-    createAttachments(resources.device, *backImg);
+    createAttachments(resources.device);
   }
   if(numValidSampler > lastNumValidSampler) {
     sceneSetDef.textures(
@@ -137,32 +141,29 @@ void DeferredPass::compile(Resources &resources) {
   }
 }
 
-auto DeferredPass::createAttachments(Device &device, Texture &backImg) -> void {
-  auto w = backImg.extent().width;
-  auto h = backImg.extent().height;
+auto DeferredPass::createAttachments(Device &device) -> void {
+  auto w = backImg_->extent().width;
+  auto h = backImg_->extent().height;
   using vkUsage = vk::ImageUsageFlagBits;
-  colorAtt = image::make2DTex(
-    "colorAtt", device, w, h, vkUsage::eColorAttachment | vkUsage::eTransferSrc,
-    backImg.format(), sampleCount);
   positionAtt = image::make2DTex(
     "positionAtt", device, w, h, vkUsage::eColorAttachment | vkUsage::eInputAttachment,
-    vk::Format::eR32G32B32A32Sfloat, sampleCount);
+    vk::Format::eR32G32B32A32Sfloat);
   normalAtt = image::make2DTex(
     "normalAtt", device, w, h, vkUsage::eColorAttachment | vkUsage::eInputAttachment,
-    vk::Format::eR32G32B32A32Sfloat, sampleCount);
+    vk::Format::eR32G32B32A32Sfloat);
   diffuseAtt = image::make2DTex(
     "diffuseAtt", device, w, h, vkUsage::eColorAttachment | vkUsage::eInputAttachment,
-    vk::Format::eR8G8B8A8Unorm, sampleCount);
+    vk::Format::eR8G8B8A8Unorm);
   specularAtt = image::make2DTex(
     "specularAtt", device, w, h, vkUsage::eColorAttachment | vkUsage::eInputAttachment,
-    vk::Format::eR8G8B8A8Unorm, sampleCount);
+    vk::Format::eR8G8B8A8Unorm);
   emissiveAtt = image::make2DTex(
     "emissiveAtt", device, w, h, vkUsage::eColorAttachment | vkUsage::eInputAttachment,
-    vk::Format::eR8G8B8A8Unorm, sampleCount);
+    vk::Format::eR8G8B8A8Unorm);
   depthAtt = image::make2DTex(
     "depthAtt", device, w, h,
     vkUsage::eDepthStencilAttachment | vkUsage::eInputAttachment, vk::Format::eD32Sfloat,
-    sampleCount, vk::ImageAspectFlagBits::eDepth);
+    vk::SampleCountFlagBits::e1, vk::ImageAspectFlagBits::eDepth);
 
   gbufferSetDef.position(positionAtt->imageView());
   gbufferSetDef.normal(normalAtt->imageView());
@@ -170,20 +171,18 @@ auto DeferredPass::createAttachments(Device &device, Texture &backImg) -> void {
   gbufferSetDef.specular(specularAtt->imageView());
   gbufferSetDef.emissive(emissiveAtt->imageView());
   gbufferSetDef.depth(depthAtt->imageView());
-  gbufferSetDef.update(gbufferSet);
+  gbufferSetDef.update(gbSet);
 
   std::vector<vk::ImageView> attachments = {
-    backImg.imageView(),      colorAtt->imageView(),   positionAtt->imageView(),
-    normalAtt->imageView(),   diffuseAtt->imageView(), specularAtt->imageView(),
-    emissiveAtt->imageView(), depthAtt->imageView()};
+    backImg_->imageView(),   positionAtt->imageView(), normalAtt->imageView(),
+    diffuseAtt->imageView(), specularAtt->imageView(), emissiveAtt->imageView(),
+    depthAtt->imageView()};
 
   vk::FramebufferCreateInfo info{
     {}, *renderPass, uint32_t(attachments.size()), attachments.data(), w, h, 1};
   framebuffer = device.vkDevice().createFramebufferUnique(info);
 }
-auto DeferredPass::createRenderPass(
-  Device &device, SceneConfig sceneConfig, vk::Format format) -> void {
-  sampleCount = static_cast<vk::SampleCountFlagBits>(sceneConfig.sampleCount);
+auto DeferredPass::createRenderPass(Device &device, vk::Format format) -> void {
   RenderPassMaker maker;
   auto backImg = maker.attachment(format)
                    .samples(vk::SampleCountFlagBits::e1)
@@ -191,17 +190,14 @@ auto DeferredPass::createRenderPass(
                    .storeOp(vk::AttachmentStoreOp::eStore)
                    .stencilLoadOp(vk::AttachmentLoadOp::eDontCare)
                    .stencilStoreOp(vk::AttachmentStoreOp::eDontCare)
-                   .initialLayout(vk::ImageLayout::eUndefined)
-                   .finalLayout(vk::ImageLayout::eTransferDstOptimal)
+                   .initialLayout(vk::ImageLayout::eColorAttachmentOptimal)
+                   .finalLayout(vk::ImageLayout::eColorAttachmentOptimal)
                    .index();
-  auto color = maker.attachmentCopy(backImg)
-                 .samples(sampleCount)
-                 .storeOp(vk::AttachmentStoreOp::eStore)
-                 .finalLayout(vk::ImageLayout::eTransferSrcOptimal)
-                 .index();
-  auto position = maker.attachmentCopy(color)
+  auto position = maker.attachmentCopy(backImg)
                     .format(vk::Format::eR32G32B32A32Sfloat)
+                    .loadOp(vk::AttachmentLoadOp::eClear)
                     .storeOp(vk::AttachmentStoreOp::eDontCare)
+                    .initialLayout(vk::ImageLayout::eUndefined)
                     .finalLayout(vk::ImageLayout::eColorAttachmentOptimal)
                     .index();
   auto normal =
@@ -216,45 +212,54 @@ auto DeferredPass::createRenderPass(
                  .format(vk::Format::eD32Sfloat)
                  .finalLayout(vk::ImageLayout::eDepthStencilAttachmentOptimal)
                  .index();
-  color = sceneConfig.sampleCount == 1 ? backImg : color;
-  gbufferPass = maker.subpass(vk::PipelineBindPoint::eGraphics)
-                  .color(position)
-                  .color(normal)
-                  .color(diffuse)
-                  .color(specular)
-                  .color(emissive)
-                  .depthStencil(depth)
-                  .index();
-  lightingPass = maker.subpass(vk::PipelineBindPoint::eGraphics)
-                   .color(color)
-                   .input(position)
-                   .input(normal)
-                   .input(diffuse)
-                   .input(specular)
-                   .input(emissive)
-                   .input(depth)
-                   .index();
-  transPass = maker.subpass(vk::PipelineBindPoint::eGraphics)
-                .color(color)
+  gbPass = maker.subpass(vk::PipelineBindPoint::eGraphics)
+             .color(position)
+             .color(normal)
+             .color(diffuse)
+             .color(specular)
+             .color(emissive)
+             .depthStencil(depth)
+             .index();
+  litPass = maker.subpass(vk::PipelineBindPoint::eGraphics)
+              .color(backImg)
+              .input(position)
+              .input(normal)
+              .input(diffuse)
+              .input(specular)
+              .input(emissive)
+              .input(depth)
+              .index();
+  unlitPass = maker.subpass(vk::PipelineBindPoint::eGraphics)
+                .color(backImg)
                 .depthStencil(depth)
                 .index();
-  resolvePass =
-    sceneConfig.sampleCount > 1 ?
-      maker.subpass(vk::PipelineBindPoint::eGraphics).color(color, backImg).index() :
-      maker.subpass(vk::PipelineBindPoint::eGraphics).color(color).index();
-  maker.dependency(VK_SUBPASS_EXTERNAL, gbufferPass)
+  transPass = maker.subpass(vk::PipelineBindPoint::eGraphics)
+                .color(backImg)
+                .depthStencil(depth)
+                .index();
+  maker.dependency(VK_SUBPASS_EXTERNAL, gbPass)
     .srcStage(vk::PipelineStageFlagBits::eBottomOfPipe)
     .dstStage(vk::PipelineStageFlagBits::eColorAttachmentOutput)
     .srcAccess(vk::AccessFlagBits::eMemoryRead)
     .dstAccess(vk::AccessFlagBits::eColorAttachmentWrite)
     .flags(vk::DependencyFlagBits::eByRegion);
-  maker.dependency(gbufferPass, lightingPass)
+  maker.dependency(gbPass, litPass)
     .srcStage(vk::PipelineStageFlagBits::eColorAttachmentOutput)
     .dstStage(vk::PipelineStageFlagBits::eFragmentShader)
     .srcAccess(vk::AccessFlagBits::eColorAttachmentWrite)
     .dstAccess(vk::AccessFlagBits::eInputAttachmentRead)
     .flags(vk::DependencyFlagBits::eByRegion);
-  maker.dependency(lightingPass, transPass)
+  maker.dependency(litPass, unlitPass)
+    .srcStage(vk::PipelineStageFlagBits::eColorAttachmentOutput)
+    .dstStage(
+      vk::PipelineStageFlagBits::eEarlyFragmentTests |
+      vk::PipelineStageFlagBits::eLateFragmentTests)
+    .srcAccess(vk::AccessFlagBits::eColorAttachmentWrite)
+    .dstAccess(
+      vk::AccessFlagBits::eDepthStencilAttachmentRead |
+      vk::AccessFlagBits::eDepthStencilAttachmentWrite)
+    .flags(vk::DependencyFlagBits::eByRegion);
+  maker.dependency(unlitPass, transPass)
     .srcStage(vk::PipelineStageFlagBits::eColorAttachmentOutput)
     .dstStage(
       vk::PipelineStageFlagBits::eEarlyFragmentTests |
@@ -262,13 +267,7 @@ auto DeferredPass::createRenderPass(
     .srcAccess(vk::AccessFlagBits::eColorAttachmentWrite)
     .dstAccess(vk::AccessFlagBits::eDepthStencilAttachmentRead)
     .flags(vk::DependencyFlagBits::eByRegion);
-  maker.dependency(transPass, resolvePass)
-    .srcStage(vk::PipelineStageFlagBits::eColorAttachmentOutput)
-    .dstStage(vk::PipelineStageFlagBits::eColorAttachmentOutput)
-    .srcAccess(vk::AccessFlagBits::eColorAttachmentWrite)
-    .dstAccess(vk::AccessFlagBits::eColorAttachmentRead)
-    .flags(vk::DependencyFlagBits::eByRegion);
-  maker.dependency(resolvePass, VK_SUBPASS_EXTERNAL)
+  maker.dependency(transPass, VK_SUBPASS_EXTERNAL)
     .srcStage(vk::PipelineStageFlagBits::eColorAttachmentOutput)
     .dstStage(vk::PipelineStageFlagBits::eBottomOfPipe)
     .srcAccess(vk::AccessFlagBits::eColorAttachmentWrite)

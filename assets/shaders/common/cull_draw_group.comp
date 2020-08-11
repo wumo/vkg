@@ -90,7 +90,6 @@ void main() {
 
     uint groupID = mesh.drawGroupID;
     uint outIdx = atomicAdd(drawCMDCount[groupID], 1);
-    drawCMD.firstInstance = outIdx;
     uint offset = drawCMDOffset[groupID];
     drawCMDs[offset + outIdx] = drawCMD;
   }
