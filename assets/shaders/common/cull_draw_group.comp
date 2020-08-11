@@ -72,7 +72,7 @@ void main() {
 
   MeshInstanceUBO mesh = meshInstances[id];
 
-  if(!mesh.visible) return;
+  if(!mesh.visible || mesh.drawGroupID == ~0u) return;
 
   PrimitiveUBO prim = primitives[mesh.primitive];
   AABB aabb = prim.aabb;

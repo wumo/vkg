@@ -49,20 +49,20 @@ void DeferredPass::execute(RenderContext &ctx, Resources &resources) {
   cb.bindVertexBuffers(2, resources.get(passIn.uvs), zero);
   cb.bindIndexBuffer(resources.get(passIn.indices), zero, vk::IndexType::eUint32);
 
-  dev.begin(cb, "Subpass gbuffer triangles");
+  auto draw = [&](DrawGroup drawGroup) {
+    auto drawGroupIdx = value(drawGroup);
+    cb.drawIndexedIndirectCountKHR(
+      drawCMDBuffer, stride * drawCMDOffsets[drawGroupIdx], drawCMDCountBuffer,
+      sizeof(uint32_t) * drawGroupIdx, drawGroupCount[drawGroupIdx], stride);
+  };
+
+  dev.begin(cb, "Subpass gbuffer brdf triangles");
   if(wireframe_) cb.bindPipeline(vk::PipelineBindPoint::eGraphics, *gbWireFramePipe);
   else
     cb.bindPipeline(vk::PipelineBindPoint::eGraphics, *gbTriPipe);
-  cb.drawIndexedIndirectCountKHR(
-    drawCMDBuffer, stride * drawCMDOffsets[0], drawCMDCountBuffer, sizeof(uint32_t) * 0,
-    drawGroupCount[0], stride);
-  dev.end(cb);
-
-  dev.begin(cb, "Subpass gbuffer lines");
-  cb.bindPipeline(vk::PipelineBindPoint::eGraphics, *gbLinePipe);
-  cb.drawIndexedIndirectCountKHR(
-    drawCMDBuffer, stride * drawCMDOffsets[1], drawCMDCountBuffer, sizeof(uint32_t) * 1,
-    drawGroupCount[1], stride);
+  draw(DrawGroup::BRDF);
+  draw(DrawGroup::Reflective);
+  draw(DrawGroup::Refractive);
   dev.end(cb);
 
   cb.nextSubpass(vk::SubpassContents::eInline);
@@ -76,32 +76,24 @@ void DeferredPass::execute(RenderContext &ctx, Resources &resources) {
 
   dev.begin(cb, "Subpass unlit triangles");
   cb.bindPipeline(vk::PipelineBindPoint::eGraphics, *unlitTriPipe);
-  cb.drawIndexedIndirectCountKHR(
-    drawCMDBuffer, stride * drawCMDOffsets[2], drawCMDCountBuffer, sizeof(uint32_t) * 2,
-    drawGroupCount[2], stride);
+  draw(DrawGroup::Unlit);
   dev.end(cb);
 
-  dev.begin(cb, "Subpass unlit lines");
+  dev.begin(cb, "Subpass opaque lines");
   cb.bindPipeline(vk::PipelineBindPoint::eGraphics, *unlitLinePipe);
-  cb.drawIndexedIndirectCountKHR(
-    drawCMDBuffer, stride * drawCMDOffsets[3], drawCMDCountBuffer, sizeof(uint32_t) * 3,
-    drawGroupCount[3], stride);
+  draw(DrawGroup::OpaqueLines);
   dev.end(cb);
 
   cb.nextSubpass(vk::SubpassContents::eInline);
 
   dev.begin(cb, "Subpass transparent triangles");
   cb.bindPipeline(vk::PipelineBindPoint::eGraphics, *transTriPipe);
-  cb.drawIndexedIndirectCountKHR(
-    drawCMDBuffer, stride * drawCMDOffsets[4], drawCMDCountBuffer, sizeof(uint32_t) * 4,
-    drawGroupCount[4], stride);
+  draw(DrawGroup::Transparent);
   dev.end(cb);
 
   dev.begin(cb, "Subpass transparent lines");
   cb.bindPipeline(vk::PipelineBindPoint::eGraphics, *transLinePipe);
-  cb.drawIndexedIndirectCountKHR(
-    drawCMDBuffer, stride * drawCMDOffsets[5], drawCMDCountBuffer, sizeof(uint32_t) * 5,
-    drawGroupCount[5], stride);
+  draw(DrawGroup::TransparentLines);
   dev.end(cb);
 
   cb.endRenderPass();

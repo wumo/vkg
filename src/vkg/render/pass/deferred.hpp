@@ -5,6 +5,7 @@
 #include "vkg/render/model/camera.hpp"
 #include "compute_cull_drawcmd.hpp"
 #include "vkg/render/model/vertex.hpp"
+#include "vkg/render/draw_group.hpp"
 
 namespace vkg {
 struct DeferredPassIn {
@@ -108,8 +109,8 @@ private:
 
   uint32_t gbPass{}, litPass{}, unlitPass{}, transPass{};
   vk::UniqueRenderPass renderPass;
-  vk::UniquePipeline gbTriPipe, gbLinePipe, gbWireFramePipe, litPipe, unlitTriPipe,
-    unlitLinePipe, transTriPipe, transLinePipe;
+  vk::UniquePipeline gbTriPipe, gbWireFramePipe, litPipe, unlitTriPipe, unlitLinePipe,
+    transTriPipe, transLinePipe;
   vk::UniqueFramebuffer framebuffer;
 };
 }

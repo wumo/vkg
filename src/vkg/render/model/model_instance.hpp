@@ -3,6 +3,7 @@
 #include "vkg/render/allocation.hpp"
 #include "vkg/render/ranges.hpp"
 #include "vkg/base/vk_headers.hpp"
+#include "vkg/render/draw_group.hpp"
 
 namespace vkg {
 class Scene;
@@ -21,7 +22,7 @@ public:
     vk::Bool32 visible;
     /**the draw group used to draw this mesh instance. MeshInsts with same draw group will
      * be grouped*/
-    uint32_t drawGroupID;
+    DrawGroup drawGroupID;
   };
   ModelInstance(Scene &scene, uint32_t id, const Transform &transform, uint32_t modelId);
   virtual auto id() const -> uint32_t;

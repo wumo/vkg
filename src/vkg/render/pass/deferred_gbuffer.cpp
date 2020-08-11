@@ -50,12 +50,5 @@ auto DeferredPass::createGbufferPass(Device &device, SceneConfig sceneConfig) ->
 
   gbWireFramePipe = maker.createUnique();
   device.name(*gbWireFramePipe, "gbuffer wireframe pipeline");
-
-  maker.inputAssembly(vk::PrimitiveTopology::eLineList)
-    .polygonMode(vk::PolygonMode::eFill)
-    .cullMode(vk::CullModeFlagBits::eNone)
-    .lineWidth(lineWidth_);
-  gbLinePipe = maker.createUnique();
-  device.name(*gbLinePipe, "gbuffer line pipeline");
 }
 }

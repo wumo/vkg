@@ -13,6 +13,7 @@
 #include "buffer_allocation.hpp"
 #include "vkg/render/graph/frame_graph.hpp"
 #include "vkg/math/frustum.hpp"
+#include "draw_group.hpp"
 #include <span>
 
 namespace vkg {
@@ -81,7 +82,8 @@ public:
   auto allocatePrimitiveDesc() -> Allocation<Primitive::Desc>;
   auto allocateMeshInstDesc() -> Allocation<ModelInstance::MeshInstanceDesc>;
 
-  auto addToDrawGroup(uint32_t meshId, uint32_t oldGroupID = nullIdx) -> uint32_t;
+  auto addToDrawGroup(uint32_t meshId, DrawGroup oldGroupID = DrawGroup::Unknown)
+    -> DrawGroup;
 
   auto setup(PassBuilder &builder, const ScenePassIn &inputs) -> ScenePassOut override;
   void compile(Resources &resources) override;
@@ -129,7 +131,6 @@ private:
     std::vector<Light> lights;
     std::unique_ptr<Camera> camera_;
 
-    const uint32_t numDrawGroup{6};
     std::vector<uint32_t> drawGroupInstCount;
   } Host;
 

@@ -65,7 +65,7 @@ Scene::Scene(Renderer &renderer, SceneConfig sceneConfig, std::string name)
 
   newMaterial(MaterialType::eNone);
 
-  Host.drawGroupInstCount.resize(Host.numDrawGroup);
+  Host.drawGroupInstCount.resize(value(DrawGroup::Last) + 1);
 }
 
 auto Scene::newPrimitive(
@@ -190,39 +190,36 @@ auto Scene::allocatePrimitiveDesc() -> Allocation<Primitive::Desc> {
 auto Scene::allocateMeshInstDesc() -> Allocation<ModelInstance::MeshInstanceDesc> {
   return Dev.meshInstances->allocate();
 }
-auto Scene::addToDrawGroup(uint32_t meshId, uint32_t oldGroupID) -> uint32_t {
+auto Scene::addToDrawGroup(uint32_t meshId, DrawGroup oldGroupID) -> DrawGroup {
   auto &mesh_ = mesh(meshId);
   auto &primitive_ = primitive(mesh_.primitive());
   auto &material_ = material(mesh_.material());
 
-  uint32_t gID;
-  switch(material_.type()) {
-    case MaterialType::eBRDF:
-    case MaterialType::eBRDFSG:
-      switch(primitive_.topology()) {
-        case PrimitiveTopology::Triangles: gID = 0; break;
-        case PrimitiveTopology::Lines: gID = 1; break;
-        default: throw std::runtime_error("Not supported");
+  DrawGroup gID{};
+  switch(primitive_.topology()) {
+    case PrimitiveTopology::Triangles:
+      switch(material_.type()) {
+        case MaterialType::eNone: gID = DrawGroup::Unlit; break;
+        case MaterialType::eBRDF:
+        case MaterialType::eBRDFSG: gID = DrawGroup::BRDF; break;
+        case MaterialType::eReflective: gID = DrawGroup::Reflective; break;
+        case MaterialType::eRefractive: gID = DrawGroup::Refractive; break;
+        case MaterialType::eTransparent: gID = DrawGroup::Transparent; break;
+        case MaterialType::eTerrain: gID = DrawGroup::Terrain; break;
       }
       break;
-    case MaterialType::eNone:
-      switch(primitive_.topology()) {
-        case PrimitiveTopology::Triangles: gID = 2; break;
-        case PrimitiveTopology::Lines: gID = 3; break;
-        default: throw std::runtime_error("Not supported");
+    case PrimitiveTopology::Lines:
+      switch(material_.type()) {
+        case MaterialType::eRefractive:
+        case MaterialType::eTransparent: gID = DrawGroup::TransparentLines; break;
+        default: gID = DrawGroup::OpaqueLines;
       }
       break;
-    case MaterialType::eTransparent:
-      switch(primitive_.topology()) {
-        case PrimitiveTopology::Triangles: gID = 4; break;
-        case PrimitiveTopology::Lines: gID = 5; break;
-        default: throw std::runtime_error("Not supported");
-      }
-      break;
-    default: throw std::runtime_error("Not supported");
+    case PrimitiveTopology::Procedural:
+    case PrimitiveTopology::Patches: throw std::runtime_error("Not supported"); break;
   }
-  if(oldGroupID != nullIdx) Host.drawGroupInstCount[oldGroupID]--;
-  Host.drawGroupInstCount[gID]++;
+  if(oldGroupID != DrawGroup::Unknown) Host.drawGroupInstCount[value(oldGroupID)]--;
+  Host.drawGroupInstCount[value(gID)]++;
   return gID;
 }
 }
