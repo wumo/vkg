@@ -16,7 +16,8 @@ auto DeferredPass::createLightingPass(Device &device, SceneConfig sceneConfig) -
     .viewport({})
     .scissor({})
     .dynamicState(vk::DynamicState::eViewport)
-    .dynamicState(vk::DynamicState::eScissor);
+    .dynamicState(vk::DynamicState::eScissor)
+    .dynamicState(vk::DynamicState::eLineWidth);
 
   maker.blendColorAttachment(false);
 

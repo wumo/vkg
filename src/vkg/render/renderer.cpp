@@ -107,35 +107,35 @@ void Renderer::onInit() {
 void Renderer::onFrame(uint32_t imageIndex, float elapsed) {
   auto &graphicsCB = graphicsCmdBuffers[frameIndex];
   auto &computeCB = computeCmdBuffers[frameIndex];
-
-  computeCB.begin({vk::CommandBufferUsageFlagBits::eSimultaneousUse});
-  graphicsCB.begin({vk::CommandBufferUsageFlagBits::eSimultaneousUse});
+//
+//  computeCB.begin({vk::CommandBufferUsageFlagBits::eSimultaneousUse});
+//  graphicsCB.begin({vk::CommandBufferUsageFlagBits::eSimultaneousUse});
   RenderContext ctx{*device_,   imageIndex, frameIndex, swapchain_->imageCount(),
                     graphicsCB, computeCB};
   frameGraph->onFrame(ctx);
 
-  computeCB.end();
-  graphicsCB.end();
-
-  auto &semaphore = semaphores[frameIndex];
-
-  vk::SubmitInfo submit;
-  submit.commandBufferCount = 1;
-  submit.pCommandBuffers = &computeCB;
-  submit.signalSemaphoreCount = 1;
-  submit.pSignalSemaphores = semaphore.computeFinished.operator->();
-  submit.waitSemaphoreCount = uint32_t(semaphore.computeWaits.size());
-  submit.pWaitSemaphores = semaphore.computeWaits.data();
-  submit.pWaitDstStageMask = semaphore.computeWaitStages.data();
-  device_->computeQueue().submit(submit, {});
-
-  submit.pCommandBuffers = &graphicsCB;
-  submit.waitSemaphoreCount = uint32_t(semaphore.renderWaits.size());
-  submit.pWaitSemaphores = semaphore.renderWaits.data();
-  submit.pWaitDstStageMask = semaphore.renderWaitStages.data();
-  submit.signalSemaphoreCount = 1;
-  submit.pSignalSemaphores = semaphore.renderFinished.operator->();
-  device_->graphicsQueue().submit(submit, *renderFences[frameIndex]);
+//  computeCB.end();
+//  graphicsCB.end();
+//
+//  auto &semaphore = semaphores[frameIndex];
+//
+//  vk::SubmitInfo submit;
+//  submit.commandBufferCount = 1;
+//  submit.pCommandBuffers = &computeCB;
+//  submit.signalSemaphoreCount = 1;
+//  submit.pSignalSemaphores = semaphore.computeFinished.operator->();
+//  submit.waitSemaphoreCount = uint32_t(semaphore.computeWaits.size());
+//  submit.pWaitSemaphores = semaphore.computeWaits.data();
+//  submit.pWaitDstStageMask = semaphore.computeWaitStages.data();
+//  device_->computeQueue().submit(submit, {});
+//
+//  submit.pCommandBuffers = &graphicsCB;
+//  submit.waitSemaphoreCount = uint32_t(semaphore.renderWaits.size());
+//  submit.pWaitSemaphores = semaphore.renderWaits.data();
+//  submit.pWaitDstStageMask = semaphore.renderWaitStages.data();
+//  submit.signalSemaphoreCount = uint32_t(semaphore.renderSignals.size());
+//  submit.pSignalSemaphores = semaphore.renderSignals.data();
+//  device_->graphicsQueue().submit(submit, *renderFences[frameIndex]);
 }
 
 }

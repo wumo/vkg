@@ -20,7 +20,7 @@ public:
   auto supported() const -> const SupportedExtension &;
 
 private:
-  uint32_t apiVersion{VK_API_VERSION_1_1};
+  uint32_t apiVersion{VK_API_VERSION_1_2};
   vk::DynamicLoader dl;
   vk::UniqueInstance vkInstance_;
   vk::UniqueDebugUtilsMessengerEXT callback;

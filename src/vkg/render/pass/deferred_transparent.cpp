@@ -25,7 +25,8 @@ auto DeferredPass::createTransparentPass(Device &device, SceneConfig sceneConfig
     .viewport({})
     .scissor({})
     .dynamicState(vk::DynamicState::eViewport)
-    .dynamicState(vk::DynamicState::eScissor);
+    .dynamicState(vk::DynamicState::eScissor)
+    .dynamicState(vk::DynamicState::eLineWidth);
 
   maker.blendColorAttachment(true)
     .srcColorBlendFactor(vk::BlendFactor::eSrcAlpha)
@@ -52,7 +53,7 @@ auto DeferredPass::createTransparentPass(Device &device, SceneConfig sceneConfig
   transTriPipe = maker.createUnique();
   device.name(*transTriPipe, "transparent triangle pipeline");
 
-  maker.inputAssembly(vk::PrimitiveTopology::eLineList).lineWidth(lineWidth_);
+  maker.inputAssembly(vk::PrimitiveTopology::eLineList);
   transLinePipe = maker.createUnique();
   device.name(*transLinePipe, "transparent line pipeline");
 }

@@ -146,40 +146,26 @@ Device::Device(Instance &instance, vk::SurfaceKHR surface, FeatureConfig feature
   vk::PhysicalDeviceScalarBlockLayoutFeaturesEXT scalarBlockLayoutFeature;
   vk::PhysicalDeviceDescriptorIndexingFeaturesEXT descriptorIndexingFeature;
   vk::PhysicalDeviceMultiviewFeatures multiviewFeatures;
+  vk::PhysicalDeviceTimelineSemaphoreFeatures timelineSemaphoreFeatures;
 
-  features2 = physicalDevice_.getFeatures2();
+  auto features2 = physicalDevice_.getFeatures2();
   void **pNext = &features2.pNext;
 
-  {
-    scalarBlockLayoutFeature =
-      physicalDevice_
-        .getFeatures2<
-          vk::PhysicalDeviceFeatures2, vk::PhysicalDeviceScalarBlockLayoutFeaturesEXT>()
-        .get<vk::PhysicalDeviceScalarBlockLayoutFeaturesEXT>();
-    if(scalarBlockLayoutFeature.scalarBlockLayout)
-      deviceExtensions.push_back(VK_EXT_SCALAR_BLOCK_LAYOUT_EXTENSION_NAME);
-    *pNext = &scalarBlockLayoutFeature;
-    pNext = &scalarBlockLayoutFeature.pNext;
-  }
+  auto features12 =
+    physicalDevice_
+      .getFeatures2<vk::PhysicalDeviceFeatures2, vk::PhysicalDeviceVulkan12Features>()
+      .get<vk::PhysicalDeviceVulkan12Features>();
 
-  deviceExtensions.push_back(VK_KHR_DRAW_INDIRECT_COUNT_EXTENSION_NAME);
+  *pNext = &features12;
+  pNext = &features12.pNext;
 
-  {
-    multiviewFeatures =
-      physicalDevice_
-        .getFeatures2<vk::PhysicalDeviceFeatures2, vk::PhysicalDeviceMultiviewFeatures>()
-        .get<vk::PhysicalDeviceMultiviewFeatures>();
-    if(multiviewFeatures.multiview) {
-      supported_.multiview = true;
-      multiviewProperties_ =
-        physicalDevice_
-          .getProperties2<
-            vk::PhysicalDeviceProperties2, vk::PhysicalDeviceMultiviewProperties>()
-          .get<vk::PhysicalDeviceMultiviewProperties>();
-      *pNext = &multiviewFeatures;
-      pNext = &multiviewFeatures.pNext;
-    }
-  }
+  errorIf(
+    !features12.scalarBlockLayout, "required feature scalarBlockLayout not supported!");
+  errorIf(
+    !features12.drawIndirectCount, "required feature drawIndirectCount not supported!");
+  errorIf(
+    !features12.timelineSemaphore, "required feature timelineSemaphore not supported!");
+
 #if defined(USE_DEBUG_PRINTF)
   deviceExtensions.push_back(VK_KHR_SHADER_NON_SEMANTIC_INFO_EXTENSION_NAME);
   errorIf(
@@ -190,25 +176,6 @@ Device::Device(Instance &instance, vk::SurfaceKHR surface, FeatureConfig feature
   deviceExtensions.push_back(VK_KHR_DEDICATED_ALLOCATION_EXTENSION_NAME);
   deviceExtensions.push_back(VK_KHR_GET_MEMORY_REQUIREMENTS_2_EXTENSION_NAME);
 
-  {
-    descriptorIndexingFeature =
-      physicalDevice_
-        .getFeatures2<
-          vk::PhysicalDeviceFeatures2, vk::PhysicalDeviceDescriptorIndexingFeaturesEXT>()
-        .get<vk::PhysicalDeviceDescriptorIndexingFeaturesEXT>();
-    if(
-      descriptorIndexingFeature.descriptorBindingSampledImageUpdateAfterBind &&
-      descriptorIndexingFeature.descriptorBindingVariableDescriptorCount &&
-      descriptorIndexingFeature.descriptorBindingPartiallyBound &&
-      descriptorIndexingFeature.descriptorBindingStorageImageUpdateAfterBind) {
-      supported_.descriptorIndexing = true;
-      deviceExtensions.push_back(VK_KHR_MAINTENANCE3_EXTENSION_NAME);
-      deviceExtensions.push_back(VK_EXT_DESCRIPTOR_INDEXING_EXTENSION_NAME);
-
-      *pNext = &descriptorIndexingFeature;
-      pNext = &descriptorIndexingFeature.pNext;
-    }
-  }
   if(featureConfig.rayTracing) {
     deviceExtensions.push_back(VK_NV_RAY_TRACING_EXTENSION_NAME);
     if(instance.supported().externalSync) {

@@ -18,6 +18,7 @@ public:
     bool multiview{false};
     bool descriptorIndexing{false};
     bool externalSync{false};
+    bool timelineSemaphore{false};
   };
 
   Device(Instance &instance, vk::SurfaceKHR surface, FeatureConfig featureConfig = {});
@@ -82,9 +83,6 @@ private:
   using UniqueAllocator =
     std::unique_ptr<VmaAllocator, std::function<void(VmaAllocator *)>>;
   UniqueAllocator allocator_;
-
-  vk::PhysicalDeviceFeatures features;
-  vk::PhysicalDeviceFeatures2 features2;
 
   SupportedExtension supported_;
 

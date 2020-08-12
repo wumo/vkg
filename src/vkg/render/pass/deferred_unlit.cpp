@@ -24,7 +24,8 @@ auto DeferredPass::createUnlitPass(Device &device, SceneConfig sceneConfig) -> v
     .viewport({})
     .scissor({})
     .dynamicState(vk::DynamicState::eViewport)
-    .dynamicState(vk::DynamicState::eScissor);
+    .dynamicState(vk::DynamicState::eScissor)
+    .dynamicState(vk::DynamicState::eLineWidth);
 
   maker.blendColorAttachment(false);
 
@@ -44,8 +45,7 @@ auto DeferredPass::createUnlitPass(Device &device, SceneConfig sceneConfig) -> v
 
   maker.inputAssembly(vk::PrimitiveTopology::eLineList)
     .polygonMode(vk::PolygonMode::eFill)
-    .cullMode(vk::CullModeFlagBits::eNone)
-    .lineWidth(lineWidth_);
+    .cullMode(vk::CullModeFlagBits::eNone);
   unlitLinePipe = maker.createUnique();
   device.name(*unlitLinePipe, "unlit line pipeline");
 }

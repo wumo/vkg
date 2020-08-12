@@ -120,8 +120,7 @@ void main() {
     color = color * p.ao;
     color += p.emissive;
 
-//    outColor.rgb = LINEARtoSRGB(color);
-    outColor.rgb = vec3(1);
+    outColor.rgb = LINEARtoSRGB(color);
 
     //    uint cIdx = cascadeIndex(p.position);
     //    switch(cIdx) {

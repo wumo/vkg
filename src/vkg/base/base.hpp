@@ -41,6 +41,8 @@ public:
   auto swapchain() -> Swapchain &;
 
 protected:
+  auto sync(double elapsed, const std::function<void(double)> &updater) -> void;
+  auto syncTimeline(double elapsed, const std::function<void(double)> &updater) -> void;
   virtual auto resize() -> void;
   virtual auto onInit() -> void{};
   virtual void onFrame(uint32_t imageIndex, float elapsed);
@@ -63,15 +65,24 @@ protected:
   struct Semaphores {
     vk::UniqueSemaphore imageAvailable;
     vk::UniqueSemaphore computeFinished;
+    vk::UniqueSemaphore readyToCompute;
     vk::UniqueSemaphore renderFinished;
 
     std::vector<vk::PipelineStageFlags> renderWaitStages;
     std::vector<vk::Semaphore> renderWaits;
+    std::vector<vk::Semaphore> renderSignals;
     std::vector<vk::Semaphore> computeWaits;
     std::vector<vk::PipelineStageFlags> computeWaitStages;
   };
 
   std::vector<Semaphores> semaphores;
+
+  struct TimelineSemaphore {
+    vk::UniqueSemaphore semaphore;
+    uint64_t waitValue{0};
+  };
+
+  std::vector<TimelineSemaphore> tSemaphores;
 
   std::vector<vk::UniqueFence> renderFences;
   uint32_t frameIndex{0};

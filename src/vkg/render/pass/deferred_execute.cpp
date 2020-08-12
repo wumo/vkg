@@ -49,11 +49,13 @@ void DeferredPass::execute(RenderContext &ctx, Resources &resources) {
   cb.bindVertexBuffers(1, resources.get(passIn.normals), zero);
   cb.bindVertexBuffers(2, resources.get(passIn.uvs), zero);
   cb.bindIndexBuffer(resources.get(passIn.indices), zero, vk::IndexType::eUint32);
-
+  
+  cb.setLineWidth(1.0);
+  
   auto draw = [&](DrawGroup drawGroup) {
     auto drawGroupIdx = value(drawGroup);
     if(drawGroupCount[drawGroupIdx] == 0) return;
-    cb.drawIndexedIndirectCountKHR(
+    cb.drawIndexedIndirectCount(
       drawCMDBuffer, stride * drawCMDOffsets[drawGroupIdx], drawCMDCountBuffer,
       sizeof(uint32_t) * (drawCMDCountOffset + drawGroupIdx),
       drawGroupCount[drawGroupIdx], stride);
