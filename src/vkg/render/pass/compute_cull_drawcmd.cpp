@@ -28,22 +28,26 @@ auto ComputeCullDrawCMD::setup(
   passOut.drawCMDBuffer = builder.create<vk::Buffer>("drawCMDBuffer");
   passOut.drawCMDCountBuffer = builder.create<vk::Buffer>("drawCMDCountBuffer");
   passOut.drawCMDOffsets = builder.create<std::vector<uint32_t>>("drawCMDOffsets");
+  passOut.drawCMDCountOffset = builder.create<uint32_t>("drawCMDCountOffset");
 
   return passOut;
 }
-void ComputeCullDrawCMD::compile(Resources &resources) {
+void ComputeCullDrawCMD::compile(RenderContext &ctx, Resources &resources) {
   if(!init) {
     init = true;
     auto sceneConfig = resources.get(passIn.sceneConfig);
     auto drawGroupCount = resources.get(passIn.drawGroupCount);
-    drawCMDOffsetBuffer = buffer::devStorageBuffer(
-      resources.device, sizeof(uint32_t) * drawGroupCount.size(), "drawCMDOffset");
+    numDrawCMDs = sceneConfig.maxNumMeshInstances;
+    numDrawCMDCounts = uint32_t(drawGroupCount.size());
     drawCMD = buffer::devIndirectStorageBuffer(
       resources.device,
-      sizeof(vk::DrawIndexedIndirectCommand) * sceneConfig.maxNumMeshInstances,
-      "drawCMD");
+      sizeof(vk::DrawIndexedIndirectCommand) * numDrawCMDs * ctx.numFrames, "drawCMD");
+    drawCMDOffsetBuffer = buffer::devStorageBuffer(
+      resources.device, sizeof(uint32_t) * numDrawCMDCounts * ctx.numFrames,
+      "drawCMDOffset");
     drawCMDCount = buffer::devIndirectStorageBuffer(
-      resources.device, sizeof(uint32_t) * drawGroupCount.size(), name + "_drawCMDCount");
+      resources.device, sizeof(uint32_t) * numDrawCMDCounts * ctx.numFrames,
+      name + "_drawCMDCount");
 
     resources.set(passOut.drawCMDBuffer, drawCMD->buffer());
     resources.set(passOut.drawCMDCountBuffer, drawCMDCount->buffer());
@@ -53,19 +57,21 @@ void ComputeCullDrawCMD::compile(Resources &resources) {
     setDef.meshInstances(resources.get(passIn.meshInstances));
     setDef.primitives(resources.get(passIn.primitives));
     setDef.matrices(resources.get(passIn.matrices));
-    setDef.drawCMDOffset(drawCMDOffsetBuffer->buffer());
     setDef.drawCMD(drawCMD->buffer());
+    setDef.drawCMDOffset(drawCMDOffsetBuffer->buffer());
     setDef.drawCMDCount(drawCMDCount->buffer());
     setDef.update(set);
   }
   auto drawGroupCount = resources.get(passIn.drawGroupCount);
-  std::vector<uint32_t> offsets(drawGroupCount.size());
-  uint32_t offset = 0;
+  assert(drawGroupCount.size() == numDrawCMDCounts);
+  std::vector<uint32_t> offsets(numDrawCMDCounts);
+  uint32_t offset = ctx.frameIndex * numDrawCMDs;
   for(int i = 0; i < drawGroupCount.size(); ++i) {
     offsets[i] = offset;
     offset += drawGroupCount[i];
   }
   resources.set(passOut.drawCMDOffsets, offsets);
+  resources.set(passOut.drawCMDCountOffset, ctx.frameIndex * numDrawCMDCounts);
 }
 void ComputeCullDrawCMD::execute(RenderContext &ctx, Resources &resources) {
   auto total = resources.get(passIn.meshInstancesCount);
@@ -74,8 +80,10 @@ void ComputeCullDrawCMD::execute(RenderContext &ctx, Resources &resources) {
   auto cb = ctx.compute;
 
   std::vector<uint32_t> offsets = resources.get(passOut.drawCMDOffsets);
+  uint32_t drawCMDCountOffset = resources.get(passOut.drawCMDCountOffset);
   cb.updateBuffer(
-    drawCMDOffsetBuffer->buffer(), 0, sizeof(uint32_t) * offsets.size(), offsets.data());
+    drawCMDOffsetBuffer->buffer(), sizeof(uint32_t) * drawCMDCountOffset,
+    sizeof(uint32_t) * offsets.size(), offsets.data());
 
   /**
        * TODO It seems that we have to use cb.fillBuffer to initialize Dev.drawCMDCount instead
@@ -83,10 +91,15 @@ void ComputeCullDrawCMD::execute(RenderContext &ctx, Resources &resources) {
        * shader will not work as expected. Need to fully inspect the real reason of this. And
        * this may invalidate other host coherent memories that will be accessed by compute shader.
        */
-  cb.fillBuffer(drawCMDCount->buffer(), 0, VK_WHOLE_SIZE, 0u);
+  cb.fillBuffer(
+    drawCMDCount->buffer(), sizeof(uint32_t) * drawCMDCountOffset,
+    sizeof(uint32_t) * numDrawCMDCounts, 0u);
+
+  pushConstant.totalMeshInstances = total;
+  pushConstant.drawCMDCountOffset = drawCMDCountOffset;
 
   cb.pipelineBarrier(
-    vk::PipelineStageFlagBits::eTransfer, vk::PipelineStageFlagBits::eComputeShader, {},
+    vk::PipelineStageFlagBits::eTransfer, vk::PipelineStageFlagBits::eAllCommands, {},
     vk::MemoryBarrier{
       vk::AccessFlagBits::eTransferWrite, vk::AccessFlagBits::eShaderRead},
     nullptr, nullptr);
@@ -99,20 +112,21 @@ void ComputeCullDrawCMD::execute(RenderContext &ctx, Resources &resources) {
   totalGroup = uint32_t(totalGroup / double(dy));
   auto dz = std::min(std::max(totalGroup, 1u), maxCG[1]);
 
-  ctx.device.begin(cb, "compute cull drawGroup");
+  ctx.device.begin(cb, name + " compute cull drawGroup");
   cb.bindPipeline(vk::PipelineBindPoint::eCompute, *pipe);
   cb.bindDescriptorSets(
     vk::PipelineBindPoint::eCompute, pipeDef.layout(), pipeDef.transf.set(), set,
     nullptr);
-  cb.pushConstants<uint32_t>(
-    pipeDef.layout(), vk::ShaderStageFlagBits::eCompute, 0, total);
+  cb.pushConstants<PushConstant>(
+    pipeDef.layout(), vk::ShaderStageFlagBits::eCompute, 0, pushConstant);
   cb.dispatch(dx, dy, dz);
 
-  vk::MemoryBarrier barrier{
-    vk::AccessFlagBits::eShaderWrite, vk::AccessFlagBits::eShaderRead};
   cb.pipelineBarrier(
-    vk::PipelineStageFlagBits::eComputeShader, vk::PipelineStageFlagBits::eAllCommands,
-    {}, barrier, nullptr, nullptr);
+    vk::PipelineStageFlagBits::eComputeShader, vk::PipelineStageFlagBits::eDrawIndirect,
+    {},
+    vk::MemoryBarrier{
+      vk::AccessFlagBits::eShaderWrite, vk::AccessFlagBits::eIndirectCommandRead},
+    nullptr, nullptr);
   ctx.device.end(cb);
 }
 

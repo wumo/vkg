@@ -64,7 +64,7 @@ public:
 
     return passOut;
   }
-  void compile(Resources &resources) override {
+  void compile(RenderContext &ctx, Resources &resources) override {
     if(!boundPassData) {
       boundPassData = true;
       resources.set(passOut.sceneConfig, scene.sceneConfig);
@@ -150,7 +150,7 @@ auto Scene::setup(PassBuilder &builder, const ScenePassIn &inputs) -> ScenePassO
   return passOut;
 }
 
-void Scene::compile(Resources &resources) {
+void Scene::compile(RenderContext &ctx, Resources &resources) {
   renderArea.extent = resources.get<vk::Extent2D>(passIn.swapchainExtent);
   resources.set(passOut.renderArea, renderArea);
 }

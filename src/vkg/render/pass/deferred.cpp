@@ -21,7 +21,7 @@ public:
 
     return passOut;
   }
-  void compile(Resources &resources) override {
+  void compile(RenderContext &ctx, Resources &resources) override {
     if(!init) {
       init = true;
       camFrustum =
@@ -73,16 +73,14 @@ auto DeferredPass::setup(PassBuilder &builder, const DeferredPassIn &inputs)
   builder.read(passIn.samplers);
   builder.read(passIn.lighting);
   builder.read(passIn.lights);
-  builder.read(cullPassOut.drawCMDBuffer);
-  builder.read(cullPassOut.drawCMDCountBuffer);
-  builder.read(cullPassOut.drawCMDOffsets);
   builder.read(passIn.drawGroupCount);
+  builder.read(cullPassOut);
   builder.read(passIn.atmosphere);
   passOut.backImg = builder.write(passIn.backImg);
 
   return passOut;
 }
-void DeferredPass::compile(Resources &resources) {
+void DeferredPass::compile(RenderContext &ctx, Resources &resources) {
   auto *backImg = resources.get(passIn.backImg);
   auto *samplers = resources.get(passIn.samplers);
   auto numValidSampler = resources.get(passIn.numValidSampler);

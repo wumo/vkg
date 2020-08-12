@@ -19,7 +19,7 @@ class ComputeTransf: public Pass<ComputeTransfPassIn, ComputeTransfPassOut> {
 public:
   auto setup(PassBuilder &builder, const ComputeTransfPassIn &inputs)
     -> ComputeTransfPassOut override;
-  void compile(Resources &resources) override;
+  void compile(RenderContext &ctx, Resources &resources) override;
   void execute(RenderContext &ctx, Resources &resources) override;
 
 private:

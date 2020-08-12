@@ -9,7 +9,10 @@ layout(constant_id = 1) const uint ly = 1;
 layout(constant_id = 2) const uint lz = 1;
 layout(local_size_x_id = 0, local_size_y_id = 1, local_size_z_id = 2) in;
 
-layout(push_constant) uniform TotalMeshInstances { uint total; };
+layout(push_constant) uniform PushConstant {
+  uint totalMeshInstances;
+  uint drawCMDCountOffset;
+};
 
 layout(set = 0, binding = 0) uniform Frustum { vec4 planes[6]; };
 layout(set = 0, binding = 1, scalar) readonly buffer MeshesBuffer {
@@ -19,11 +22,11 @@ layout(set = 0, binding = 2, scalar) readonly buffer PrimitiveBuffer {
   PrimitiveUBO primitives[];
 };
 layout(set = 0, binding = 3, std430) readonly buffer TransformBuffer { mat4 matrices[]; };
-layout(set = 0, binding = 4, scalar) readonly buffer DrawGroupOffsetBuffer {
-  uint drawCMDOffset[];
-};
-layout(set = 0, binding = 5, scalar) buffer DrawIndirectCMDBuffer {
+layout(set = 0, binding = 4, scalar) buffer DrawIndirectCMDBuffer {
   VkDrawIndexedIndirectCommand drawCMDs[];
+};
+layout(set = 0, binding = 5, scalar) readonly buffer DrawGroupOffsetBuffer {
+  uint drawCMDOffset[];
 };
 layout(set = 0, binding = 6, scalar) buffer DrawCountBuffer { uint drawCMDCount[]; };
 
@@ -68,7 +71,7 @@ void main() {
   uint id = gl_GlobalInvocationID.z * (NX * NY) + gl_GlobalInvocationID.y * NX +
             gl_GlobalInvocationID.x;
 
-  if(id >= total) return;
+  if(id >= totalMeshInstances) return;
 
   MeshInstanceUBO mesh = meshInstances[id];
 
@@ -89,8 +92,8 @@ void main() {
     drawCMD.instanceCount = 1;
 
     uint groupID = mesh.drawGroupID;
-    uint outIdx = atomicAdd(drawCMDCount[groupID], 1);
-    uint offset = drawCMDOffset[groupID];
+    uint outIdx = atomicAdd(drawCMDCount[drawCMDCountOffset + groupID], 1);
+    uint offset = drawCMDOffset[drawCMDCountOffset + groupID];
     drawCMDs[offset + outIdx] = drawCMD;
   }
 }

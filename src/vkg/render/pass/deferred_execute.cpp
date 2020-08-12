@@ -5,6 +5,7 @@ void DeferredPass::execute(RenderContext &ctx, Resources &resources) {
   auto drawCMDBuffer = resources.get(cullPassOut.drawCMDBuffer);
   auto drawCMDCountBuffer = resources.get(cullPassOut.drawCMDCountBuffer);
   auto drawCMDOffsets = resources.get(cullPassOut.drawCMDOffsets);
+  auto drawCMDCountOffset = resources.get(cullPassOut.drawCMDCountOffset);
   auto drawGroupCount = resources.get(passIn.drawGroupCount);
 
   auto cb = ctx.graphics;
@@ -51,9 +52,11 @@ void DeferredPass::execute(RenderContext &ctx, Resources &resources) {
 
   auto draw = [&](DrawGroup drawGroup) {
     auto drawGroupIdx = value(drawGroup);
+    if(drawGroupCount[drawGroupIdx] == 0) return;
     cb.drawIndexedIndirectCountKHR(
       drawCMDBuffer, stride * drawCMDOffsets[drawGroupIdx], drawCMDCountBuffer,
-      sizeof(uint32_t) * drawGroupIdx, drawGroupCount[drawGroupIdx], stride);
+      sizeof(uint32_t) * (drawCMDCountOffset + drawGroupIdx),
+      drawGroupCount[drawGroupIdx], stride);
   };
 
   dev.begin(cb, "Subpass gbuffer brdf triangles");

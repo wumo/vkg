@@ -89,7 +89,7 @@ public:
     -> DrawGroup;
 
   auto setup(PassBuilder &builder, const ScenePassIn &inputs) -> ScenePassOut override;
-  void compile(Resources &resources) override;
+  void compile(RenderContext &ctx, Resources &resources) override;
 
 private:
   auto ensureTextures(uint32_t toAdd) const -> void;

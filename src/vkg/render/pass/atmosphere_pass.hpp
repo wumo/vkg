@@ -20,7 +20,7 @@ class AtmospherePass: public Pass<AtmospherePassIn, AtmospherePassOut> {
 public:
   auto setup(PassBuilder &builder, const AtmospherePassIn &inputs)
     -> AtmospherePassOut override;
-  void compile(Resources &resources) override;
+  void compile(RenderContext &ctx, Resources &resources) override;
   void execute(RenderContext &ctx, Resources &resources) override;
 
 private:

@@ -20,7 +20,7 @@ class PassBuilder;
 template<typename PassInType, typename PassOutType>
 using PassSetup =
   std::function<PassOutType(PassBuilder &builder, const PassInType &inputs)>;
-using PassCompile = std::function<void(Resources &resources)>;
+using PassCompile = std::function<void(RenderContext &ctx, Resources &resources)>;
 using PassExec = std::function<void(RenderContext &ctx, Resources &resources)>;
 
 struct FrameGraphBaseResource {
@@ -54,7 +54,7 @@ class BasePass {
 
 public:
   virtual ~BasePass() = default;
-  virtual void compile(Resources &resources){};
+  virtual void compile(RenderContext &ctx, Resources &resources){};
   virtual void execute(RenderContext &ctx, Resources &resources){};
 
 protected:
@@ -84,7 +84,9 @@ public:
   auto setup(PassBuilder &builder, const PassInType &inputs) -> PassOutType override {
     return setup_(builder, inputs);
   }
-  void compile(Resources &resources) override { compile_(resources); }
+  void compile(RenderContext &ctx, Resources &resources) override {
+    compile_(ctx, resources);
+  }
   void execute(RenderContext &ctx, Resources &resources) override {
     exec_(ctx, resources);
   }
@@ -194,6 +196,8 @@ private:
 struct RenderContext {
   Device &device;
   uint32_t swapchainIndex{};
+  uint32_t frameIndex{};
+  uint32_t numFrames{};
   vk::CommandBuffer graphics;
   vk::CommandBuffer compute;
 };
@@ -237,9 +241,7 @@ public:
 
   auto build() -> void;
 
-  auto onFrame(
-    uint32_t imageIndex, vk::CommandBuffer graphicsCB, vk::CommandBuffer computeCB)
-    -> void;
+  auto onFrame(RenderContext &renderContext) -> void;
 
 private:
   template<typename T>

@@ -49,7 +49,7 @@ auto Base::createSyncObjects() -> void {
   auto numFrames = swapchain_->imageCount();
 
   semaphores.resize(numFrames);
-  inFlightFrameFences.resize(numFrames);
+  renderFences.resize(numFrames);
   vk::FenceCreateInfo fenceInfo{vk::FenceCreateFlagBits::eSignaled};
   for(uint32_t i = 0; i < numFrames; i++) {
     semaphores[i].imageAvailable = _device.createSemaphoreUnique({});
@@ -61,7 +61,7 @@ auto Base::createSyncObjects() -> void {
     semaphores[i].renderWaitStages.emplace_back(vk::PipelineStageFlagBits::eAllCommands);
     semaphores[i].renderWaitStages.emplace_back(vk::PipelineStageFlagBits::eAllCommands);
 
-    inFlightFrameFences[i] = _device.createFenceUnique(fenceInfo);
+    renderFences[i] = _device.createFenceUnique(fenceInfo);
   }
 }
 
@@ -81,8 +81,8 @@ auto Base::resize() -> void {
 }
 
 void Base::onFrame(uint32_t imageIndex, float elapsed) {
-  auto &graphicsCB = graphicsCmdBuffers[imageIndex];
-  auto &computeCB = computeCmdBuffers[imageIndex];
+  auto &graphicsCB = graphicsCmdBuffers[frameIndex];
+  auto &computeCB = computeCmdBuffers[frameIndex];
 
   computeCB.begin({vk::CommandBufferUsageFlagBits::eSimultaneousUse});
   graphicsCB.begin({vk::CommandBufferUsageFlagBits::eSimultaneousUse});
@@ -110,7 +110,7 @@ void Base::onFrame(uint32_t imageIndex, float elapsed) {
   submit.pWaitDstStageMask = semaphore.renderWaitStages.data();
   submit.signalSemaphoreCount = 1;
   submit.pSignalSemaphores = &(*semaphore.renderFinished);
-  device_->graphicsQueue().submit(submit, {});
+  device_->graphicsQueue().submit(submit, *renderFences[frameIndex]);
 }
 
 void Base::loop(const std::function<void(double)> &updater) {
@@ -126,10 +126,19 @@ void Base::loop(const std::function<void(double)> &updater) {
       window_->setResizeWanted(false);
     }
 
+    auto renderFence = *renderFences[frameIndex];
+    device_->vkDevice().waitForFences(
+      renderFence, true, std::numeric_limits<uint64_t>::max());
+    device_->vkDevice().resetFences(renderFence);
+
+    /**
+     * imageIndex is the index of available swapchain image. frameIndex is the ring index of frame.
+     * we should depend on frameIndex to ring index our buffers and render into imageIndex swapchain image.
+     */
     uint32_t imageIndex = 0;
+    auto &semaphore = semaphores[frameIndex];
     try {
-      auto result =
-        swapchain_->acquireNextImage(*semaphores[frameIndex].imageAvailable, imageIndex);
+      auto result = swapchain_->acquireNextImage(*semaphore.imageAvailable, imageIndex);
       if(result == vk::Result::eSuboptimalKHR) {
         window_->setResizeWanted(true);
         resize();
@@ -150,7 +159,6 @@ void Base::loop(const std::function<void(double)> &updater) {
     updater(elapsed);
     onFrame(imageIndex, float(elapsed));
 
-    auto &semaphore = semaphores[frameIndex];
     try {
       auto result = swapchain_->present(imageIndex, *semaphore.renderFinished);
       if(result == vk::Result::eSuboptimalKHR) {

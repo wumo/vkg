@@ -13,8 +13,6 @@ auto AtmospherePass::setup(PassBuilder &builder, const AtmospherePassIn &inputs)
   passOut.irradiance = builder.create<Texture *>("irradiance");
   return passOut;
 }
-void AtmospherePass::compile(Resources &resources) { BasePass::compile(resources); }
-void AtmospherePass::execute(RenderContext &ctx, Resources &resources) {
-  BasePass::execute(ctx, resources);
-}
+void AtmospherePass::compile(RenderContext &ctx, Resources &resources) {}
+void AtmospherePass::execute(RenderContext &ctx, Resources &resources) {}
 }

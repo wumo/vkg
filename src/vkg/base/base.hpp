@@ -67,11 +67,13 @@ protected:
 
     std::vector<vk::PipelineStageFlags> renderWaitStages;
     std::vector<vk::Semaphore> renderWaits;
+    std::vector<vk::Semaphore> computeWaits;
+    std::vector<vk::PipelineStageFlags> computeWaitStages;
   };
 
   std::vector<Semaphores> semaphores;
 
-  std::vector<vk::UniqueFence> inFlightFrameFences;
+  std::vector<vk::UniqueFence> renderFences;
   uint32_t frameIndex{0};
 
   FPSMeter fpsMeter;

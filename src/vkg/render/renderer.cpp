@@ -19,7 +19,7 @@ public:
     passOut.swapchainVersion = builder.create<uint64_t>("swapchainVersion");
     return passOut;
   }
-  void compile(Resources &resources) override {
+  void compile(RenderContext &ctx, Resources &resources) override {
     resources.set(passOut.swapchainExtent, renderer.swapchain().imageExtent());
     resources.set(passOut.swapchainFormat, renderer.swapchain().format());
     resources.set(passOut.swapchainVersion, renderer.swapchain().version());
@@ -105,13 +105,14 @@ void Renderer::onInit() {
 }
 
 void Renderer::onFrame(uint32_t imageIndex, float elapsed) {
-  auto &graphicsCB = graphicsCmdBuffers[imageIndex];
-  auto &computeCB = computeCmdBuffers[imageIndex];
+  auto &graphicsCB = graphicsCmdBuffers[frameIndex];
+  auto &computeCB = computeCmdBuffers[frameIndex];
 
   computeCB.begin({vk::CommandBufferUsageFlagBits::eSimultaneousUse});
   graphicsCB.begin({vk::CommandBufferUsageFlagBits::eSimultaneousUse});
-
-  frameGraph->onFrame(imageIndex, graphicsCB, computeCB);
+  RenderContext ctx{*device_,   imageIndex, frameIndex, swapchain_->imageCount(),
+                    graphicsCB, computeCB};
+  frameGraph->onFrame(ctx);
 
   computeCB.end();
   graphicsCB.end();
@@ -122,7 +123,10 @@ void Renderer::onFrame(uint32_t imageIndex, float elapsed) {
   submit.commandBufferCount = 1;
   submit.pCommandBuffers = &computeCB;
   submit.signalSemaphoreCount = 1;
-  submit.pSignalSemaphores = &(*semaphore.computeFinished);
+  submit.pSignalSemaphores = semaphore.computeFinished.operator->();
+  submit.waitSemaphoreCount = uint32_t(semaphore.computeWaits.size());
+  submit.pWaitSemaphores = semaphore.computeWaits.data();
+  submit.pWaitDstStageMask = semaphore.computeWaitStages.data();
   device_->computeQueue().submit(submit, {});
 
   submit.pCommandBuffers = &graphicsCB;
@@ -130,8 +134,8 @@ void Renderer::onFrame(uint32_t imageIndex, float elapsed) {
   submit.pWaitSemaphores = semaphore.renderWaits.data();
   submit.pWaitDstStageMask = semaphore.renderWaitStages.data();
   submit.signalSemaphoreCount = 1;
-  submit.pSignalSemaphores = &(*semaphore.renderFinished);
-  device_->graphicsQueue().submit(submit, {});
+  submit.pSignalSemaphores = semaphore.renderFinished.operator->();
+  device_->graphicsQueue().submit(submit, *renderFences[frameIndex]);
 }
 
 }

@@ -24,7 +24,7 @@ auto ComputeTransf::setup(PassBuilder &builder, const ComputeTransfPassIn &input
   passOut.matrices = builder.create<vk::Buffer>("matrices");
   return passOut;
 }
-void ComputeTransf::compile(Resources &resources) {
+void ComputeTransf::compile(RenderContext &ctx, Resources &resources) {
   if(!set) {
     auto sceneConfig = resources.get(passIn.sceneConfig);
     matrices = buffer::devStorageBuffer(
