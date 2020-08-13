@@ -77,8 +77,8 @@ public:
   auto texture(uint32_t index) -> Texture &;
   auto light(uint32_t index) -> Light &;
   auto lighting() -> Lighting &;
-  auto atmosphere() -> Atmosphere &;
-  auto shadowmap() -> ShadowMap &;
+  auto atmosphere() -> AtmosphereSetting &;
+  auto shadowmap() -> ShadowMapSetting &;
 
   auto allocateLightingDesc() -> Allocation<Lighting::Desc>;
   auto allocateLightDesc() -> Allocation<Light::Desc>;
@@ -136,8 +136,8 @@ private:
     std::unique_ptr<Lighting> lighting;
     std::vector<Light> lights;
     std::unique_ptr<Camera> camera_;
-    Atmosphere atmosphere;
-    ShadowMap shadowMap;
+    AtmosphereSetting atmosphere;
+    ShadowMapSetting shadowMap;
   } Host;
 
   vk::Rect2D renderArea;

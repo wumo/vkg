@@ -1,7 +1,8 @@
 #include "scene.hpp"
 #include "pass/compute_transf.hpp"
-#include "vkg/render/pass/atmosphere/atmosphere_pass.hpp"
 #include "vkg/render/pass/deferred/deferred.hpp"
+#include "vkg/render/pass/atmosphere/atmosphere_pass.hpp"
+#include "vkg/render/pass/shadowmap/shadow_map_pass.hpp"
 
 namespace vkg {
 
@@ -24,12 +25,13 @@ struct SceneSetupPassOut {
   FrameGraphResource<uint32_t> meshInstancesCount;
   FrameGraphResource<vk::Buffer> lighting;
   FrameGraphResource<vk::Buffer> lights;
-  FrameGraphResource<std::vector<vk::DescriptorImageInfo> *> samplers;
+  FrameGraphResource<std::span<vk::DescriptorImageInfo>> samplers;
   FrameGraphResource<uint32_t> numValidSampler;
   FrameGraphResource<Camera *> camera;
   FrameGraphResource<vk::Buffer> cameraBuffer;
-  FrameGraphResource<std::vector<uint32_t>> drawGroupCount;
-  FrameGraphResource<Atmosphere> atmosphere;
+  FrameGraphResource<std::span<uint32_t>> maxPerGroup;
+  FrameGraphResource<AtmosphereSetting> atmosphereSetting;
+  FrameGraphResource<ShadowMapSetting> shadowMapSetting;
 };
 
 class SceneSetupPass: public Pass<SceneSetupPassIn, SceneSetupPassOut> {
@@ -42,26 +44,28 @@ public:
     builder.read(passIn.swapchainExtent);
     builder.read(passIn.swapchainFormat);
     builder.read(passIn.swapchainVersion);
-    passOut.backImg = builder.create<Texture *>("backImg");
-    passOut.sceneConfig = builder.create<SceneConfig>("sceneConfig");
-    passOut.positions = builder.create<vk::Buffer>("positions");
-    passOut.normals = builder.create<vk::Buffer>("normals");
-    passOut.uvs = builder.create<vk::Buffer>("uvs");
-    passOut.indices = builder.create<vk::Buffer>("indices");
-    passOut.primitives = builder.create<vk::Buffer>("primitives");
-    passOut.materials = builder.create<vk::Buffer>("materials");
-    passOut.transforms = builder.create<vk::Buffer>("transforms");
-    passOut.meshInstances = builder.create<vk::Buffer>("meshInstances");
-    passOut.meshInstancesCount = builder.create<uint32_t>("meshInstancesCount");
-    passOut.lighting = builder.create<vk::Buffer>("lighting");
-    passOut.lights = builder.create<vk::Buffer>("lights");
-    passOut.samplers = builder.create<std::vector<vk::DescriptorImageInfo> *>("textures");
-    passOut.numValidSampler = builder.create<uint32_t>("numValidSampler");
-    passOut.camera = builder.create<Camera *>("camera");
-    passOut.cameraBuffer = builder.create<vk::Buffer>("cameraBuffer");
-    passOut.drawGroupCount = builder.create<std::vector<uint32_t>>("drawGroupCount");
-    passOut.atmosphere = builder.create<Atmosphere>("atmosphere");
-
+    passOut = {
+      .backImg = builder.create<Texture *>("backImg"),
+      .sceneConfig = builder.create<SceneConfig>("sceneConfig"),
+      .positions = builder.create<vk::Buffer>("positions"),
+      .normals = builder.create<vk::Buffer>("normals"),
+      .uvs = builder.create<vk::Buffer>("uvs"),
+      .indices = builder.create<vk::Buffer>("indices"),
+      .primitives = builder.create<vk::Buffer>("primitives"),
+      .materials = builder.create<vk::Buffer>("materials"),
+      .transforms = builder.create<vk::Buffer>("transforms"),
+      .meshInstances = builder.create<vk::Buffer>("meshInstances"),
+      .meshInstancesCount = builder.create<uint32_t>("meshInstancesCount"),
+      .lighting = builder.create<vk::Buffer>("lighting"),
+      .lights = builder.create<vk::Buffer>("lights"),
+      .samplers = builder.create<std::span<vk::DescriptorImageInfo>>("textures"),
+      .numValidSampler = builder.create<uint32_t>("numValidSampler"),
+      .camera = builder.create<Camera *>("camera"),
+      .cameraBuffer = builder.create<vk::Buffer>("cameraBuffer"),
+      .maxPerGroup = builder.create<std::span<uint32_t>>("drawGroupCount"),
+      .atmosphereSetting = builder.create<AtmosphereSetting>("atmosphere"),
+      .shadowMapSetting = builder.create<ShadowMapSetting>("shadowMapSetting"),
+    };
     return passOut;
   }
   void compile(RenderContext &ctx, Resources &resources) override {
@@ -80,10 +84,11 @@ public:
       resources.set(passOut.lights, scene.Dev.lights->buffer());
       resources.set(passOut.camera, scene.Host.camera_.get());
       resources.set(passOut.cameraBuffer, scene.Dev.camera->buffer());
-      resources.set(passOut.samplers, &scene.Dev.sampler2Ds);
+      resources.set(passOut.samplers, {scene.Dev.sampler2Ds});
     }
     resources.set(passOut.numValidSampler, uint32_t(scene.Dev.textures.size()));
-    resources.set(passOut.atmosphere, scene.atmosphere());
+    resources.set(passOut.atmosphereSetting, scene.atmosphere());
+    resources.set(passOut.shadowMapSetting, scene.shadowmap());
 
     auto extent = resources.get<vk::Extent2D>(passIn.swapchainExtent);
     auto format = resources.get<vk::Format>(passIn.swapchainFormat);
@@ -104,58 +109,71 @@ public:
     scene.Host.camera_->updateUBO();
 
     resources.set(passOut.meshInstancesCount, scene.Dev.meshInstances->count());
-    resources.set(passOut.drawGroupCount, scene.Host.drawGroupInstCount);
+    resources.set(passOut.maxPerGroup, {scene.Host.drawGroupInstCount});
   }
 
 private:
   Scene &scene;
-  SceneSetupPassIn passIn;
-  SceneSetupPassOut passOut;
   bool boundPassData{false};
 };
 
 auto Scene::setup(PassBuilder &builder, const ScenePassIn &inputs) -> ScenePassOut {
   passIn = inputs;
 
-  auto sceneSetupPassOut = builder.newPass<SceneSetupPass>(
+  auto &sceneSetup = builder.newPass<SceneSetupPass>(
     "SceneSetup",
     SceneSetupPassIn{
       inputs.swapchainExtent, inputs.swapchainFormat, inputs.swapchainVersion},
     *this);
 
-  auto transfPassOut = builder.newPass<ComputeTransf>(
+  auto &transf = builder.newPass<ComputeTransf>(
     "Transf", ComputeTransfPassIn{
-                sceneSetupPassOut.transforms, sceneSetupPassOut.meshInstances,
-                sceneSetupPassOut.meshInstancesCount, sceneSetupPassOut.sceneConfig});
+                sceneSetup.out().transforms, sceneSetup.out().meshInstances,
+                sceneSetup.out().meshInstancesCount, sceneSetup.out().sceneConfig});
 
-  auto atmospherePassOut = builder.newPass<AtmospherePass>(
-    "Atmosphere", AtmospherePassIn{sceneSetupPassOut.atmosphere});
+  auto &atmosphere = builder.newPass<AtmospherePass>(
+    "Atmosphere", AtmospherePassIn{sceneSetup.out().atmosphereSetting});
 
-  auto deferredPassOut = builder.newPass<DeferredPass>(
+  auto &shadowMap = builder.newPass<ShadowMapPass>(
+    "ShadowMap", ShadowMapPassIn{
+                   sceneSetup.out().shadowMapSetting,
+                   sceneSetup.out().camera,
+                   sceneSetup.out().cameraBuffer,
+                   sceneSetup.out().sceneConfig,
+                   sceneSetup.out().meshInstances,
+                   sceneSetup.out().meshInstancesCount,
+                   sceneSetup.out().primitives,
+                   transf.out().matrices,
+                   sceneSetup.out().maxPerGroup,
+                 });
+
+  auto &deferred = builder.newPass<DeferredPass>(
     "Deferred", DeferredPassIn{
-                  sceneSetupPassOut.backImg,
-                  sceneSetupPassOut.camera,
-                  sceneSetupPassOut.cameraBuffer,
-                  sceneSetupPassOut.sceneConfig,
-                  sceneSetupPassOut.meshInstances,
-                  sceneSetupPassOut.meshInstancesCount,
-                  sceneSetupPassOut.positions,
-                  sceneSetupPassOut.normals,
-                  sceneSetupPassOut.uvs,
-                  sceneSetupPassOut.indices,
-                  sceneSetupPassOut.primitives,
-                  transfPassOut.matrices,
-                  sceneSetupPassOut.materials,
-                  sceneSetupPassOut.samplers,
-                  sceneSetupPassOut.numValidSampler,
-                  sceneSetupPassOut.lighting,
-                  sceneSetupPassOut.lights,
-                  sceneSetupPassOut.drawGroupCount,
-                  sceneSetupPassOut.atmosphere,
-                  atmospherePassOut});
+                  sceneSetup.out().backImg,
+                  sceneSetup.out().camera,
+                  sceneSetup.out().cameraBuffer,
+                  sceneSetup.out().sceneConfig,
+                  sceneSetup.out().meshInstances,
+                  sceneSetup.out().meshInstancesCount,
+                  sceneSetup.out().positions,
+                  sceneSetup.out().normals,
+                  sceneSetup.out().uvs,
+                  sceneSetup.out().indices,
+                  sceneSetup.out().primitives,
+                  transf.out().matrices,
+                  sceneSetup.out().materials,
+                  sceneSetup.out().samplers,
+                  sceneSetup.out().numValidSampler,
+                  sceneSetup.out().lighting,
+                  sceneSetup.out().lights,
+                  sceneSetup.out().maxPerGroup,
+                  sceneSetup.out().atmosphereSetting,
+                  atmosphere.out(),
+                  sceneSetup.out().shadowMapSetting,
+                  shadowMap.out()});
 
   builder.read(passIn.swapchainExtent);
-  passOut.backImg = deferredPassOut.backImg;
+  passOut.backImg = deferred.out().backImg;
   passOut.renderArea = builder.create<vk::Rect2D>("renderArea");
 
   return passOut;

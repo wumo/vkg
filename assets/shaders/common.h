@@ -107,4 +107,7 @@ struct VkDrawIndexedIndirectCommand {
   uint firstInstance;
 };
 
+struct Frustum {
+  vec4 planes[6];
+};
 #endif //VKG_COMMON_H

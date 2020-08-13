@@ -8,7 +8,7 @@ struct CamFrustumPassIn {
   FrameGraphResource<Camera *> camera;
 };
 struct CamFrustumPassOut {
-  FrameGraphResource<vk::Buffer> camFrustum;
+  FrameGraphResource<std::span<Frustum>> camFrustum;
 };
 
 class CamFrustumPass: public Pass<CamFrustumPassIn, CamFrustumPassOut> {
@@ -17,52 +17,35 @@ public:
     -> CamFrustumPassOut override {
     passIn = inputs;
     builder.read(passIn.camera);
-    passOut.camFrustum = builder.create<vk::Buffer>("camFrustum");
+    passOut.camFrustum = builder.create<std::span<Frustum>>("camFrustum");
 
+    frustums.resize(1);
     return passOut;
   }
   void compile(RenderContext &ctx, Resources &resources) override {
-    if(!init) {
-      init = true;
-      camFrustum =
-        buffer::devUniformBuffer(resources.device, sizeof(Frustum), name + "_camFrustum");
-
-      resources.set(passOut.camFrustum, camFrustum->buffer());
-    }
-  }
-  void execute(RenderContext &ctx, Resources &resources) override {
-    auto cb = ctx.compute;
-
     auto *camera = resources.get(passIn.camera);
     Frustum frustum{camera->proj() * camera->view()};
-    cb.updateBuffer(camFrustum->buffer(), 0, sizeof(Frustum), &frustum);
 
-    cb.pipelineBarrier(
-      vk::PipelineStageFlagBits::eTransfer, vk::PipelineStageFlagBits::eComputeShader, {},
-      vk::MemoryBarrier{
-        vk::AccessFlagBits::eTransferWrite, vk::AccessFlagBits::eShaderRead},
-      nullptr, nullptr);
+    frustums[0] = frustum;
+    resources.set(passOut.camFrustum, {frustums});
   }
 
-  CamFrustumPassIn passIn;
-  CamFrustumPassOut passOut;
-  bool init{false};
-
-  std::unique_ptr<Buffer> camFrustum;
+  std::vector<Frustum> frustums;
 };
 
 auto DeferredPass::setup(PassBuilder &builder, const DeferredPassIn &inputs)
   -> DeferredPassOut {
   passIn = inputs;
 
-  auto camPassOut =
+  auto &cam =
     builder.newPass<CamFrustumPass>("CamFrustum", CamFrustumPassIn{passIn.camera});
 
-  cullPassOut = builder.newPass<ComputeCullDrawCMD>(
+  auto &cull = builder.newPass<ComputeCullDrawCMD>(
     "Cull",
     ComputeCullDrawCMDPassIn{
-      camPassOut.camFrustum, passIn.meshInstances, passIn.meshInstancesCount,
+      cam.out().camFrustum, passIn.meshInstances, passIn.meshInstancesCount,
       passIn.sceneConfig, passIn.primitives, passIn.matrices, passIn.drawGroupCount});
+  cullPassOut = cull.out();
 
   builder.read(passIn.sceneConfig);
   builder.read(passIn.cameraBuffer);
@@ -74,15 +57,18 @@ auto DeferredPass::setup(PassBuilder &builder, const DeferredPassIn &inputs)
   builder.read(passIn.lighting);
   builder.read(passIn.lights);
   builder.read(passIn.drawGroupCount);
-  builder.read(cullPassOut);
+  builder.read(cull.out());
+  builder.read(passIn.atmosSetting);
   builder.read(passIn.atmosphere);
+  builder.read(passIn.shadowMapSetting);
+  builder.read(passIn.shadowmap);
   passOut.backImg = builder.write(passIn.backImg);
 
   return passOut;
 }
 void DeferredPass::compile(RenderContext &ctx, Resources &resources) {
   auto *backImg = resources.get(passIn.backImg);
-  auto *samplers = resources.get(passIn.samplers);
+  auto samplers = resources.get(passIn.samplers);
   auto numValidSampler = resources.get(passIn.numValidSampler);
 
   if(!init) {
@@ -116,7 +102,7 @@ void DeferredPass::compile(RenderContext &ctx, Resources &resources) {
     sceneSetDef.materials(resources.get(passIn.materials));
 
     lastNumValidSampler = numValidSampler;
-    sceneSetDef.textures(0, uint32_t(samplers->size()), samplers->data());
+    sceneSetDef.textures(0, uint32_t(samplers.size()), samplers.data());
     sceneSetDef.lighting(resources.get(passIn.lighting));
     sceneSetDef.lights(resources.get(passIn.lights));
     sceneSetDef.update(sceneSet);
@@ -135,7 +121,7 @@ void DeferredPass::compile(RenderContext &ctx, Resources &resources) {
   if(numValidSampler > lastNumValidSampler) {
     sceneSetDef.textures(
       lastNumValidSampler, numValidSampler - lastNumValidSampler,
-      samplers->data() + lastNumValidSampler);
+      samplers.data() + lastNumValidSampler);
     sceneSetDef.update(sceneSet);
     lastNumValidSampler = numValidSampler;
   }
@@ -148,6 +134,13 @@ void DeferredPass::compile(RenderContext &ctx, Resources &resources) {
     atmosphereSetDef.scattering(*resources.get(passIn.atmosphere.scattering));
     atmosphereSetDef.irradiance(*resources.get(passIn.atmosphere.irradiance));
     atmosphereSetDef.update(atmosphereSet);
+  }
+  auto shadowMapSetting = resources.get(passIn.shadowMapSetting);
+  if(shadowMapSetting.isEnabled()) {
+    csmSetDef.setting(resources.get(passIn.shadowmap.setting));
+    csmSetDef.cascades(resources.get(passIn.shadowmap.cascades));
+    csmSetDef.shadowMaps(*resources.get(passIn.shadowmap.shadowMaps));
+    csmSetDef.update(shadowMapSet);
   }
 }
 

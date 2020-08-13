@@ -10,7 +10,6 @@ struct CascadeDesc {
 };
 
 struct ShadowMapSetting {
-  bool enabled;
   uint numCascades;
 };
 

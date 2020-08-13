@@ -17,8 +17,6 @@ uint cascadeIndex(vec3 pos) {
 }
 
 float shadowCoordDepth(vec3 pos) {
-  if(!shadowMapSeting.enabled) return 1;
-
   uint cascadeIdx = cascadeIndex(pos);
 
   CascadeDesc cascade = cascades[cascadeIdx];
@@ -27,29 +25,25 @@ float shadowCoordDepth(vec3 pos) {
   shadowCoord = shadowCoord / shadowCoord.w;
   //shadowCoord in [-1,1]x[-1,1],map to [0,1]x[0,1] first.
   shadowCoord.xy = shadowCoord.xy / 2 + 0.5;
-  
+
   return shadowCoord.z;
 }
 
 float shadowMapDepth(vec3 pos) {
-  if(!shadowMapSeting.enabled) return 1;
-  
   uint cascadeIdx = cascadeIndex(pos);
-  
+
   CascadeDesc cascade = cascades[cascadeIdx];
-  
+
   vec4 shadowCoord = cascade.lightViewProj * vec4(pos, 1);
   shadowCoord = shadowCoord / shadowCoord.w;
   //shadowCoord in [-1,1]x[-1,1],map to [0,1]x[0,1] first.
   shadowCoord.xy = shadowCoord.xy / 2 + 0.5;
-  
+
   float depth = texture(shadowMap, vec3(shadowCoord.xy, cascadeIdx)).r;
   return depth;
 }
 
 bool shadowTrace(vec3 pos) {
-  if(!shadowMapSeting.enabled) return false;
-
   uint cascadeIdx = cascadeIndex(pos);
 
   CascadeDesc cascade = cascades[cascadeIdx];
@@ -58,7 +52,7 @@ bool shadowTrace(vec3 pos) {
   shadowCoord = shadowCoord / shadowCoord.w;
   //shadowCoord in [-1,1]x[-1,1],map to [0,1]x[0,1] first.
   shadowCoord.xy = shadowCoord.xy / 2 + 0.5;
-  
+
   float depth = texture(shadowMap, vec3(shadowCoord.xy, cascadeIdx)).r;
 
   float bias = 0.0005;

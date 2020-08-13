@@ -6,7 +6,7 @@
 
 namespace vkg {
 struct AtmospherePassIn {
-  FrameGraphResource<Atmosphere> atmosphere;
+  FrameGraphResource<AtmosphereSetting> atmosphere;
 };
 struct AtmospherePassOut {
   FrameGraphResource<uint64_t> version;

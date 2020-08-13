@@ -18,72 +18,106 @@ auto ComputeCullDrawCMD::setup(
            .shader(Shader{shader::common::cull_draw_group_comp_span, local_size, 1, 1})
            .createUnique();
 
-  builder.read(passIn.frustum);
+  builder.read(passIn.frustums);
   builder.read(passIn.meshInstances);
   builder.read(passIn.meshInstancesCount);
   builder.read(passIn.sceneConfig);
   builder.read(passIn.primitives);
   builder.read(passIn.matrices);
-  builder.read(passIn.drawGroupCount);
-  passOut.drawCMDBuffer = builder.create<vk::Buffer>("drawCMDBuffer");
-  passOut.drawCMDCountBuffer = builder.create<vk::Buffer>("drawCMDCountBuffer");
-  passOut.drawCMDOffsets = builder.create<std::vector<uint32_t>>("drawCMDOffsets");
-  passOut.drawCMDCountOffset = builder.create<uint32_t>("drawCMDCountOffset");
-
+  builder.read(passIn.maxPerGroup);
+  passOut = {
+    .drawCMDBuffer = builder.create<vk::Buffer>("drawCMDBuffer"),
+    .drawGroupCountBuffer = builder.create<vk::Buffer>("drawCMDCountBuffer"),
+    .cmdOffsetPerFrustum = builder.create<std::span<uint32_t>>("cmdOffsetPerFrustum"),
+    .cmdOffsetPerGroup = builder.create<std::span<uint32_t>>("cmdOffsetPerGroup"),
+    .countOffset = builder.create<uint32_t>("countOffset"),
+  };
   return passOut;
 }
 void ComputeCullDrawCMD::compile(RenderContext &ctx, Resources &resources) {
+  auto frustums = resources.get(passIn.frustums);
+  auto sceneConfig = resources.get(passIn.sceneConfig);
+  auto maxPerGroup = resources.get(passIn.maxPerGroup);
   if(!init) {
     init = true;
-    auto sceneConfig = resources.get(passIn.sceneConfig);
-    auto drawGroupCount = resources.get(passIn.drawGroupCount);
-    numDrawCMDs = sceneConfig.maxNumMeshInstances;
-    numDrawCMDCounts = uint32_t(drawGroupCount.size());
+    set = setDef.createSet(*descriptorPool);
+
+    numFrustums = uint32_t(frustums.size());
+    numDrawCMDsPerFrustum = sceneConfig.maxNumMeshInstances;
+    numDrawGroups = uint32_t(maxPerGroup.size());
+
+    cmdOffsetPerFrustum.resize(numFrustums);
+    cmdOffsetPerGroup.resize(numDrawGroups);
+    countOffsetPerGroup.resize(numDrawGroups);
+
+    frustumsBuf = buffer::devStorageBuffer(
+      resources.device, sizeof(Frustum) * numFrustums * ctx.numFrames, "frustum");
     drawCMD = buffer::devIndirectStorageBuffer(
       resources.device,
-      sizeof(vk::DrawIndexedIndirectCommand) * numDrawCMDs * ctx.numFrames, "drawCMD");
-    drawCMDOffsetBuffer = buffer::devStorageBuffer(
-      resources.device, sizeof(uint32_t) * numDrawCMDCounts * ctx.numFrames,
+      sizeof(vk::DrawIndexedIndirectCommand) * numDrawCMDsPerFrustum * numFrustums *
+        ctx.numFrames,
+      "drawCMD");
+    cmdOffsetPerGroupBuffer = buffer::devStorageBuffer(
+      resources.device, sizeof(uint32_t) * numDrawGroups * numFrustums * ctx.numFrames,
       "drawCMDOffset");
-    drawCMDCount = buffer::devIndirectStorageBuffer(
-      resources.device, sizeof(uint32_t) * numDrawCMDCounts * ctx.numFrames,
-      name + "_drawCMDCount");
+    countPerGroupBuffer = buffer::devIndirectStorageBuffer(
+      resources.device, sizeof(uint32_t) * numDrawGroups * numFrustums * ctx.numFrames,
+      name + "drawGroupCount");
 
     resources.set(passOut.drawCMDBuffer, drawCMD->buffer());
-    resources.set(passOut.drawCMDCountBuffer, drawCMDCount->buffer());
+    resources.set(passOut.drawGroupCountBuffer, countPerGroupBuffer->buffer());
 
-    set = setDef.createSet(*descriptorPool);
-    setDef.frustum(resources.get(passIn.frustum));
+    setDef.frustums(frustumsBuf->buffer());
     setDef.meshInstances(resources.get(passIn.meshInstances));
     setDef.primitives(resources.get(passIn.primitives));
     setDef.matrices(resources.get(passIn.matrices));
     setDef.drawCMD(drawCMD->buffer());
-    setDef.drawCMDOffset(drawCMDOffsetBuffer->buffer());
-    setDef.drawCMDCount(drawCMDCount->buffer());
+    setDef.cmdOffsetPerGroup(cmdOffsetPerGroupBuffer->buffer());
+    setDef.drawCMDCount(countPerGroupBuffer->buffer());
     setDef.update(set);
   }
-  auto drawGroupCount = resources.get(passIn.drawGroupCount);
-  assert(drawGroupCount.size() == numDrawCMDCounts);
-  std::vector<uint32_t> offsets(numDrawCMDCounts);
-  uint32_t offset = ctx.frameIndex * numDrawCMDs;
-  for(int i = 0; i < drawGroupCount.size(); ++i) {
-    offsets[i] = offset;
-    offset += drawGroupCount[i];
+  errorIf(frustums.size() != numFrustums, "number of frustums changed!");
+  errorIf(maxPerGroup.size() != numDrawGroups, "number of draw group changed!");
+
+  std::span<uint32_t> _cmdOffsetPerFrustum{cmdOffsetPerFrustum};
+  std::span<uint32_t> _cmdOffsetPerGroup{cmdOffsetPerGroup};
+  uint32_t _countOffset;
+  uint32_t offset = ctx.frameIndex * numDrawCMDsPerFrustum * numFrustums;
+
+  for(int i = 0; i < numFrustums; ++i) {
+    _cmdOffsetPerFrustum[i] = offset;
+    offset += numDrawCMDsPerFrustum;
   }
-  resources.set(passOut.drawCMDOffsets, offsets);
-  resources.set(passOut.drawCMDCountOffset, ctx.frameIndex * numDrawCMDCounts);
+
+  offset = 0;
+  for(int i = 0; i < numDrawGroups; ++i) {
+    _cmdOffsetPerGroup[i] = offset;
+    offset += maxPerGroup[i];
+  }
+
+  _countOffset = ctx.frameIndex * numDrawGroups * numFrustums;
+
+  resources.set(passOut.cmdOffsetPerFrustum, _cmdOffsetPerFrustum);
+  resources.set(passOut.cmdOffsetPerGroup, _cmdOffsetPerGroup);
+  resources.set(passOut.countOffset, _countOffset);
 }
 void ComputeCullDrawCMD::execute(RenderContext &ctx, Resources &resources) {
-  auto total = resources.get(passIn.meshInstancesCount);
-  if(total == 0) return;
+  auto totalMeshInstances = resources.get(passIn.meshInstancesCount);
+  if(totalMeshInstances == 0) return;
 
   auto cb = ctx.compute;
 
-  std::vector<uint32_t> offsets = resources.get(passOut.drawCMDOffsets);
-  uint32_t drawCMDCountOffset = resources.get(passOut.drawCMDCountOffset);
+  auto frustums = resources.get(passIn.frustums);
+  auto _cmdOffsetPerGroup = resources.get(passOut.cmdOffsetPerGroup);
+  auto _countOffset = resources.get(passOut.countOffset);
+
   cb.updateBuffer(
-    drawCMDOffsetBuffer->buffer(), sizeof(uint32_t) * drawCMDCountOffset,
-    sizeof(uint32_t) * numDrawCMDCounts, offsets.data());
+    frustumsBuf->buffer(), ctx.frameIndex * frustums.size_bytes(), frustums.size_bytes(),
+    frustums.data());
+
+  cb.updateBuffer(
+    cmdOffsetPerGroupBuffer->buffer(), sizeof(uint32_t) * _countOffset,
+    _cmdOffsetPerGroup.size_bytes(), _cmdOffsetPerGroup.data());
 
   /**
        * TODO It seems that we have to use cb.fillBuffer to initialize Dev.drawCMDCount instead
@@ -92,11 +126,16 @@ void ComputeCullDrawCMD::execute(RenderContext &ctx, Resources &resources) {
        * this may invalidate other host coherent memories that will be accessed by compute shader.
        */
   cb.fillBuffer(
-    drawCMDCount->buffer(), sizeof(uint32_t) * drawCMDCountOffset,
-    sizeof(uint32_t) * numDrawCMDCounts, 0u);
+    countPerGroupBuffer->buffer(), sizeof(uint32_t) * _countOffset,
+    sizeof(uint32_t) * numDrawGroups, 0u);
 
-  pushConstant.totalMeshInstances = total;
-  pushConstant.drawCMDCountOffset = drawCMDCountOffset;
+  pushConstant = {
+    .totalFrustums = numFrustums,
+    .totalMeshInstances = totalMeshInstances,
+    .cmdFrameStride = numDrawCMDsPerFrustum * numFrustums,
+    .cmdFrustumStride = numDrawCMDsPerFrustum,
+    .groupFrameStride = numDrawGroups * numFrustums,
+    .frame = ctx.frameIndex};
 
   cb.pipelineBarrier(
     vk::PipelineStageFlagBits::eTransfer, vk::PipelineStageFlagBits::eAllCommands, {},
@@ -105,7 +144,7 @@ void ComputeCullDrawCMD::execute(RenderContext &ctx, Resources &resources) {
     nullptr, nullptr);
 
   auto maxCG = ctx.device.limits().maxComputeWorkGroupCount;
-  auto totalGroup = uint32_t(std::ceil(total / double(local_size)));
+  auto totalGroup = uint32_t(std::ceil(totalMeshInstances / double(local_size)));
   auto dx = std::min(totalGroup, maxCG[0]);
   totalGroup = uint32_t(totalGroup / double(dx));
   auto dy = std::min(std::max(totalGroup, 1u), maxCG[1]);

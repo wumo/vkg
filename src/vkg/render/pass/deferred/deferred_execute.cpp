@@ -3,11 +3,13 @@
 namespace vkg {
 void DeferredPass::execute(RenderContext &ctx, Resources &resources) {
   auto drawCMDBuffer = resources.get(cullPassOut.drawCMDBuffer);
-  auto drawCMDCountBuffer = resources.get(cullPassOut.drawCMDCountBuffer);
-  auto drawCMDOffsets = resources.get(cullPassOut.drawCMDOffsets);
-  auto drawCMDCountOffset = resources.get(cullPassOut.drawCMDCountOffset);
+  auto drawCMDCountBuffer = resources.get(cullPassOut.drawGroupCountBuffer);
+  auto cmdOffsetPerFrustum = resources.get(cullPassOut.cmdOffsetPerFrustum);
+  auto cmdOffsetPerGroup = resources.get(cullPassOut.cmdOffsetPerGroup);
+  auto countOffset = resources.get(cullPassOut.countOffset);
   auto drawGroupCount = resources.get(passIn.drawGroupCount);
   auto atmosSetting = resources.get(passIn.atmosSetting);
+  auto shadowMapSetting = resources.get(passIn.shadowMapSetting);
 
   auto cb = ctx.graphics;
   image::transitTo(
@@ -38,7 +40,6 @@ void DeferredPass::execute(RenderContext &ctx, Resources &resources) {
 
   auto &dev = resources.device;
   vk::DeviceSize zero{0};
-  auto stride = sizeof(vk::DrawIndexedIndirectCommand);
   cb.bindDescriptorSets(
     vk::PipelineBindPoint::eGraphics, deferredPipeDef.layout(),
     deferredPipeDef.scene.set(), sceneSet, nullptr);
@@ -49,21 +50,27 @@ void DeferredPass::execute(RenderContext &ctx, Resources &resources) {
     cb.bindDescriptorSets(
       vk::PipelineBindPoint::eGraphics, deferredPipeDef.layout(),
       deferredPipeDef.atmosphere.set(), atmosphereSet, nullptr);
+  if(shadowMapSetting.isEnabled())
+    cb.bindDescriptorSets(
+      vk::PipelineBindPoint::eGraphics, deferredPipeDef.layout(),
+      deferredPipeDef.shadowMap.set(), shadowMapSet, nullptr);
 
   cb.bindVertexBuffers(0, resources.get(passIn.positions), zero);
   cb.bindVertexBuffers(1, resources.get(passIn.normals), zero);
   cb.bindVertexBuffers(2, resources.get(passIn.uvs), zero);
   cb.bindIndexBuffer(resources.get(passIn.indices), zero, vk::IndexType::eUint32);
 
-  cb.setLineWidth(1.0);
+  cb.setLineWidth(lineWidth_);
 
   auto draw = [&](DrawGroup drawGroup) {
     auto drawGroupIdx = value(drawGroup);
     if(drawGroupCount[drawGroupIdx] == 0) return;
     cb.drawIndexedIndirectCount(
-      drawCMDBuffer, stride * drawCMDOffsets[drawGroupIdx], drawCMDCountBuffer,
-      sizeof(uint32_t) * (drawCMDCountOffset + drawGroupIdx),
-      drawGroupCount[drawGroupIdx], stride);
+      drawCMDBuffer,
+      sizeof(vk::DrawIndexedIndirectCommand) *
+        (cmdOffsetPerFrustum[0] + cmdOffsetPerGroup[drawGroupIdx]),
+      drawCMDCountBuffer, sizeof(uint32_t) * (countOffset + drawGroupIdx),
+      drawGroupCount[drawGroupIdx], sizeof(vk::DrawIndexedIndirectCommand));
   };
 
   dev.begin(cb, "Subpass gbuffer brdf triangles");
@@ -78,8 +85,14 @@ void DeferredPass::execute(RenderContext &ctx, Resources &resources) {
   cb.nextSubpass(vk::SubpassContents::eInline);
 
   dev.begin(cb, "Subpass deferred lighting");
-  vk::Pipeline pipe = *litPipe;
-  if(atmosSetting.isEnabled()) pipe = *litAtmosPipe;
+  vk::Pipeline pipe;
+  if(atmosSetting.isEnabled() && shadowMapSetting.isEnabled()) pipe = *litAtmosCSMPipe;
+  else if(atmosSetting.isEnabled())
+    pipe = *litAtmosPipe;
+  else if(shadowMapSetting.isEnabled())
+    pipe = *litCSMPipe;
+  else
+    pipe = *litPipe;
   cb.bindPipeline(vk::PipelineBindPoint::eGraphics, pipe);
   cb.draw(3, 1, 0, 0);
   dev.end(cb);

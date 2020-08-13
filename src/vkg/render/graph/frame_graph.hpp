@@ -22,6 +22,7 @@ using PassSetup =
   std::function<PassOutType(PassBuilder &builder, const PassInType &inputs)>;
 using PassCompile = std::function<void(RenderContext &ctx, Resources &resources)>;
 using PassExec = std::function<void(RenderContext &ctx, Resources &resources)>;
+using PassCondition = std::function<bool()>;
 
 struct FrameGraphBaseResource {
   uint32_t id{~0u};
@@ -57,6 +58,10 @@ public:
   virtual void compile(RenderContext &ctx, Resources &resources){};
   virtual void execute(RenderContext &ctx, Resources &resources){};
 
+  void setPassCondition(PassCondition &&passCondition) {
+    passCondition_ = std::move(passCondition);
+  }
+
 protected:
   std::string name;
 
@@ -65,6 +70,8 @@ private:
   uint32_t order;
   std::vector<FrameGraphBaseResource> inputs_;
   std::vector<FrameGraphBaseResource> outputs_;
+
+  PassCondition passCondition_{[]() { return true; }};
 };
 
 template<typename PassInType, typename PassOutType>
@@ -72,6 +79,8 @@ class Pass: public BasePass {
 
 public:
   virtual auto setup(PassBuilder &builder, const PassInType &inputs) -> PassOutType = 0;
+
+  auto out() -> PassOutType & { return passOut; }
 
 protected:
   PassInType passIn;
@@ -110,6 +119,12 @@ concept DerivedPass = std::is_base_of<Pass<PassInType, PassOutType>, T>::value;
 template<typename T>
 concept DerivedResource = std::is_base_of<FrameGraphBaseResource, T>::value;
 
+template<typename T, typename PassOutType>
+struct ResultPass {
+  T pass;
+  PassOutType out;
+};
+
 class PassBuilder {
   friend class FrameGraph;
 
@@ -145,16 +160,16 @@ public:
   template<typename PassInType, typename PassOutType>
   auto addPass(
     const std::string &name, const PassInType &inputs,
-    Pass<PassInType, PassOutType> &pass) -> PassOutType;
+    Pass<PassInType, PassOutType> &pass) -> Pass<PassInType, PassOutType> &;
 
   template<typename T, typename PassInType, typename... Args>
-  auto newPass(const std::string &name, const PassInType &inputs, Args &&... args);
+  auto newPass(const std::string &name, const PassInType &inputs, Args &&... args) -> T &;
 
   template<typename PassInType, typename PassOutType>
   auto newLambdaPass(
     const std::string &name, const PassInType &inputs,
     PassSetup<PassInType, PassOutType> &&setup, PassCompile &&compile, PassExec &&exec)
-    -> PassOutType;
+    -> LambdaPass<PassInType, PassOutType> &;
 
 private:
   template<typename PassInType, typename PassOutType>
@@ -215,30 +230,35 @@ public:
   template<typename PassInType, typename PassOutType>
   auto addPass(
     const std::string &name, const PassInType &inputs,
-    Pass<PassInType, PassOutType> &pass) -> PassOutType {
+    Pass<PassInType, PassOutType> &pass) -> Pass<PassInType, PassOutType> & {
     errorIf(frozen, "frame graph already frozen");
     auto passId = uint32_t(passes.size());
     pass.name = name;
     pass.id = passId;
     passes.push_back(&pass);
     PassBuilder builder(*this, passId, pass);
-    return builder.build<PassInType, PassOutType>(pass, inputs);
+    builder.build<PassInType, PassOutType>(pass, inputs);
+    return pass;
   };
   template<typename T, typename PassInType, typename... Args>
-  auto newPass(const std::string &name, const PassInType &inputs, Args &&... args) {
+  auto newPass(const std::string &name, const PassInType &inputs, Args &&... args)
+    -> T & {
     allocated.push_back(std::make_unique<T>(std::forward<Args>(args)...));
-    return addPass(name, inputs, (T &)*allocated.back());
+    auto idx = allocated.size() - 1;
+    addPass(name, inputs, (T &)*allocated[idx]);
+    return (T &)*allocated[idx];
   }
 
   template<typename PassInType, typename PassOutType>
   auto newLambdaPass(
     const std::string &name, const PassInType &inputs,
     PassSetup<PassInType, PassOutType> &&setup, PassCompile &&compile, PassExec &&exec)
-    -> PassOutType {
+    -> LambdaPass<PassInType, PassOutType> & {
     allocated.push_back(std::make_unique<LambdaPass<PassInType, PassOutType>>(
       std::move(setup), std::move(compile), std::move(exec)));
-    return addPass(
-      name, inputs, (LambdaPass<PassInType, PassOutType> &)*allocated.back());
+    auto idx = allocated.size() - 1;
+    addPass(name, inputs, (LambdaPass<PassInType, PassOutType> &)*allocated[idx]);
+    return (LambdaPass<PassInType, PassOutType> &)*allocated[idx];
   }
 
   auto device() -> Device &;
@@ -325,12 +345,12 @@ auto PassBuilder::write(const FrameGraphResource<T> &input) -> FrameGraphResourc
 template<typename PassInType, typename PassOutType>
 auto PassBuilder::addPass(
   const std::string &name, const PassInType &inputs, Pass<PassInType, PassOutType> &pass)
-  -> PassOutType {
+  -> Pass<PassInType, PassOutType> & {
   return frameGraph.addPass(nameMangling(name), inputs, pass);
 }
 template<typename T, typename PassInType, typename... Args>
 auto PassBuilder::newPass(
-  const std::string &name, const PassInType &inputs, Args &&... args) {
+  const std::string &name, const PassInType &inputs, Args &&... args) -> T & {
   return frameGraph.newPass<T, PassInType>(
     nameMangling(name), inputs, std::forward<Args>(args)...);
 }
@@ -338,7 +358,8 @@ template<typename PassInType, typename PassOutType>
 auto PassBuilder::newLambdaPass(
   const std::string &name, const PassInType &inputs,
   PassSetup<PassInType, PassOutType> &&setup, PassCompile &&compile, PassExec &&exec)
-  -> PassOutType {
-  return nullptr;
+  -> LambdaPass<PassInType, PassOutType> & {
+  return frameGraph.newLambdaPass<PassInType, PassOutType>(
+    nameMangling(name), inputs, std::move(setup), std::move(compile), std::move(exec));
 }
 }

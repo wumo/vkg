@@ -90,9 +90,10 @@ auto FrameGraph::build() -> void {
 }
 
 auto FrameGraph::onFrame(RenderContext &renderContext) -> void {
+  for(auto &id: sortedPassIds) {
+    if(passes[id]->passCondition_()) passes[id]->compile(renderContext, *resources);
+  }
   for(auto &id: sortedPassIds)
-    passes[id]->compile(renderContext, *resources);
-  for(auto &id: sortedPassIds)
-    passes[id]->execute(renderContext, *resources);
+    if(passes[id]->passCondition_()) passes[id]->execute(renderContext, *resources);
 }
 }

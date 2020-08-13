@@ -7,6 +7,7 @@
 #include "vkg/render/model/vertex.hpp"
 #include "vkg/render/draw_group.hpp"
 #include "vkg/render/pass/atmosphere/atmosphere_pass.hpp"
+#include "vkg/render/pass/shadowmap/shadow_map_pass.hpp"
 
 namespace vkg {
 struct DeferredPassIn {
@@ -23,15 +24,18 @@ struct DeferredPassIn {
   FrameGraphResource<vk::Buffer> primitives;
   FrameGraphResource<vk::Buffer> matrices;
   FrameGraphResource<vk::Buffer> materials;
-  FrameGraphResource<std::vector<vk::DescriptorImageInfo> *> samplers;
+  FrameGraphResource<std::span<vk::DescriptorImageInfo>> samplers;
   FrameGraphResource<uint32_t> numValidSampler;
   FrameGraphResource<vk::Buffer> lighting;
   FrameGraphResource<vk::Buffer> lights;
 
-  FrameGraphResource<std::vector<uint32_t>> drawGroupCount;
+  FrameGraphResource<std::span<uint32_t>> drawGroupCount;
 
-  FrameGraphResource<Atmosphere> atmosSetting;
+  FrameGraphResource<AtmosphereSetting> atmosSetting;
   AtmospherePassOut atmosphere;
+
+  FrameGraphResource<ShadowMapSetting> shadowMapSetting;
+  ShadowMapPassOut shadowmap;
 };
 struct DeferredPassOut {
   FrameGraphResource<Texture *> backImg;

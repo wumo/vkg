@@ -10,11 +10,15 @@ layout(constant_id = 2) const uint lz = 1;
 layout(local_size_x_id = 0, local_size_y_id = 1, local_size_z_id = 2) in;
 
 layout(push_constant) uniform PushConstant {
+  uint totalFrustums;
   uint totalMeshInstances;
-  uint drawCMDCountOffset;
+  uint cmdFrameStride;
+  uint cmdFrustumStride;
+  uint groupFrameStride;
+  uint frame;
 };
 
-layout(set = 0, binding = 0) uniform Frustum { vec4 planes[6]; };
+layout(set = 0, binding = 0) buffer Frustums { Frustum frustums[]; };
 layout(set = 0, binding = 1, scalar) readonly buffer MeshesBuffer {
   MeshInstanceUBO meshInstances[];
 };
@@ -26,14 +30,14 @@ layout(set = 0, binding = 4, scalar) buffer DrawIndirectCMDBuffer {
   VkDrawIndexedIndirectCommand drawCMDs[];
 };
 layout(set = 0, binding = 5, scalar) readonly buffer DrawGroupOffsetBuffer {
-  uint drawCMDOffset[];
+  uint cmdOffsetPerGroup[];
 };
 layout(set = 0, binding = 6, scalar) buffer DrawCountBuffer { uint drawCMDCount[]; };
 
-bool isInFrustum(vec4 p, float radius) {
+bool isInFrustum(Frustum frustum, vec4 p, float radius) {
   p /= p.w;
   for(int i = 0; i < 6; ++i)
-    if(dot(planes[i], p) + radius < 0) return false;
+    if(dot(frustum.planes[i], p) + radius < 0) return false;
   return true;
 }
 
@@ -71,7 +75,9 @@ void main() {
   uint id = gl_GlobalInvocationID.z * (NX * NY) + gl_GlobalInvocationID.y * NX +
             gl_GlobalInvocationID.x;
 
-  if(id >= totalMeshInstances) return;
+  uint frustumIdx = id / totalMeshInstances;
+  if(frustumIdx >= totalFrustums) return;
+  Frustum frustum = frustums[frustumIdx];
 
   MeshInstanceUBO mesh = meshInstances[id];
 
@@ -83,7 +89,9 @@ void main() {
   transformAABB(aabb, model);
   vec3 center = (aabb.min + aabb.max) / 2;
   float radius = length(aabb.max - aabb.min) / 2;
-  if(isInFrustum(vec4(center, 1), 0) || isInFrustum(vec4(center, 1), radius)) {
+  if(
+    isInFrustum(frustum, vec4(center, 1), 0) ||
+    isInFrustum(frustum, vec4(center, 1), radius)) {
     VkDrawIndexedIndirectCommand drawCMD;
     drawCMD.firstIndex = prim.index.start;
     drawCMD.indexCount = prim.index.size;
@@ -92,8 +100,10 @@ void main() {
     drawCMD.instanceCount = 1;
 
     uint groupID = mesh.drawGroupID;
-    uint outIdx = atomicAdd(drawCMDCount[drawCMDCountOffset + groupID], 1);
-    uint offset = drawCMDOffset[drawCMDCountOffset + groupID];
-    drawCMDs[offset + outIdx] = drawCMD;
+    uint groupIdx = atomicAdd(drawCMDCount[frame * groupFrameStride + groupID], 1);
+    uint groupOffset = cmdOffsetPerGroup[frame * groupFrameStride + groupID];
+    uint cmdIdx =
+      frame * cmdFrameStride + frustumIdx * cmdFrustumStride + groupOffset + groupIdx;
+    drawCMDs[cmdIdx] = drawCMD;
   }
 }

@@ -5,12 +5,14 @@ auto AtmospherePass::setup(PassBuilder &builder, const AtmospherePassIn &inputs)
   -> AtmospherePassOut {
   passIn = inputs;
   builder.read(passIn.atmosphere);
-  passOut.version = builder.create<uint64_t>("atmosphereVersion");
-  passOut.atmosphere = builder.create<vk::Buffer>("atmosphere");
-  passOut.sun = builder.create<vk::Buffer>("sun");
-  passOut.transmittance = builder.create<Texture *>("transmittance");
-  passOut.scattering = builder.create<Texture *>("scattering");
-  passOut.irradiance = builder.create<Texture *>("irradiance");
+  passOut = {
+    .version = builder.create<uint64_t>("atmosphereVersion"),
+    .atmosphere = builder.create<vk::Buffer>("atmosphere"),
+    .sun = builder.create<vk::Buffer>("sun"),
+    .transmittance = builder.create<Texture *>("transmittance"),
+    .scattering = builder.create<Texture *>("scattering"),
+    .irradiance = builder.create<Texture *>("irradiance"),
+  };
   return passOut;
 }
 void AtmospherePass::compile(RenderContext &ctx, Resources &resources) {

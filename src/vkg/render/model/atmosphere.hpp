@@ -2,7 +2,7 @@
 #include "vkg/math/glm_common.hpp"
 
 namespace vkg {
-class Atmosphere {
+class AtmosphereSetting {
 
 public:
   auto isEnabled() const -> bool;

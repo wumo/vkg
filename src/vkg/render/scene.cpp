@@ -172,7 +172,7 @@ auto Scene::texture(uint32_t index) -> Texture & { return *Dev.textures.at(index
 auto Scene::light(uint32_t index) -> Light & { return Host.lights.at(index); }
 auto Scene::lighting() -> Lighting & { return *Host.lighting; }
 
-auto Scene::atmosphere() -> Atmosphere & { return Host.atmosphere; }
+auto Scene::atmosphere() -> AtmosphereSetting & { return Host.atmosphere; }
 
 auto Scene::allocateLightingDesc() -> Allocation<Lighting::Desc> {
   return Dev.lighting->allocate();
@@ -224,5 +224,5 @@ auto Scene::addToDrawGroup(uint32_t meshId, DrawGroup oldGroupID) -> DrawGroup {
   Host.drawGroupInstCount[value(gID)]++;
   return gID;
 }
-auto Scene::shadowmap() -> ShadowMap & { return Host.shadowMap; }
+auto Scene::shadowmap() -> ShadowMapSetting & { return Host.shadowMap; }
 }
