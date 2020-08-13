@@ -47,9 +47,7 @@ auto DeferredPass::createTransparentPass(Device &device, SceneConfig sceneConfig
         sceneConfig.maxNumLights})
     .shader(
       vk::ShaderStageFlagBits::eFragment,
-      Shader{
-        shader::deferred::transparent_frag_span, sceneConfig.maxNumTextures,
-        sceneConfig.maxNumLights, sceneConfig.numCascades});
+      Shader{shader::deferred::transparent_frag_span, sceneConfig.maxNumTextures});
   transTriPipe = maker.createUnique();
   device.name(*transTriPipe, "transparent triangle pipeline");
 

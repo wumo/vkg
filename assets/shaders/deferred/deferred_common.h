@@ -9,8 +9,9 @@ struct CascadeDesc {
   float z;
 };
 
-struct ShadowMapSetting{
+struct ShadowMapSetting {
   bool enabled;
+  uint numCascades;
 };
 
 #endif //VKG_DEFERRED_COMMON_H

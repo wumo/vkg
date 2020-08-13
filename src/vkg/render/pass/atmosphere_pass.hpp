@@ -26,5 +26,6 @@ public:
 private:
   AtmospherePassIn passIn;
   AtmospherePassOut passOut;
+  uint64_t version{0};
 };
 }

@@ -112,8 +112,10 @@ private:
 
   uint32_t gbPass{}, litPass{}, unlitPass{}, transPass{};
   vk::UniqueRenderPass renderPass;
-  vk::UniquePipeline gbTriPipe, gbWireFramePipe, litPipe, unlitTriPipe, unlitLinePipe,
-    transTriPipe, transLinePipe;
+  vk::UniquePipeline gbTriPipe, gbWireFramePipe;
+  vk::UniquePipeline unlitTriPipe, unlitLinePipe;
+  vk::UniquePipeline transTriPipe, transLinePipe;
+  vk::UniquePipeline litPipe, litAtmosPipe, litCSMPipe, litAtmosCSMPipe;
   vk::UniqueFramebuffer framebuffer;
 };
 }

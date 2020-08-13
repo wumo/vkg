@@ -6,6 +6,10 @@
 #include "../../brdf.h"
 #include "../../punctual_light.h"
 
+#ifdef USE_ATMOSPHERE
+  #include "../../atmosphere/lighting.h"
+#endif
+
 layout(location = 0) rayPayloadInNV RayTracingRayPayload prd;
 layout(location = 2) rayPayloadInNV RayTracingShadowRayPayload prdShadow;
 

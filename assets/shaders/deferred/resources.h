@@ -5,8 +5,6 @@
 
 #include "deferred_common.h"
 layout(constant_id = 0) const uint maxNumTextures = 1;
-layout(constant_id = 1) const uint maxLights = 1;
-layout(constant_id = 2) const uint numCascades = 1;
 
 layout(set = 0, binding = 0) uniform Camera { CameraUBO cam; };
 layout(set = 0, binding = 1, scalar) readonly buffer MeshesBuffer {
@@ -23,7 +21,7 @@ layout(set = 0, binding = 5) uniform sampler2D textures[maxNumTextures];
 
 layout(set = 0, binding = 6) uniform LightingUBO { LightUBO lighting; };
 layout(set = 0, binding = 7, std430) readonly buffer LightsBuffer {
-  LightInstanceUBO lights[maxLights];
+  LightInstanceUBO lights[];
 };
 
 #ifdef SUBPASS
@@ -54,7 +52,7 @@ layout(set = 1, binding = 5,input_attachment_index = 5) uniform SUBPASS_INPUT sa
 layout(set = 3, binding = 0) uniform ShadowMapSettingUBO {
   ShadowMapSetting shadowMapSeting;
 };
-layout(set = 3, binding = 1) uniform Cascades { CascadeDesc cascades[numCascades]; };
+layout(set = 3, binding = 1) buffer Cascades { CascadeDesc cascades[]; };
 layout(set = 3, binding = 2) uniform sampler2DArray shadowMap;
 #endif
 

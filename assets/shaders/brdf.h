@@ -1,10 +1,6 @@
 #ifndef VKG_BRDF_H
 #define VKG_BRDF_H
 
-#ifdef USE_ATMOSPHERE
-  #include "atmosphere/lighting.h"
-#endif
-
 //
 // This fragment shader defines a reference implementation for Physically Based Shading of
 // a microfacet surface material defined by a glTF model.
@@ -211,20 +207,4 @@ vec3 getGGXMicrofacet(vec2 u, vec3 N, float roughness) {
   return normalize(T * tH.x + B * tH.y + N * tH.z);
 }
 
-//#ifdef USE_ATMOSPHERE
-//vec3 applyAtmosphere(
-//  vec3 pointToLight, vec3 worldPos, vec3 worldNormal, MaterialInfo materialInfo, vec3 eye,
-//  out vec3 F) {
-//  AngularInfo angularInfo =
-//    getAngularInfo(pointToLight, worldNormal, normalize(eye - worldPos));
-//  F = specularReflection(materialInfo, angularInfo);
-//  float Vis = visibilityOcclusion(materialInfo, angularInfo);
-//  float D = microfacetDistribution(materialInfo, angularInfo);
-//
-//  // Calculation of analytical lighting contribution
-//  vec3 diffuseContrib = (1.0 - F) * diffuse(materialInfo, angularInfo);
-//  vec3 specContrib = F * Vis * D;
-//  return (diffuseContrib + specContrib) * atmosphereLight(state.pos, state.normal, eye);
-//}
-//#endif
 #endif //VKG_RT_LIGHTING_H

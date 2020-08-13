@@ -7,7 +7,7 @@ uint cascadeIndex(vec3 pos) {
   float z = dot(pos - cam.eye.xyz, cam.v.xyz);
 
   uint cascadeIdx = 0;
-  for(int i = 0; i < numCascades; ++i)
+  for(int i = 0; i < shadowMapSeting.numCascades; ++i)
     if(z < cascades[i].z) {
       cascadeIdx = i;
       break;

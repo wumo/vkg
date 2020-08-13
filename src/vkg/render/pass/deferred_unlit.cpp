@@ -32,14 +32,10 @@ auto DeferredPass::createUnlitPass(Device &device, SceneConfig sceneConfig) -> v
   maker
     .shader(
       vk::ShaderStageFlagBits::eVertex,
-      Shader{
-        shader::deferred::deferred_vert_span, sceneConfig.maxNumTextures,
-        sceneConfig.maxNumLights, sceneConfig.numCascades})
+      Shader{shader::deferred::deferred_vert_span, sceneConfig.maxNumTextures})
     .shader(
       vk::ShaderStageFlagBits::eFragment,
-      Shader{
-        shader::deferred::unlit_frag_span, sceneConfig.maxNumTextures,
-        sceneConfig.maxNumLights, sceneConfig.numCascades});
+      Shader{shader::deferred::unlit_frag_span, sceneConfig.maxNumTextures});
   unlitTriPipe = maker.createUnique();
   device.name(*unlitTriPipe, "unlit triangle pipeline");
 

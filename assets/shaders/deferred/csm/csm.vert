@@ -10,7 +10,7 @@ layout(location = 2) in vec2 inUV0;
 
 layout(constant_id = 0) const uint numCascades = 1;
 layout(push_constant) uniform CascadedIndex { uint cascadeIndex; };
-layout(set = 0, binding = 0) uniform Cascades { CascadeDesc cascades[numCascades]; };
+layout(set = 0, binding = 0) buffer Cascades { CascadeDesc cascades[]; };
 layout(set = 0, binding = 1, std430) buffer TransformMatrixBuffer { mat4 matrices[]; };
 
 void main() {

@@ -36,14 +36,10 @@ auto DeferredPass::createGbufferPass(Device &device, SceneConfig sceneConfig) ->
   maker
     .shader(
       vk::ShaderStageFlagBits::eVertex,
-      Shader{
-        shader::deferred::deferred_vert_span, sceneConfig.maxNumTextures,
-        sceneConfig.maxNumLights, sceneConfig.numCascades})
+      Shader{shader::deferred::deferred_vert_span, sceneConfig.maxNumTextures})
     .shader(
       vk::ShaderStageFlagBits::eFragment,
-      Shader{
-        shader::deferred::gbuffer_frag_span, sceneConfig.maxNumTextures,
-        sceneConfig.maxNumLights, sceneConfig.numCascades});
+      Shader{shader::deferred::gbuffer_frag_span, sceneConfig.maxNumTextures});
   gbTriPipe = maker.createUnique();
   device.name(*gbTriPipe, "gbuffer triangle pipeline");
 

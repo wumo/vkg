@@ -4,15 +4,15 @@
 #include "../math.h"
 #define SUBPASS
 #include "resources.h"
-#include "../tonemap.h"
 #ifdef USE_ATMOSPHERE
   #include "../atmosphere/lighting.h"
 #endif
-#include "../brdf.h"
-#include "../punctual_light.h"
 #ifdef USE_SHADOW_MAP
   #include "csm/csm.h"
 #endif
+#include "../brdf.h"
+#include "../punctual_light.h"
+#include "../tonemap.h"
 
 layout(location = 0) out vec4 outColor;
 
