@@ -27,7 +27,6 @@ public:
 
 private:
   Renderer &renderer;
-  RendererSetupPassOut passOut;
 };
 
 struct RendererPresentPassIn {
@@ -73,7 +72,6 @@ public:
 
 private:
   Renderer &renderer;
-  RendererPresentPassIn passIn;
 };
 
 Renderer::Renderer(WindowConfig windowConfig, FeatureConfig featureConfig)

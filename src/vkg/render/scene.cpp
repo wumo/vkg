@@ -224,4 +224,5 @@ auto Scene::addToDrawGroup(uint32_t meshId, DrawGroup oldGroupID) -> DrawGroup {
   Host.drawGroupInstCount[value(gID)]++;
   return gID;
 }
+auto Scene::shadowmap() -> ShadowMap & { return Host.shadowMap; }
 }

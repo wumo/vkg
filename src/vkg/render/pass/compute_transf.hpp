@@ -23,9 +23,6 @@ public:
   void execute(RenderContext &ctx, Resources &resources) override;
 
 private:
-  ComputeTransfPassIn passIn;
-  ComputeTransfPassOut passOut;
-
   std::unique_ptr<Buffer> matrices;
 
   struct ComputeTransfSetDef: DescriptorSetDef {

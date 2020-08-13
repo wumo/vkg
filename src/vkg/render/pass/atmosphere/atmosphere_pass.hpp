@@ -22,11 +22,8 @@ public:
   auto setup(PassBuilder &builder, const AtmospherePassIn &inputs)
     -> AtmospherePassOut override;
   void compile(RenderContext &ctx, Resources &resources) override;
-  void execute(RenderContext &ctx, Resources &resources) override;
 
 private:
-  AtmospherePassIn passIn;
-  AtmospherePassOut passOut;
   uint64_t version{0};
   std::unique_ptr<AtmosphereModel> model_;
 };

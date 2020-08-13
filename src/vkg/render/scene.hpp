@@ -15,6 +15,7 @@
 #include "vkg/math/frustum.hpp"
 #include "draw_group.hpp"
 #include "model/atmosphere.hpp"
+#include "model/shadow_map.hpp"
 #include <span>
 
 namespace vkg {
@@ -77,6 +78,7 @@ public:
   auto light(uint32_t index) -> Light &;
   auto lighting() -> Lighting &;
   auto atmosphere() -> Atmosphere &;
+  auto shadowmap() -> ShadowMap &;
 
   auto allocateLightingDesc() -> Allocation<Lighting::Desc>;
   auto allocateLightDesc() -> Allocation<Light::Desc>;
@@ -130,17 +132,16 @@ private:
     std::vector<Node> nodes;
     std::vector<Model> models;
     std::vector<ModelInstance> modelInstances;
+    std::vector<uint32_t> drawGroupInstCount;
     std::unique_ptr<Lighting> lighting;
     std::vector<Light> lights;
     std::unique_ptr<Camera> camera_;
     Atmosphere atmosphere;
-    std::vector<uint32_t> drawGroupInstCount;
+    ShadowMap shadowMap;
   } Host;
 
   vk::Rect2D renderArea;
 
-  ScenePassOut passOut;
-  ScenePassIn passIn;
   bool boundPassData{false};
   uint64_t swapchainVersion{0};
 };

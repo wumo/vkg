@@ -70,6 +70,7 @@ set(sources
   src/vkg/render/model/primitive.cpp
   src/vkg/render/model/camera.cpp
   src/vkg/render/model/atmosphere.cpp
+  src/vkg/render/model/shadow_map.cpp
   
   src/vkg/render/builder/primitive_builder.cpp
   src/vkg/render/builder/gltf_loader.cpp
@@ -98,6 +99,7 @@ set(sources
   src/vkg/render/pass/atmosphere/compute_scattering_density.cpp
   src/vkg/render/pass/atmosphere/compute_single_scattering.cpp
   src/vkg/render/pass/atmosphere/compute_transmittance.cpp
+  src/vkg/render/pass/shadowmap/shadow_map_pass.cpp
   )
 
 set(definitions "")

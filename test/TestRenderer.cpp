@@ -28,6 +28,7 @@ auto main() -> int {
   sky.setSunIntensity(1);
   sky.setSunDirection(sunDir);
 
+  scene.shadowmap().enable(true);
   //  auto lightId = scene.newLight();
   //  auto &light = scene.light(lightId);
   //  light.setColor(White);

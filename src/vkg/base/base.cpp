@@ -316,6 +316,6 @@ auto Base::syncTimeline(double elapsed, const std::function<void(double)> &updat
   } catch(const vk::OutOfDateKHRError &) { resize(); }
 
   frameIndex = (frameIndex + 1) % swapchain_->imageCount();
-  dev.waitIdle();
+//  dev.waitIdle();
 }
 }

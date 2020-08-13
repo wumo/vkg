@@ -72,6 +72,10 @@ class Pass: public BasePass {
 
 public:
   virtual auto setup(PassBuilder &builder, const PassInType &inputs) -> PassOutType = 0;
+
+protected:
+  PassInType passIn;
+  PassOutType passOut;
 };
 
 template<typename PassInType, typename PassOutType>

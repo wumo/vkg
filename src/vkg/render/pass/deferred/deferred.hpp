@@ -52,8 +52,6 @@ private:
   auto createUnlitPass(Device &device, SceneConfig sceneConfig) -> void;
   auto createTransparentPass(Device &device, SceneConfig sceneConfig) -> void;
 
-  DeferredPassIn passIn;
-  DeferredPassOut passOut;
   ComputeCullDrawCMDPassOut cullPassOut;
   uint32_t lastNumValidSampler{0};
 

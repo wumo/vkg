@@ -44,5 +44,4 @@ void AtmospherePass::compile(RenderContext &ctx, Resources &resources) {
   model_->updateSunDirection(atmosSetting.sunDirection());
   model_->updateEarthCenter(atmosSetting.earthCenter());
 }
-void AtmospherePass::execute(RenderContext &ctx, Resources &resources) {}
 }

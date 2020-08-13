@@ -28,9 +28,6 @@ public:
   void execute(RenderContext &ctx, Resources &resources) override;
 
 private:
-  ComputeCullDrawCMDPassIn passIn;
-  ComputeCullDrawCMDPassOut passOut;
-
   struct ComputeTransfSetDef: DescriptorSetDef {
     __uniform__(frustum, vk::ShaderStageFlagBits::eCompute);
     __buffer__(meshInstances, vk::ShaderStageFlagBits::eCompute);
