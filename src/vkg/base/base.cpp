@@ -76,6 +76,7 @@ auto Base::createSyncObjects() -> void {
     device_->computeQueue().submit(submit, {});
 
     renderFences[i] = _device.createFenceUnique(fenceInfo);
+    if(i != 0) _device.resetFences(renderFences[i].get());
   }
 
   tSemaphores.resize(numFrames);
@@ -136,7 +137,7 @@ void Base::loop(const std::function<void(double)> &updater) {
     start = end;
 
     fpsMeter.update(elapsed);
-    sync(elapsed, updater);
+    syncReverse(elapsed, updater);
   }
 
   device_->vkDevice().waitIdle();
@@ -153,7 +154,8 @@ void Base::loop(CallFrameUpdater &updater) {
 auto Base::device() -> Device & { return *device_; }
 auto Base::swapchain() -> Swapchain & { return *swapchain_; }
 
-auto Base::sync(double elapsed, const std::function<void(double)> &updater) -> void {
+auto Base::syncReverse(double elapsed, const std::function<void(double)> &updater)
+  -> void {
   auto renderFence = *renderFences[frameIndex];
   device_->vkDevice().waitForFences(
     renderFence, true, std::numeric_limits<uint64_t>::max());
@@ -167,16 +169,8 @@ auto Base::sync(double elapsed, const std::function<void(double)> &updater) -> v
   auto &semaphore = semaphores[frameIndex];
   try {
     auto result = swapchain_->acquireNextImage(*semaphore.imageAvailable, imageIndex);
-    if(result == vk::Result::eSuboptimalKHR) {
-      window_->setResizeWanted(true);
-      resize();
-      window_->setResizeWanted(false);
-    }
-  } catch(const vk::OutOfDateKHRError &) {
-    window_->setResizeWanted(true);
-    resize();
-    window_->setResizeWanted(false);
-  }
+    if(result == vk::Result::eSuboptimalKHR) resize();
+  } catch(const vk::OutOfDateKHRError &) { resize(); }
 
   auto graphicsCB = graphicsCmdBuffers[frameIndex];
   auto computeCB = computeCmdBuffers[frameIndex];
@@ -194,19 +188,11 @@ auto Base::sync(double elapsed, const std::function<void(double)> &updater) -> v
 
   try {
     auto result = swapchain_->present(imageIndex, *semaphore.renderFinished);
-    if(result == vk::Result::eSuboptimalKHR) {
-      window_->setResizeWanted(true);
-      resize();
-      window_->setResizeWanted(false);
-    }
-  } catch(const vk::OutOfDateKHRError &) {
-    window_->setResizeWanted(true);
-    resize();
-    window_->setResizeWanted(false);
-  }
+    if(result == vk::Result::eSuboptimalKHR) resize();
+  } catch(const vk::OutOfDateKHRError &) { resize(); }
 
   frameIndex = (frameIndex + 1) % swapchain_->imageCount();
-  device_->vkDevice().waitIdle();
+  //  device_->vkDevice().waitIdle();
 
   graphicsCB = graphicsCmdBuffers[frameIndex];
   computeCB = computeCmdBuffers[frameIndex];
@@ -231,7 +217,11 @@ auto Base::sync(double elapsed, const std::function<void(double)> &updater) -> v
   device_->computeQueue().submit(submit, *renderFences[frameIndex]);
 }
 
-auto Base::syncTimeline(double elapsed, const std::function<void(double)> &updater) -> void {
+/**
+ * TODO this method cannot ensure the memory sync between async compute queue and graphics queue
+ */
+auto Base::syncTimeline(double elapsed, const std::function<void(double)> &updater)
+  -> void {
   auto dev = device_->vkDevice();
   auto &tSemaphore = tSemaphores[frameIndex];
   auto &semaphore = semaphores[frameIndex];
@@ -248,16 +238,8 @@ auto Base::syncTimeline(double elapsed, const std::function<void(double)> &updat
   uint32_t imageIndex = 0;
   try {
     auto result = swapchain_->acquireNextImage(*semaphore.imageAvailable, imageIndex);
-    if(result == vk::Result::eSuboptimalKHR) {
-      window_->setResizeWanted(true);
-      resize();
-      window_->setResizeWanted(false);
-    }
-  } catch(const vk::OutOfDateKHRError &) {
-    window_->setResizeWanted(true);
-    resize();
-    window_->setResizeWanted(false);
-  }
+    if(result == vk::Result::eSuboptimalKHR) resize();
+  } catch(const vk::OutOfDateKHRError &) { resize(); }
 
   auto graphicsCB = graphicsCmdBuffers[frameIndex];
   auto computeCB = computeCmdBuffers[frameIndex];
@@ -309,8 +291,8 @@ auto Base::syncTimeline(double elapsed, const std::function<void(double)> &updat
   waitStages = {
     vk::PipelineStageFlagBits::eAllGraphics,
     vk::PipelineStageFlagBits::eColorAttachmentOutput};
-  signalSemaphores = {tSemaphore.semaphore.get(), semaphore.renderFinished.get()};
   std::array<uint64_t, 2> waitValues{computeFinishedValue, 0};
+  signalSemaphores = {tSemaphore.semaphore.get(), semaphore.renderFinished.get()};
   std::array<uint64_t, 2> signalValues{renderFinishedValue, 0};
 
   timelineInfo.waitSemaphoreValueCount = uint32_t(waitValues.size());
@@ -330,16 +312,8 @@ auto Base::syncTimeline(double elapsed, const std::function<void(double)> &updat
 
   try {
     auto result = swapchain_->present(imageIndex, *semaphore.renderFinished);
-    if(result == vk::Result::eSuboptimalKHR) {
-      window_->setResizeWanted(true);
-      resize();
-      window_->setResizeWanted(false);
-    }
-  } catch(const vk::OutOfDateKHRError &) {
-    window_->setResizeWanted(true);
-    resize();
-    window_->setResizeWanted(false);
-  }
+    if(result == vk::Result::eSuboptimalKHR) resize();
+  } catch(const vk::OutOfDateKHRError &) { resize(); }
 
   frameIndex = (frameIndex + 1) % swapchain_->imageCount();
   dev.waitIdle();

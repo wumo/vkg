@@ -23,6 +23,7 @@ public:
   auto version() const -> uint64_t;
 
 private:
+  Device &device;
   vk::PhysicalDevice physicalDevice;
   vk::Device vkDevice;
   vk::SurfaceKHR surface;

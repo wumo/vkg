@@ -83,7 +83,7 @@ void ComputeCullDrawCMD::execute(RenderContext &ctx, Resources &resources) {
   uint32_t drawCMDCountOffset = resources.get(passOut.drawCMDCountOffset);
   cb.updateBuffer(
     drawCMDOffsetBuffer->buffer(), sizeof(uint32_t) * drawCMDCountOffset,
-    sizeof(uint32_t) * offsets.size(), offsets.data());
+    sizeof(uint32_t) * numDrawCMDCounts, offsets.data());
 
   /**
        * TODO It seems that we have to use cb.fillBuffer to initialize Dev.drawCMDCount instead

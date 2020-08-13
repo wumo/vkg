@@ -1,7 +1,7 @@
 #include "swapchain.hpp"
 #include <set>
 #include "vkg/util/syntactic_sugar.hpp"
-
+#include "vkg/base/resource/textures.hpp"
 namespace vkg {
 auto chooseSurfaceFormat(const std::vector<vk::SurfaceFormatKHR> &formats)
   -> vk::SurfaceFormatKHR {
@@ -40,7 +40,8 @@ auto chooseExtent(
 
 Swapchain::Swapchain(
   Device &device, vk::SurfaceKHR surface, const WindowConfig &windowConfig)
-  : physicalDevice{device.physicalDevice()},
+  : device{device},
+    physicalDevice{device.physicalDevice()},
     vkDevice{device.vkDevice()},
     surface{surface},
     graphicsIndex{device.graphicsIndex()},
@@ -98,6 +99,11 @@ auto Swapchain::resize(uint32_t width, uint32_t height, bool vsync) -> void {
     imageViewInfo.format = surfaceFormat.format;
     imageViewInfo.subresourceRange = {vk::ImageAspectFlagBits::eColor, 0, 1, 0, 1};
     imageViews[i] = vkDevice.createImageViewUnique(imageViewInfo);
+    device.execSyncInGraphicsQueue([&](vk::CommandBuffer cb) {
+      image::setLayout(
+        cb, images[i], vk::ImageLayout::eUndefined, vk::ImageLayout::ePresentSrcKHR,
+        vk::AccessFlagBits::eTransferWrite, vk::AccessFlagBits::eMemoryRead);
+    });
   }
   version_++;
 }

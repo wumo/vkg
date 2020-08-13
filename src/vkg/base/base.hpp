@@ -41,7 +41,7 @@ public:
   auto swapchain() -> Swapchain &;
 
 protected:
-  auto sync(double elapsed, const std::function<void(double)> &updater) -> void;
+  auto syncReverse(double elapsed, const std::function<void(double)> &updater) -> void;
   auto syncTimeline(double elapsed, const std::function<void(double)> &updater) -> void;
   virtual auto resize() -> void;
   virtual auto onInit() -> void{};

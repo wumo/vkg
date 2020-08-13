@@ -50,6 +50,7 @@ auto getVkFilterMode(int32_t filterMode) -> vk::Filter {
     case 9985: return vk::Filter::eNearest;
     case 9986: return vk::Filter::eLinear;
     case 9987: return vk::Filter::eLinear;
+    case -1: return vk::Filter::eLinear;
     default: error("not supported Filter", filterMode); return vk::Filter::eLinear;
   }
 }
@@ -262,7 +263,8 @@ AABB GLTFLoader::loadVertices(
     vec3(posAccessor.maxValues[0], posAccessor.maxValues[1], posAccessor.maxValues[2]);
   posByteStride = posAccessor.ByteStride(posView) ?
                     (posAccessor.ByteStride(posView) / uint32_t(sizeof(float))) :
-                    tinygltf::GetTypeSizeInBytes(TINYGLTF_TYPE_VEC3);
+                    tinygltf::GetNumComponentsInType(TINYGLTF_TYPE_VEC3) *
+                      tinygltf::GetComponentSizeInBytes(TINYGLTF_COMPONENT_TYPE_FLOAT);
 
   if(primitive.attributes.contains("NORMAL")) {
     const auto &normAccessor = model.accessors[primitive.attributes.at("NORMAL")];
@@ -272,7 +274,8 @@ AABB GLTFLoader::loadVertices(
                           .data[normAccessor.byteOffset + normView.byteOffset]));
     normByteStride = normAccessor.ByteStride(normView) ?
                        (normAccessor.ByteStride(normView) / uint32_t(sizeof(float))) :
-                       tinygltf::GetTypeSizeInBytes(TINYGLTF_TYPE_VEC3);
+                       tinygltf::GetNumComponentsInType(TINYGLTF_TYPE_VEC3) *
+                         tinygltf::GetComponentSizeInBytes(TINYGLTF_COMPONENT_TYPE_FLOAT);
   }
 
   if(primitive.attributes.contains("TEXCOORD_0")) {
@@ -282,7 +285,8 @@ AABB GLTFLoader::loadVertices(
       model.buffers[uvView.buffer].data[uvAccessor.byteOffset + uvView.byteOffset]));
     uv0ByteStride = uvAccessor.ByteStride(uvView) ?
                       (uvAccessor.ByteStride(uvView) / uint32_t(sizeof(float))) :
-                      tinygltf::GetTypeSizeInBytes(TINYGLTF_TYPE_VEC2);
+                      tinygltf::GetNumComponentsInType(TINYGLTF_TYPE_VEC2) *
+                        tinygltf::GetComponentSizeInBytes(TINYGLTF_COMPONENT_TYPE_FLOAT);
   }
 
   //vertices
