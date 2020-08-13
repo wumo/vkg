@@ -3,10 +3,10 @@
 #include "vkg/render/scene_config.hpp"
 #include "vkg/render/graph/frame_graph.hpp"
 #include "vkg/render/model/camera.hpp"
-#include "compute_cull_drawcmd.hpp"
+#include "vkg/render/pass/compute_cull_drawcmd.hpp"
 #include "vkg/render/model/vertex.hpp"
 #include "vkg/render/draw_group.hpp"
-#include "atmosphere_pass.hpp"
+#include "vkg/render/pass/atmosphere/atmosphere_pass.hpp"
 
 namespace vkg {
 struct DeferredPassIn {
@@ -30,6 +30,7 @@ struct DeferredPassIn {
 
   FrameGraphResource<std::vector<uint32_t>> drawGroupCount;
 
+  FrameGraphResource<Atmosphere> atmosSetting;
   AtmospherePassOut atmosphere;
 };
 struct DeferredPassOut {
@@ -79,14 +80,14 @@ private:
 
   struct CSMSetDef: DescriptorSetDef {
     __uniform__(setting, vkStage::eFragment);
-    __uniform__(cascades, vkStage::eFragment);
+    __buffer__(cascades, vkStage::eFragment);
     __sampler2DArray__(shadowMaps, vkStage::eFragment);
   } csmSetDef;
 
   struct AtmosphereSetDef: DescriptorSetDef {
     __uniform__(atmosphere, vkStage::eFragment);
     __uniform__(sun, vkStage::eFragment);
-    __sampler3D__(transmittance, vkStage::eFragment);
+    __sampler2D__(transmittance, vkStage::eFragment);
     __sampler3D__(scattering, vkStage::eFragment);
     __sampler2D__(irradiance, vkStage::eFragment);
   } atmosphereSetDef;

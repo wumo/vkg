@@ -22,11 +22,14 @@ public:
   auto lengthUnitInMeters() const -> double;
   auto bottomRadius() const -> double;
 
+  const double kSunAngularRadius_{0.00935 / 2.0};
+  const double kSunSolidAngle_{
+    glm::pi<double>() * kSunAngularRadius_ * kSunAngularRadius_};
+  const double kLengthUnitInMeters_{1.0};
+  const double kBottomRadius_{6360000.0};
+  const double kTopRadius{6420000.0};
+
 private:
-  double kSunAngularRadius_{0.00935 / 2.0};
-  double kSunSolidAngle_{glm::pi<double>() * kSunAngularRadius_ * kSunAngularRadius_};
-  double kLengthUnitInMeters_{1.0};
-  double kBottomRadius_ = 6360000.0;
   glm::vec3 sunDirection_{0, 1, 0};
   glm::vec3 earthCenter_{0, -kBottomRadius_ / kLengthUnitInMeters_, 0};
   float sunIntensity_{1};

@@ -28,13 +28,13 @@ auto main() -> int {
   sky.setSunIntensity(1);
   sky.setSunDirection(sunDir);
 
-  auto lightId = scene.newLight();
-  auto &light = scene.light(lightId);
-  light.setColor(White);
-  glm::vec3 loc{100, 200, 200};
-  loc = glm::angleAxis(glm::radians(-60.f), glm::vec3{0, 1, 0}) * loc;
-  light.setLocation(loc);
-  light.setIntensity(1);
+  //  auto lightId = scene.newLight();
+  //  auto &light = scene.light(lightId);
+  //  light.setColor(White);
+  //  glm::vec3 loc{100, 200, 200};
+  //  loc = glm::angleAxis(glm::radians(-60.f), glm::vec3{0, 1, 0}) * loc;
+  //  light.setLocation(loc);
+  //  light.setIntensity(1);
 
   auto yellowMat = scene.newMaterial();
   scene.material(yellowMat).setColorFactor({Yellow, 1.f});

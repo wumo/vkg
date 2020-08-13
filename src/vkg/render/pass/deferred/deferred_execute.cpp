@@ -7,6 +7,7 @@ void DeferredPass::execute(RenderContext &ctx, Resources &resources) {
   auto drawCMDOffsets = resources.get(cullPassOut.drawCMDOffsets);
   auto drawCMDCountOffset = resources.get(cullPassOut.drawCMDCountOffset);
   auto drawGroupCount = resources.get(passIn.drawGroupCount);
+  auto atmosSetting = resources.get(passIn.atmosSetting);
 
   auto cb = ctx.graphics;
   image::transitTo(
@@ -44,14 +45,18 @@ void DeferredPass::execute(RenderContext &ctx, Resources &resources) {
   cb.bindDescriptorSets(
     vk::PipelineBindPoint::eGraphics, deferredPipeDef.layout(),
     deferredPipeDef.gbuffer.set(), gbSet, nullptr);
+  if(atmosSetting.isEnabled())
+    cb.bindDescriptorSets(
+      vk::PipelineBindPoint::eGraphics, deferredPipeDef.layout(),
+      deferredPipeDef.atmosphere.set(), atmosphereSet, nullptr);
 
   cb.bindVertexBuffers(0, resources.get(passIn.positions), zero);
   cb.bindVertexBuffers(1, resources.get(passIn.normals), zero);
   cb.bindVertexBuffers(2, resources.get(passIn.uvs), zero);
   cb.bindIndexBuffer(resources.get(passIn.indices), zero, vk::IndexType::eUint32);
-  
+
   cb.setLineWidth(1.0);
-  
+
   auto draw = [&](DrawGroup drawGroup) {
     auto drawGroupIdx = value(drawGroup);
     if(drawGroupCount[drawGroupIdx] == 0) return;
@@ -73,7 +78,9 @@ void DeferredPass::execute(RenderContext &ctx, Resources &resources) {
   cb.nextSubpass(vk::SubpassContents::eInline);
 
   dev.begin(cb, "Subpass deferred lighting");
-  cb.bindPipeline(vk::PipelineBindPoint::eGraphics, *litPipe);
+  vk::Pipeline pipe = *litPipe;
+  if(atmosSetting.isEnabled()) pipe = *litAtmosPipe;
+  cb.bindPipeline(vk::PipelineBindPoint::eGraphics, pipe);
   cb.draw(3, 1, 0, 0);
   dev.end(cb);
 

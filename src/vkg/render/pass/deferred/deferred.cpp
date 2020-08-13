@@ -139,6 +139,16 @@ void DeferredPass::compile(RenderContext &ctx, Resources &resources) {
     sceneSetDef.update(sceneSet);
     lastNumValidSampler = numValidSampler;
   }
+
+  auto atmosSetting = resources.get(passIn.atmosSetting);
+  if(atmosSetting.isEnabled()) {
+    atmosphereSetDef.atmosphere(resources.get(passIn.atmosphere.atmosphere));
+    atmosphereSetDef.sun(resources.get(passIn.atmosphere.sun));
+    atmosphereSetDef.transmittance(*resources.get(passIn.atmosphere.transmittance));
+    atmosphereSetDef.scattering(*resources.get(passIn.atmosphere.scattering));
+    atmosphereSetDef.irradiance(*resources.get(passIn.atmosphere.irradiance));
+    atmosphereSetDef.update(atmosphereSet);
+  }
 }
 
 auto DeferredPass::createAttachments(Device &device) -> void {

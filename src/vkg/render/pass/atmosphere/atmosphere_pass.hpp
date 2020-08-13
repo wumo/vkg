@@ -2,6 +2,7 @@
 #include "vkg/base/base.hpp"
 #include "vkg/render/graph/frame_graph.hpp"
 #include "vkg/render/model/atmosphere.hpp"
+#include "atmosphere_model.hpp"
 
 namespace vkg {
 struct AtmospherePassIn {
@@ -27,5 +28,6 @@ private:
   AtmospherePassIn passIn;
   AtmospherePassOut passOut;
   uint64_t version{0};
+  std::unique_ptr<AtmosphereModel> model_;
 };
 }

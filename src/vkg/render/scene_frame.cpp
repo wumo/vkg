@@ -1,7 +1,7 @@
 #include "scene.hpp"
 #include "pass/compute_transf.hpp"
-#include "pass/atmosphere_pass.hpp"
-#include "pass/deferred.hpp"
+#include "vkg/render/pass/atmosphere/atmosphere_pass.hpp"
+#include "vkg/render/pass/deferred/deferred.hpp"
 
 namespace vkg {
 
@@ -132,16 +132,27 @@ auto Scene::setup(PassBuilder &builder, const ScenePassIn &inputs) -> ScenePassO
     "Atmosphere", AtmospherePassIn{sceneSetupPassOut.atmosphere});
 
   auto deferredPassOut = builder.newPass<DeferredPass>(
-    "Deferred",
-    DeferredPassIn{
-      sceneSetupPassOut.backImg, sceneSetupPassOut.camera, sceneSetupPassOut.cameraBuffer,
-      sceneSetupPassOut.sceneConfig, sceneSetupPassOut.meshInstances,
-      sceneSetupPassOut.meshInstancesCount, sceneSetupPassOut.positions,
-      sceneSetupPassOut.normals, sceneSetupPassOut.uvs, sceneSetupPassOut.indices,
-      sceneSetupPassOut.primitives, transfPassOut.matrices, sceneSetupPassOut.materials,
-      sceneSetupPassOut.samplers, sceneSetupPassOut.numValidSampler,
-      sceneSetupPassOut.lighting, sceneSetupPassOut.lights,
-      sceneSetupPassOut.drawGroupCount, atmospherePassOut});
+    "Deferred", DeferredPassIn{
+                  sceneSetupPassOut.backImg,
+                  sceneSetupPassOut.camera,
+                  sceneSetupPassOut.cameraBuffer,
+                  sceneSetupPassOut.sceneConfig,
+                  sceneSetupPassOut.meshInstances,
+                  sceneSetupPassOut.meshInstancesCount,
+                  sceneSetupPassOut.positions,
+                  sceneSetupPassOut.normals,
+                  sceneSetupPassOut.uvs,
+                  sceneSetupPassOut.indices,
+                  sceneSetupPassOut.primitives,
+                  transfPassOut.matrices,
+                  sceneSetupPassOut.materials,
+                  sceneSetupPassOut.samplers,
+                  sceneSetupPassOut.numValidSampler,
+                  sceneSetupPassOut.lighting,
+                  sceneSetupPassOut.lights,
+                  sceneSetupPassOut.drawGroupCount,
+                  sceneSetupPassOut.atmosphere,
+                  atmospherePassOut});
 
   builder.read(passIn.swapchainExtent);
   passOut.backImg = deferredPassOut.backImg;

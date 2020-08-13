@@ -69,6 +69,7 @@ set(sources
   src/vkg/render/model/node.cpp
   src/vkg/render/model/primitive.cpp
   src/vkg/render/model/camera.cpp
+  src/vkg/render/model/atmosphere.cpp
   
   src/vkg/render/builder/primitive_builder.cpp
   src/vkg/render/builder/gltf_loader.cpp
@@ -83,14 +84,21 @@ set(sources
   src/vkg/render/scene_frame.cpp
   src/vkg/render/pass/compute_transf.cpp
   src/vkg/render/pass/compute_cull_drawcmd.cpp
-  src/vkg/render/pass/deferred.cpp
-  src/vkg/render/pass/deferred_execute.cpp
-  src/vkg/render/pass/deferred_gbuffer.cpp
-  src/vkg/render/pass/deferred_unlit.cpp
-  src/vkg/render/pass/deferred_lighting.cpp
-  src/vkg/render/pass/deferred_transparent.cpp
-  src/vkg/render/pass/atmosphere_pass.cpp
-  src/vkg/render/model/atmosphere.cpp)
+  src/vkg/render/pass/deferred/deferred.cpp
+  src/vkg/render/pass/deferred/deferred_execute.cpp
+  src/vkg/render/pass/deferred/deferred_gbuffer.cpp
+  src/vkg/render/pass/deferred/deferred_unlit.cpp
+  src/vkg/render/pass/deferred/deferred_lighting.cpp
+  src/vkg/render/pass/deferred/deferred_transparent.cpp
+  src/vkg/render/pass/atmosphere/atmosphere_pass.cpp
+  src/vkg/render/pass/atmosphere/atmosphere_model.cpp
+  src/vkg/render/pass/atmosphere/compute_direct_irradiance.cpp
+  src/vkg/render/pass/atmosphere/compute_indiret_irradiance.cpp
+  src/vkg/render/pass/atmosphere/compute_multiple_scattering.cpp
+  src/vkg/render/pass/atmosphere/compute_scattering_density.cpp
+  src/vkg/render/pass/atmosphere/compute_single_scattering.cpp
+  src/vkg/render/pass/atmosphere/compute_transmittance.cpp
+  )
 
 set(definitions "")
 if(WIN32)

@@ -270,7 +270,7 @@ auto GraphicsPipelineMaker::subpass(uint32_t subpass) -> GraphicsPipelineMaker &
 }
 auto GraphicsPipelineMaker::shader(vk::ShaderStageFlagBits shaderStage, Shader &&shader)
   -> GraphicsPipelineMaker & {
-  shaders.insert({shaderStage, std::move(shader)});
+  shaders[shaderStage] = std::move(shader);
   return *this;
 }
 auto GraphicsPipelineMaker::clearShader(vk::ShaderStageFlagBits shaderStage)
