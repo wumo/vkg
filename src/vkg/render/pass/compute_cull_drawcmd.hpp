@@ -40,12 +40,12 @@ private:
     __buffer__(drawCMDCount, vk::ShaderStageFlagBits::eCompute);
   } setDef;
   struct PushConstant {
-    uint totalFrustums;
-    uint totalMeshInstances;
-    uint cmdFrameStride;
-    uint cmdFrustumStride;
-    uint groupFrameStride;
-    uint frame;
+    uint32_t totalFrustums;
+    uint32_t totalMeshInstances;
+    uint32_t cmdFrameStride;
+    uint32_t cmdFrustumStride;
+    uint32_t groupFrameStride;
+    uint32_t frame;
   } pushConstant;
   struct ComputeTransfPipeDef: PipelineLayoutDef {
     __push_constant__(instCount, vk::ShaderStageFlagBits::eCompute, PushConstant);
