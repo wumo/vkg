@@ -6,13 +6,13 @@
 
 namespace vkg {
 struct ComputeTransfPassIn {
-  FrameGraphResource<vk::Buffer> transforms;
-  FrameGraphResource<vk::Buffer> meshInstances;
+  FrameGraphResource<BufferInfo> transforms;
+  FrameGraphResource<BufferInfo> meshInstances;
   FrameGraphResource<uint32_t> meshInstancesCount;
   FrameGraphResource<SceneConfig> sceneConfig;
 };
 struct ComputeTransfPassOut {
-  FrameGraphResource<vk::Buffer> matrices;
+  FrameGraphResource<BufferInfo> matrices;
 };
 
 class ComputeTransf: public Pass<ComputeTransfPassIn, ComputeTransfPassOut> {

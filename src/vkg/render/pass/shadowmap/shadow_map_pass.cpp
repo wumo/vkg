@@ -1,33 +1,131 @@
 #include "shadow_map_pass.hpp"
+#include "vkg/render/model/aabb.hpp"
 namespace vkg {
 
-struct CSMFrustumPassIn {};
+struct CSMFrustumPassIn {
+  FrameGraphResource<AtmosphereSetting> atmosSetting;
+  FrameGraphResource<ShadowMapSetting> shadowMapSetting;
+  FrameGraphResource<Camera *> camera;
+};
 struct CSMFrustumPassOut {
   FrameGraphResource<std::span<Frustum>> frustums;
+  FrameGraphResource<BufferInfo> cascades;
 };
 
 class CSMFrustumPass: public Pass<CSMFrustumPassIn, CSMFrustumPassOut> {
+  struct CascadeDesc {
+    glm::mat4 lightViewProj;
+    glm::vec3 lightDir;
+    float z;
+  };
+
 public:
   auto setup(PassBuilder &builder, const CSMFrustumPassIn &inputs)
     -> CSMFrustumPassOut override {
+    passIn = inputs;
+    builder.read(passIn);
     passOut = {
       .frustums = builder.create<std::span<Frustum>>("CSMFrustums"),
-    };
+      .cascades = builder.create<BufferInfo>("cascades")};
     return passOut;
   }
   void compile(RenderContext &ctx, Resources &resources) override {
-    BasePass::compile(ctx, resources);
+    auto atmos = resources.get(passIn.atmosSetting);
+    auto setting = resources.get(passIn.shadowMapSetting);
+    auto *camera = resources.get(passIn.camera);
+    auto sunDir = atmos.sunDirection();
+
+    const auto numCascades = setting.numCascades();
+    frustums.resize(numCascades);
+
+    auto zNear = camera->zNear();
+    auto zFar = setting.far() == 0 ?
+                  camera->zFar() :
+                  glm::clamp(setting.far(), camera->zNear(), camera->zFar());
+    auto p = camera->location();
+    auto a = camera->width() / float(camera->height());
+    auto tf = glm::tan(camera->fov() / 2);
+    auto v = glm::normalize(camera->direction());
+    auto r = normalize(cross(v, camera->worldUp()));
+    auto u = glm::normalize(glm::cross(r, v));
+
+    auto lambda = 0.5f;
+    for(int i = 0; i < numCascades; ++i) {
+      auto n = lambda * zNear * glm::pow(zFar / zNear, float(i) / numCascades) +
+               (1 - lambda) * (zNear + (zFar - zNear) * (float(i) / numCascades));
+      auto f = lambda * zNear * glm::pow(zFar / zNear, float(i + 1) / numCascades) +
+               (1 - lambda) * (zNear + (zFar - zNear) * (float(i + 1) / numCascades));
+
+      auto nearV = v * n;
+      auto nearR = n * tf * a * r;
+      auto nearU = n * tf * u;
+
+      auto farV = v * f;
+      auto farR = f * tf * a * r;
+      auto farU = f * tf * u;
+
+      glm::vec3 center{0};
+      auto cam0 = p + nearV - nearR + nearU;
+      center += cam0 / 8.f;
+      auto cam1 = p + nearV - nearR - nearU;
+      center += cam1 / 8.f;
+      auto cam2 = p + nearV + nearR - nearU;
+      center += cam2 / 8.f;
+      auto cam3 = p + nearV + nearR + nearU;
+      center += cam3 / 8.f;
+
+      auto cam4 = p + farV - farR + farU;
+      center += cam4 / 8.f;
+      auto cam5 = p + farV - farR - farU;
+      center += cam5 / 8.f;
+      auto cam6 = p + farV + farR - farU;
+      center += cam6 / 8.f;
+      auto cam7 = p + farV + farR + farU;
+      center += cam7 / 8.f;
+
+      auto lUp = glm::vec3{0, 1, 0};
+      if(glm::all(glm::epsilonEqual(
+           cross(sunDir, lUp), glm::vec3{}, std::numeric_limits<float>::epsilon())))
+        lUp = {0, 0, 1};
+
+      auto lightView = viewMatrix(center, center + sunDir, lUp);
+      auto lightViewInv = glm::inverse(lightView);
+
+      AABB aabb;
+      aabb.merge(lightView * glm::vec4(cam0, 1));
+      aabb.merge(lightView * glm::vec4(cam1, 1));
+      aabb.merge(lightView * glm::vec4(cam2, 1));
+      aabb.merge(lightView * glm::vec4(cam3, 1));
+      aabb.merge(lightView * glm::vec4(cam4, 1));
+      aabb.merge(lightView * glm::vec4(cam5, 1));
+      aabb.merge(lightView * glm::vec4(cam6, 1));
+      aabb.merge(lightView * glm::vec4(cam7, 1));
+
+      center = lightViewInv * glm::vec4(aabb.center(), 1);
+      auto range = aabb.range();
+      lightView = viewMatrix(center - sunDir * zFar / 2.f, center, lUp);
+
+      auto lightProj =
+        orthoMatrix(-range.x / 2, range.x / 2, -range.y / 2, range.y / 2, 0, zFar);
+
+      auto lightViewProj = lightProj * lightView;
+      cascades->ptr<CascadeDesc>()[i] = {lightViewProj, sunDir, f};
+      frustums[i] = Frustum{lightViewProj};
+    }
+    resources.set(passOut.cascades, {cascades->buffer()});
   }
-  void execute(RenderContext &ctx, Resources &resources) override {
-    BasePass::execute(ctx, resources);
-  }
+  void execute(RenderContext &ctx, Resources &resources) override {}
+
+  std::vector<Frustum> frustums;
+  std::unique_ptr<Buffer> cascades;
 };
 
 auto ShadowMapPass::setup(PassBuilder &builder, const ShadowMapPassIn &inputs)
   -> ShadowMapPassOut {
   passIn = inputs;
 
-  auto &frustum = builder.newPass<CSMFrustumPass>("CSMFrustumPass", {});
+  auto &frustum = builder.newPass<CSMFrustumPass>(
+    "CSMFrustumPass", {passIn.atmosSetting, passIn.shadowMapSetting, passIn.camera});
 
   auto &cull = builder.newPass<ComputeCullDrawCMD>(
     "ShadowMapCull", {.frustums = frustum.out().frustums,
@@ -37,11 +135,12 @@ auto ShadowMapPass::setup(PassBuilder &builder, const ShadowMapPassIn &inputs)
                       .primitives = passIn.primitives,
                       .matrices = passIn.matrices,
                       .maxPerGroup = passIn.maxPerGroup});
+  cull.enableIf([]() { return false; });
   cullPassOut = cull.out();
   builder.read(passIn.shadowMapSetting);
   passOut = {
-    .setting = builder.create<vk::Buffer>("ShadowMapSetting"),
-    .cascades = builder.create<vk::Buffer>("Cascades"),
+    .setting = builder.create<BufferInfo>("ShadowMapSetting"),
+    .cascades = frustum.out().cascades,
     .shadowMaps = builder.create<Texture *>("ShadowMaps"),
   };
   return passOut;
@@ -55,12 +154,13 @@ void ShadowMapPass::compile(RenderContext &ctx, Resources &resources) {
     shadowMaps == nullptr || shadowMaps->extent().width != setting.textureSize() ||
     shadowMaps->extent().depth != setting.numCascades()) {
     shadowMapSetting = buffer::hostUniformBuffer(ctx.device, sizeof(UBOShadowMapSetting));
-    cascades =
-      buffer::hostUniformBuffer(ctx.device, sizeof(CascadeDesc) * setting.numCascades());
     createRenderPass(ctx.device, setting);
     createTextures(ctx.device, setting);
     createDescriptorSets(ctx.device, setting);
     createPipeline(ctx.device, setting);
+
+    resources.set(passOut.setting, {shadowMapSetting->buffer()});
+    resources.set(passOut.shadowMaps, shadowMaps.get());
   }
 }
 

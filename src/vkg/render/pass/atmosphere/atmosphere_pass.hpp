@@ -15,6 +15,7 @@ struct AtmospherePassOut {
   FrameGraphResource<Texture *> transmittance;
   FrameGraphResource<Texture *> scattering;
   FrameGraphResource<Texture *> irradiance;
+  
 };
 
 class AtmospherePass: public Pass<AtmospherePassIn, AtmospherePassOut> {

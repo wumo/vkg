@@ -7,22 +7,24 @@
 #include "vkg/render/model/camera.hpp"
 #include "vkg/render/draw_group.hpp"
 #include "vkg/render/pass/compute_cull_drawcmd.hpp"
+#include "vkg/render/pass/atmosphere/atmosphere_pass.hpp"
 
 namespace vkg {
 struct ShadowMapPassIn {
+  FrameGraphResource<AtmosphereSetting> atmosSetting;
   FrameGraphResource<ShadowMapSetting> shadowMapSetting;
   FrameGraphResource<Camera *> camera;
-  FrameGraphResource<vk::Buffer> cameraBuffer;
+  FrameGraphResource<BufferInfo> cameraBuffer;
   FrameGraphResource<SceneConfig> sceneConfig;
-  FrameGraphResource<vk::Buffer> meshInstances;
+  FrameGraphResource<BufferInfo> meshInstances;
   FrameGraphResource<uint32_t> meshInstancesCount;
-  FrameGraphResource<vk::Buffer> primitives;
-  FrameGraphResource<vk::Buffer> matrices;
+  FrameGraphResource<BufferInfo> primitives;
+  FrameGraphResource<BufferInfo> matrices;
   FrameGraphResource<std::span<uint32_t>> maxPerGroup;
 };
 struct ShadowMapPassOut {
-  FrameGraphResource<vk::Buffer> setting;
-  FrameGraphResource<vk::Buffer> cascades;
+  FrameGraphResource<BufferInfo> setting;
+  FrameGraphResource<BufferInfo> cascades;
   FrameGraphResource<Texture *> shadowMaps;
 };
 
@@ -53,12 +55,6 @@ private:
     uint32_t numCascades;
   };
 
-  struct CascadeDesc {
-    glm::mat4 lightViewProj;
-    glm::vec3 lightDir;
-    float z;
-  };
-
   ComputeCullDrawCMDPassOut cullPassOut;
 
   vk::UniqueDescriptorPool descriptorPool;
@@ -69,8 +65,6 @@ private:
   std::vector<vk::UniquePipeline> pipes;
 
   std::unique_ptr<Buffer> shadowMapSetting;
-  std::unique_ptr<Buffer> cascades;
-  std::vector<std::unique_ptr<Buffer>> frustums;
   std::unique_ptr<Texture> shadowMaps;
   std::vector<vk::UniqueImageView> shadowMapLayerViews;
   vk::UniqueFramebuffer framebuffer;

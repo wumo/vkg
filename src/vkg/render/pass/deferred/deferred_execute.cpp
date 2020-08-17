@@ -39,7 +39,6 @@ void DeferredPass::execute(RenderContext &ctx, Resources &resources) {
   cb.setScissor(0, scissor);
 
   auto &dev = resources.device;
-  vk::DeviceSize zero{0};
   cb.bindDescriptorSets(
     vk::PipelineBindPoint::eGraphics, deferredPipeDef.layout(),
     deferredPipeDef.scene.set(), sceneSet, nullptr);
@@ -55,10 +54,14 @@ void DeferredPass::execute(RenderContext &ctx, Resources &resources) {
       vk::PipelineBindPoint::eGraphics, deferredPipeDef.layout(),
       deferredPipeDef.shadowMap.set(), shadowMapSet, nullptr);
 
-  cb.bindVertexBuffers(0, resources.get(passIn.positions), zero);
-  cb.bindVertexBuffers(1, resources.get(passIn.normals), zero);
-  cb.bindVertexBuffers(2, resources.get(passIn.uvs), zero);
-  cb.bindIndexBuffer(resources.get(passIn.indices), zero, vk::IndexType::eUint32);
+  auto bufInfo = resources.get(passIn.positions);
+  cb.bindVertexBuffers(0, bufInfo.buffer, bufInfo.offset);
+  bufInfo = resources.get(passIn.normals);
+  cb.bindVertexBuffers(1, bufInfo.buffer, bufInfo.offset);
+  bufInfo = resources.get(passIn.uvs);
+  cb.bindVertexBuffers(2, bufInfo.buffer, bufInfo.offset);
+  bufInfo = resources.get(passIn.indices);
+  cb.bindIndexBuffer(bufInfo.buffer, bufInfo.offset, vk::IndexType::eUint32);
 
   cb.setLineWidth(lineWidth_);
 
@@ -66,10 +69,11 @@ void DeferredPass::execute(RenderContext &ctx, Resources &resources) {
     auto drawGroupIdx = value(drawGroup);
     if(drawGroupCount[drawGroupIdx] == 0) return;
     cb.drawIndexedIndirectCount(
-      drawCMDBuffer,
-      sizeof(vk::DrawIndexedIndirectCommand) *
-        (cmdOffsetPerFrustum[0] + cmdOffsetPerGroup[drawGroupIdx]),
-      drawCMDCountBuffer, sizeof(uint32_t) * (countOffset + drawGroupIdx),
+      drawCMDBuffer.buffer,
+      drawCMDBuffer.offset + sizeof(vk::DrawIndexedIndirectCommand) *
+                               (cmdOffsetPerFrustum[0] + cmdOffsetPerGroup[drawGroupIdx]),
+      drawCMDCountBuffer.buffer,
+      drawCMDCountBuffer.offset + sizeof(uint32_t) * (countOffset + drawGroupIdx),
       drawGroupCount[drawGroupIdx], sizeof(vk::DrawIndexedIndirectCommand));
   };
 

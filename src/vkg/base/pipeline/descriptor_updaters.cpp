@@ -32,6 +32,9 @@ auto BufferUpdater::operator()(
   vk::Buffer buffer, vk::DeviceSize offset, vk::DeviceSize range) -> void {
   operator()(0, buffer, offset, range);
 }
+void BufferUpdater::operator()(BufferInfo bufferInfo) {
+  operator()(0, bufferInfo.buffer, bufferInfo.offset, bufferInfo.size);
+}
 
 ImageUpdater::ImageUpdater(
   DescriptorSetLayoutMaker &layoutMaker, DescriptorSetUpdater &setUpdater,

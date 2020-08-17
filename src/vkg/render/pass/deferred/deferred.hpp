@@ -13,21 +13,21 @@ namespace vkg {
 struct DeferredPassIn {
   FrameGraphResource<Texture *> backImg;
   FrameGraphResource<Camera *> camera;
-  FrameGraphResource<vk::Buffer> cameraBuffer;
+  FrameGraphResource<BufferInfo> cameraBuffer;
   FrameGraphResource<SceneConfig> sceneConfig;
-  FrameGraphResource<vk::Buffer> meshInstances;
+  FrameGraphResource<BufferInfo> meshInstances;
   FrameGraphResource<uint32_t> meshInstancesCount;
-  FrameGraphResource<vk::Buffer> positions;
-  FrameGraphResource<vk::Buffer> normals;
-  FrameGraphResource<vk::Buffer> uvs;
-  FrameGraphResource<vk::Buffer> indices;
-  FrameGraphResource<vk::Buffer> primitives;
-  FrameGraphResource<vk::Buffer> matrices;
-  FrameGraphResource<vk::Buffer> materials;
+  FrameGraphResource<BufferInfo> positions;
+  FrameGraphResource<BufferInfo> normals;
+  FrameGraphResource<BufferInfo> uvs;
+  FrameGraphResource<BufferInfo> indices;
+  FrameGraphResource<BufferInfo> primitives;
+  FrameGraphResource<BufferInfo> matrices;
+  FrameGraphResource<BufferInfo> materials;
   FrameGraphResource<std::span<vk::DescriptorImageInfo>> samplers;
   FrameGraphResource<uint32_t> numValidSampler;
-  FrameGraphResource<vk::Buffer> lighting;
-  FrameGraphResource<vk::Buffer> lights;
+  FrameGraphResource<BufferInfo> lighting;
+  FrameGraphResource<BufferInfo> lights;
 
   FrameGraphResource<std::span<uint32_t>> drawGroupCount;
 

@@ -14,21 +14,21 @@ struct SceneSetupPassIn {
 struct SceneSetupPassOut {
   FrameGraphResource<Texture *> backImg;
   FrameGraphResource<SceneConfig> sceneConfig;
-  FrameGraphResource<vk::Buffer> positions;
-  FrameGraphResource<vk::Buffer> normals;
-  FrameGraphResource<vk::Buffer> uvs;
-  FrameGraphResource<vk::Buffer> indices;
-  FrameGraphResource<vk::Buffer> primitives;
-  FrameGraphResource<vk::Buffer> materials;
-  FrameGraphResource<vk::Buffer> transforms;
-  FrameGraphResource<vk::Buffer> meshInstances;
+  FrameGraphResource<BufferInfo> positions;
+  FrameGraphResource<BufferInfo> normals;
+  FrameGraphResource<BufferInfo> uvs;
+  FrameGraphResource<BufferInfo> indices;
+  FrameGraphResource<BufferInfo> primitives;
+  FrameGraphResource<BufferInfo> materials;
+  FrameGraphResource<BufferInfo> transforms;
+  FrameGraphResource<BufferInfo> meshInstances;
   FrameGraphResource<uint32_t> meshInstancesCount;
-  FrameGraphResource<vk::Buffer> lighting;
-  FrameGraphResource<vk::Buffer> lights;
+  FrameGraphResource<BufferInfo> lighting;
+  FrameGraphResource<BufferInfo> lights;
   FrameGraphResource<std::span<vk::DescriptorImageInfo>> samplers;
   FrameGraphResource<uint32_t> numValidSampler;
   FrameGraphResource<Camera *> camera;
-  FrameGraphResource<vk::Buffer> cameraBuffer;
+  FrameGraphResource<BufferInfo> cameraBuffer;
   FrameGraphResource<std::span<uint32_t>> maxPerGroup;
   FrameGraphResource<AtmosphereSetting> atmosphereSetting;
   FrameGraphResource<ShadowMapSetting> shadowMapSetting;
@@ -47,21 +47,21 @@ public:
     passOut = {
       .backImg = builder.create<Texture *>("backImg"),
       .sceneConfig = builder.create<SceneConfig>("sceneConfig"),
-      .positions = builder.create<vk::Buffer>("positions"),
-      .normals = builder.create<vk::Buffer>("normals"),
-      .uvs = builder.create<vk::Buffer>("uvs"),
-      .indices = builder.create<vk::Buffer>("indices"),
-      .primitives = builder.create<vk::Buffer>("primitives"),
-      .materials = builder.create<vk::Buffer>("materials"),
-      .transforms = builder.create<vk::Buffer>("transforms"),
-      .meshInstances = builder.create<vk::Buffer>("meshInstances"),
+      .positions = builder.create<BufferInfo>("positions"),
+      .normals = builder.create<BufferInfo>("normals"),
+      .uvs = builder.create<BufferInfo>("uvs"),
+      .indices = builder.create<BufferInfo>("indices"),
+      .primitives = builder.create<BufferInfo>("primitives"),
+      .materials = builder.create<BufferInfo>("materials"),
+      .transforms = builder.create<BufferInfo>("transforms"),
+      .meshInstances = builder.create<BufferInfo>("meshInstances"),
       .meshInstancesCount = builder.create<uint32_t>("meshInstancesCount"),
-      .lighting = builder.create<vk::Buffer>("lighting"),
-      .lights = builder.create<vk::Buffer>("lights"),
+      .lighting = builder.create<BufferInfo>("lighting"),
+      .lights = builder.create<BufferInfo>("lights"),
       .samplers = builder.create<std::span<vk::DescriptorImageInfo>>("textures"),
       .numValidSampler = builder.create<uint32_t>("numValidSampler"),
       .camera = builder.create<Camera *>("camera"),
-      .cameraBuffer = builder.create<vk::Buffer>("cameraBuffer"),
+      .cameraBuffer = builder.create<BufferInfo>("cameraBuffer"),
       .maxPerGroup = builder.create<std::span<uint32_t>>("drawGroupCount"),
       .atmosphereSetting = builder.create<AtmosphereSetting>("atmosphere"),
       .shadowMapSetting = builder.create<ShadowMapSetting>("shadowMapSetting"),
@@ -72,18 +72,18 @@ public:
     if(!boundPassData) {
       boundPassData = true;
       resources.set(passOut.sceneConfig, scene.sceneConfig);
-      resources.set(passOut.positions, scene.Dev.positions->buffer());
-      resources.set(passOut.normals, scene.Dev.normals->buffer());
-      resources.set(passOut.uvs, scene.Dev.uvs->buffer());
-      resources.set(passOut.indices, scene.Dev.indices->buffer());
-      resources.set(passOut.primitives, scene.Dev.primitives->buffer());
-      resources.set(passOut.materials, scene.Dev.materials->buffer());
-      resources.set(passOut.transforms, scene.Dev.transforms->buffer());
-      resources.set(passOut.meshInstances, scene.Dev.meshInstances->buffer());
-      resources.set(passOut.lighting, scene.Dev.lighting->buffer());
-      resources.set(passOut.lights, scene.Dev.lights->buffer());
+      resources.set(passOut.positions, scene.Dev.positions->bufferInfo());
+      resources.set(passOut.normals, scene.Dev.normals->bufferInfo());
+      resources.set(passOut.uvs, scene.Dev.uvs->bufferInfo());
+      resources.set(passOut.indices, scene.Dev.indices->bufferInfo());
+      resources.set(passOut.primitives, scene.Dev.primitives->bufferInfo());
+      resources.set(passOut.materials, scene.Dev.materials->bufferInfo());
+      resources.set(passOut.transforms, scene.Dev.transforms->bufferInfo());
+      resources.set(passOut.meshInstances, scene.Dev.meshInstances->bufferInfo());
+      resources.set(passOut.lighting, scene.Dev.lighting->bufferInfo());
+      resources.set(passOut.lights, scene.Dev.lights->bufferInfo());
       resources.set(passOut.camera, scene.Host.camera_.get());
-      resources.set(passOut.cameraBuffer, scene.Dev.camera->buffer());
+      resources.set(passOut.cameraBuffer, scene.Dev.camera->bufferInfo());
       resources.set(passOut.samplers, {scene.Dev.sampler2Ds});
     }
     resources.set(passOut.numValidSampler, uint32_t(scene.Dev.textures.size()));
@@ -134,6 +134,7 @@ auto Scene::setup(PassBuilder &builder, const ScenePassIn &inputs) -> ScenePassO
   if(!sceneConfig.rayTraced) {
     auto &shadowMap = builder.newPass<ShadowMapPass>(
       "ShadowMap", {
+                     sceneSetup.out().atmosphereSetting,
                      sceneSetup.out().shadowMapSetting,
                      sceneSetup.out().camera,
                      sceneSetup.out().cameraBuffer,

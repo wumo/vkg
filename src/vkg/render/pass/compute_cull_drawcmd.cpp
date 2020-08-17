@@ -26,8 +26,8 @@ auto ComputeCullDrawCMD::setup(
   builder.read(passIn.matrices);
   builder.read(passIn.maxPerGroup);
   passOut = {
-    .drawCMDBuffer = builder.create<vk::Buffer>("drawCMDBuffer"),
-    .drawGroupCountBuffer = builder.create<vk::Buffer>("drawCMDCountBuffer"),
+    .drawCMDBuffer = builder.create<BufferInfo>("drawCMDBuffer"),
+    .drawGroupCountBuffer = builder.create<BufferInfo>("drawCMDCountBuffer"),
     .cmdOffsetPerFrustum = builder.create<std::span<uint32_t>>("cmdOffsetPerFrustum"),
     .cmdOffsetPerGroup = builder.create<std::span<uint32_t>>("cmdOffsetPerGroup"),
     .countOffset = builder.create<uint32_t>("countOffset"),
@@ -64,8 +64,8 @@ void ComputeCullDrawCMD::compile(RenderContext &ctx, Resources &resources) {
       resources.device, sizeof(uint32_t) * numDrawGroups * numFrustums * ctx.numFrames,
       name + "drawGroupCount");
 
-    resources.set(passOut.drawCMDBuffer, drawCMD->buffer());
-    resources.set(passOut.drawGroupCountBuffer, countPerGroupBuffer->buffer());
+    resources.set(passOut.drawCMDBuffer, drawCMD->bufferInfo());
+    resources.set(passOut.drawGroupCountBuffer, countPerGroupBuffer->bufferInfo());
 
     setDef.frustums(frustumsBuf->buffer());
     setDef.meshInstances(resources.get(passIn.meshInstances));

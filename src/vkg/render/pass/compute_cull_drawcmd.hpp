@@ -7,16 +7,16 @@
 namespace vkg {
 struct ComputeCullDrawCMDPassIn {
   FrameGraphResource<std::span<Frustum>> frustums;
-  FrameGraphResource<vk::Buffer> meshInstances;
+  FrameGraphResource<BufferInfo> meshInstances;
   FrameGraphResource<uint32_t> meshInstancesCount;
   FrameGraphResource<SceneConfig> sceneConfig;
-  FrameGraphResource<vk::Buffer> primitives;
-  FrameGraphResource<vk::Buffer> matrices;
+  FrameGraphResource<BufferInfo> primitives;
+  FrameGraphResource<BufferInfo> matrices;
   FrameGraphResource<std::span<uint32_t>> maxPerGroup;
 };
 struct ComputeCullDrawCMDPassOut {
-  FrameGraphResource<vk::Buffer> drawCMDBuffer;
-  FrameGraphResource<vk::Buffer> drawGroupCountBuffer;
+  FrameGraphResource<BufferInfo> drawCMDBuffer;
+  FrameGraphResource<BufferInfo> drawGroupCountBuffer;
   FrameGraphResource<std::span<uint32_t>> cmdOffsetPerFrustum;
   FrameGraphResource<std::span<uint32_t>> cmdOffsetPerGroup;
   FrameGraphResource<uint32_t> countOffset;

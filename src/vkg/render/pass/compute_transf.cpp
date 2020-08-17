@@ -21,7 +21,7 @@ auto ComputeTransf::setup(PassBuilder &builder, const ComputeTransfPassIn &input
   builder.read(passIn.meshInstances);
   builder.read(passIn.meshInstancesCount);
   builder.read(passIn.sceneConfig);
-  passOut.matrices = builder.create<vk::Buffer>("matrices");
+  passOut.matrices = builder.create<BufferInfo>("matrices");
   return passOut;
 }
 void ComputeTransf::compile(RenderContext &ctx, Resources &resources) {
@@ -33,9 +33,9 @@ void ComputeTransf::compile(RenderContext &ctx, Resources &resources) {
     set = setDef.createSet(*descriptorPool);
     setDef.transforms(resources.get(passIn.transforms));
     setDef.meshInstances(resources.get(passIn.meshInstances));
-    setDef.matrices(matrices->buffer());
+    setDef.matrices(matrices->bufferInfo());
     setDef.update(set);
-    resources.set(passOut.matrices, matrices->buffer());
+    resources.set(passOut.matrices, matrices->bufferInfo());
   }
 }
 void ComputeTransf::execute(RenderContext &ctx, Resources &resources) {

@@ -3,6 +3,11 @@
 #include <memory>
 
 namespace vkg {
+struct BufferInfo {
+  vk::Buffer buffer;
+  vk::DeviceSize offset{0};
+  vk::DeviceSize size{VK_WHOLE_SIZE};
+};
 class Buffer {
 public:
   Buffer(
@@ -24,6 +29,7 @@ public:
   }
 
   auto buffer() const -> vk::Buffer;
+  auto bufferInfo() const -> BufferInfo;
   auto device() const -> Device &;
   auto devMem() const -> std::pair<vk::DeviceMemory, vk::DeviceSize>;
   auto size() const -> vk::DeviceSize;

@@ -49,6 +49,7 @@ public:
 
   auto count() const -> uint32_t { return count_; }
   auto buffer() const -> vk::Buffer { return buffer_->buffer(); }
+  auto bufferInfo() const -> BufferInfo { return buffer_->bufferInfo(); }
 
 private:
   std::unique_ptr<Buffer> buffer_;
@@ -88,6 +89,7 @@ public:
   }
 
   auto buffer() const { return buffer_->buffer(); }
+  auto bufferInfo() const -> BufferInfo { return buffer_->bufferInfo(); }
   auto count() const { return uint32_t(maxNum - freeSlots.size()); }
   auto size() const { return count() * sizeof(T); }
   auto flush(vk::CommandBuffer cb) {}

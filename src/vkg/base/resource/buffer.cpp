@@ -41,6 +41,7 @@ void Buffer::barrier(
     srcStageMask, dstStageMask, dependencyFlags, nullptr, barrier, nullptr);
 }
 auto Buffer::buffer() const -> vk::Buffer { return vmaBuffer->buffer; }
+auto Buffer::bufferInfo() const -> BufferInfo { return {vmaBuffer->buffer}; }
 auto Buffer::device() const -> Device & { return vmaBuffer->vkezDevice; }
 auto Buffer::devMem() const -> std::pair<vk::DeviceMemory, vk::DeviceSize> {
   return {alloc.deviceMemory, alloc.offset};

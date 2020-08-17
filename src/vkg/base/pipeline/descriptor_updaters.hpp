@@ -33,6 +33,7 @@ public:
   auto operator()(
     vk::Buffer buffer, vk::DeviceSize offset = 0, vk::DeviceSize range = VK_WHOLE_SIZE)
     -> void;
+  void operator()(BufferInfo bufferInfo);
 
 private:
   vk::DescriptorType descriptorType;
