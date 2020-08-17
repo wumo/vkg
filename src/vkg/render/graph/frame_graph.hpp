@@ -58,7 +58,7 @@ public:
   virtual void compile(RenderContext &ctx, Resources &resources){};
   virtual void execute(RenderContext &ctx, Resources &resources){};
 
-  void setPassCondition(PassCondition &&passCondition) {
+  void enableIf(PassCondition &&passCondition) {
     passCondition_ = std::move(passCondition);
   }
 
@@ -70,6 +70,7 @@ private:
   uint32_t order;
   std::vector<FrameGraphBaseResource> inputs_;
   std::vector<FrameGraphBaseResource> outputs_;
+  uint32_t parent{~0u};
 
   PassCondition passCondition_{[]() { return true; }};
 };
@@ -295,7 +296,8 @@ private:
   std::vector<BasePass *> passes;
   std::vector<uint32_t> sortedPassIds;
   std::vector<std::unique_ptr<BasePass>> allocated;
-
+  std::vector<bool> enabled;
+  
   std::vector<FrameGraphResources> resRevisions;
 
   std::unique_ptr<Resources> resources;
@@ -347,19 +349,25 @@ template<typename PassInType, typename PassOutType>
 auto PassBuilder::addPass(
   const std::string &name, const PassInType &inputs, Pass<PassInType, PassOutType> &pass)
   -> Pass<PassInType, PassOutType> & {
-  return frameGraph.addPass(scopedName(name), inputs, pass);
+  auto &p = frameGraph.addPass(scopedName(name), inputs, pass);
+  p.parent = pass_.id;
+  return p;
 }
 template<typename T, typename... Args>
 auto PassBuilder::newPass(
   const std::string &name, const typename T::PassInType &inputs, Args &&... args) -> T & {
-  return frameGraph.newPass<T>(scopedName(name), inputs, std::forward<Args>(args)...);
+  auto &p = frameGraph.newPass<T>(scopedName(name), inputs, std::forward<Args>(args)...);
+  p.parent = pass_.id;
+  return p;
 }
 template<typename PassInType, typename PassOutType>
 auto PassBuilder::newLambdaPass(
   const std::string &name, const PassInType &inputs,
   PassSetup<PassInType, PassOutType> &&setup, PassCompile &&compile, PassExec &&exec)
   -> LambdaPass<PassInType, PassOutType> & {
-  return frameGraph.newLambdaPass<PassInType, PassOutType>(
+  auto &p = frameGraph.newLambdaPass<PassInType, PassOutType>(
     scopedName(name), inputs, std::move(setup), std::move(compile), std::move(exec));
+  p.parent = pass_.id;
+  return p;
 }
 }

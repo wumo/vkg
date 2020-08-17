@@ -37,7 +37,6 @@ auto ShadowMapPass::setup(PassBuilder &builder, const ShadowMapPassIn &inputs)
                       .primitives = passIn.primitives,
                       .matrices = passIn.matrices,
                       .maxPerGroup = passIn.maxPerGroup});
-  cull.setPassCondition([]() { return false; });
   cullPassOut = cull.out();
   builder.read(passIn.shadowMapSetting);
   passOut = {

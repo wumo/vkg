@@ -131,45 +131,48 @@ auto Scene::setup(PassBuilder &builder, const ScenePassIn &inputs) -> ScenePassO
   auto &atmosphere =
     builder.newPass<AtmospherePass>("Atmosphere", {sceneSetup.out().atmosphereSetting});
 
-  auto &shadowMap = builder.newPass<ShadowMapPass>(
-    "ShadowMap", {
-                   sceneSetup.out().shadowMapSetting,
+  if(!sceneConfig.rayTraced) {
+    auto &shadowMap = builder.newPass<ShadowMapPass>(
+      "ShadowMap", {
+                     sceneSetup.out().shadowMapSetting,
+                     sceneSetup.out().camera,
+                     sceneSetup.out().cameraBuffer,
+                     sceneSetup.out().sceneConfig,
+                     sceneSetup.out().meshInstances,
+                     sceneSetup.out().meshInstancesCount,
+                     sceneSetup.out().primitives,
+                     transf.out().matrices,
+                     sceneSetup.out().maxPerGroup,
+                   });
+    shadowMap.enableIf([&]() { return Host.shadowMap.isEnabled(); });
+
+    auto &deferred = builder.newPass<DeferredPass>(
+      "Deferred", {sceneSetup.out().backImg,
                    sceneSetup.out().camera,
                    sceneSetup.out().cameraBuffer,
                    sceneSetup.out().sceneConfig,
                    sceneSetup.out().meshInstances,
                    sceneSetup.out().meshInstancesCount,
+                   sceneSetup.out().positions,
+                   sceneSetup.out().normals,
+                   sceneSetup.out().uvs,
+                   sceneSetup.out().indices,
                    sceneSetup.out().primitives,
                    transf.out().matrices,
+                   sceneSetup.out().materials,
+                   sceneSetup.out().samplers,
+                   sceneSetup.out().numValidSampler,
+                   sceneSetup.out().lighting,
+                   sceneSetup.out().lights,
                    sceneSetup.out().maxPerGroup,
-                 });
+                   sceneSetup.out().atmosphereSetting,
+                   atmosphere.out(),
+                   sceneSetup.out().shadowMapSetting,
+                   shadowMap.out()});
 
-  auto &deferred = builder.newPass<DeferredPass>(
-    "Deferred", {sceneSetup.out().backImg,
-                 sceneSetup.out().camera,
-                 sceneSetup.out().cameraBuffer,
-                 sceneSetup.out().sceneConfig,
-                 sceneSetup.out().meshInstances,
-                 sceneSetup.out().meshInstancesCount,
-                 sceneSetup.out().positions,
-                 sceneSetup.out().normals,
-                 sceneSetup.out().uvs,
-                 sceneSetup.out().indices,
-                 sceneSetup.out().primitives,
-                 transf.out().matrices,
-                 sceneSetup.out().materials,
-                 sceneSetup.out().samplers,
-                 sceneSetup.out().numValidSampler,
-                 sceneSetup.out().lighting,
-                 sceneSetup.out().lights,
-                 sceneSetup.out().maxPerGroup,
-                 sceneSetup.out().atmosphereSetting,
-                 atmosphere.out(),
-                 sceneSetup.out().shadowMapSetting,
-                 shadowMap.out()});
-
-  builder.read(passIn.swapchainExtent);
-  passOut.backImg = deferred.out().backImg;
+    builder.read(passIn.swapchainExtent);
+    passOut.backImg = deferred.out().backImg;
+  }
   passOut.renderArea = builder.create<vk::Rect2D>("renderArea");
 
   return passOut;

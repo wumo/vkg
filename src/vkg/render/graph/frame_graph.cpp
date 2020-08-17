@@ -87,13 +87,17 @@ auto FrameGraph::build() -> void {
   }
 
   resources = std::make_unique<Resources>(device_, uint32_t(resRevisions.size()));
+  enabled.resize(passes.size());
 }
 
 auto FrameGraph::onFrame(RenderContext &renderContext) -> void {
-  for(auto &id: sortedPassIds) {
-    if(passes[id]->passCondition_()) passes[id]->compile(renderContext, *resources);
-  }
+  //this depends on that the parent pass is always created before child passes(created in setup method).
+  for(auto &pass: passes)
+    enabled[pass->id] =
+      ((pass->parent == ~0u || enabled[pass->parent]) && pass->passCondition_());
   for(auto &id: sortedPassIds)
-    if(passes[id]->passCondition_()) passes[id]->execute(renderContext, *resources);
+    if(enabled[id]) passes[id]->compile(renderContext, *resources);
+  for(auto &id: sortedPassIds)
+    if(enabled[id]) passes[id]->execute(renderContext, *resources);
 }
 }
