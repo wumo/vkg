@@ -37,14 +37,12 @@ auto DeferredPass::setup(PassBuilder &builder, const DeferredPassIn &inputs)
   -> DeferredPassOut {
   passIn = inputs;
 
-  auto &cam =
-    builder.newPass<CamFrustumPass>("CamFrustum", CamFrustumPassIn{passIn.camera});
+  auto &cam = builder.newPass<CamFrustumPass>("CamFrustum", {passIn.camera});
 
   auto &cull = builder.newPass<ComputeCullDrawCMD>(
     "Cull",
-    ComputeCullDrawCMDPassIn{
-      cam.out().camFrustum, passIn.meshInstances, passIn.meshInstancesCount,
-      passIn.sceneConfig, passIn.primitives, passIn.matrices, passIn.drawGroupCount});
+    {cam.out().camFrustum, passIn.meshInstances, passIn.meshInstancesCount,
+     passIn.sceneConfig, passIn.primitives, passIn.matrices, passIn.drawGroupCount});
   cullPassOut = cull.out();
 
   builder.read(passIn.sceneConfig);

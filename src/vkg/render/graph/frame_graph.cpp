@@ -5,7 +5,7 @@ namespace vkg {
 PassBuilder::PassBuilder(FrameGraph &frameGraph, uint32_t id, BasePass &pass)
   : frameGraph(frameGraph), id{id}, pass_{pass} {}
 auto PassBuilder::device() -> Device & { return frameGraph.device(); }
-auto PassBuilder::nameMangling(std::string name) -> std::string {
+auto PassBuilder::scopedName(std::string name) -> std::string {
   return pass_.name + "/" + name;
 }
 

@@ -122,20 +122,17 @@ auto Scene::setup(PassBuilder &builder, const ScenePassIn &inputs) -> ScenePassO
 
   auto &sceneSetup = builder.newPass<SceneSetupPass>(
     "SceneSetup",
-    SceneSetupPassIn{
-      inputs.swapchainExtent, inputs.swapchainFormat, inputs.swapchainVersion},
-    *this);
+    {inputs.swapchainExtent, inputs.swapchainFormat, inputs.swapchainVersion}, *this);
 
   auto &transf = builder.newPass<ComputeTransf>(
-    "Transf", ComputeTransfPassIn{
-                sceneSetup.out().transforms, sceneSetup.out().meshInstances,
-                sceneSetup.out().meshInstancesCount, sceneSetup.out().sceneConfig});
+    "Transf", {sceneSetup.out().transforms, sceneSetup.out().meshInstances,
+               sceneSetup.out().meshInstancesCount, sceneSetup.out().sceneConfig});
 
-  auto &atmosphere = builder.newPass<AtmospherePass>(
-    "Atmosphere", AtmospherePassIn{sceneSetup.out().atmosphereSetting});
+  auto &atmosphere =
+    builder.newPass<AtmospherePass>("Atmosphere", {sceneSetup.out().atmosphereSetting});
 
   auto &shadowMap = builder.newPass<ShadowMapPass>(
-    "ShadowMap", ShadowMapPassIn{
+    "ShadowMap", {
                    sceneSetup.out().shadowMapSetting,
                    sceneSetup.out().camera,
                    sceneSetup.out().cameraBuffer,
@@ -148,29 +145,28 @@ auto Scene::setup(PassBuilder &builder, const ScenePassIn &inputs) -> ScenePassO
                  });
 
   auto &deferred = builder.newPass<DeferredPass>(
-    "Deferred", DeferredPassIn{
-                  sceneSetup.out().backImg,
-                  sceneSetup.out().camera,
-                  sceneSetup.out().cameraBuffer,
-                  sceneSetup.out().sceneConfig,
-                  sceneSetup.out().meshInstances,
-                  sceneSetup.out().meshInstancesCount,
-                  sceneSetup.out().positions,
-                  sceneSetup.out().normals,
-                  sceneSetup.out().uvs,
-                  sceneSetup.out().indices,
-                  sceneSetup.out().primitives,
-                  transf.out().matrices,
-                  sceneSetup.out().materials,
-                  sceneSetup.out().samplers,
-                  sceneSetup.out().numValidSampler,
-                  sceneSetup.out().lighting,
-                  sceneSetup.out().lights,
-                  sceneSetup.out().maxPerGroup,
-                  sceneSetup.out().atmosphereSetting,
-                  atmosphere.out(),
-                  sceneSetup.out().shadowMapSetting,
-                  shadowMap.out()});
+    "Deferred", {sceneSetup.out().backImg,
+                 sceneSetup.out().camera,
+                 sceneSetup.out().cameraBuffer,
+                 sceneSetup.out().sceneConfig,
+                 sceneSetup.out().meshInstances,
+                 sceneSetup.out().meshInstancesCount,
+                 sceneSetup.out().positions,
+                 sceneSetup.out().normals,
+                 sceneSetup.out().uvs,
+                 sceneSetup.out().indices,
+                 sceneSetup.out().primitives,
+                 transf.out().matrices,
+                 sceneSetup.out().materials,
+                 sceneSetup.out().samplers,
+                 sceneSetup.out().numValidSampler,
+                 sceneSetup.out().lighting,
+                 sceneSetup.out().lights,
+                 sceneSetup.out().maxPerGroup,
+                 sceneSetup.out().atmosphereSetting,
+                 atmosphere.out(),
+                 sceneSetup.out().shadowMapSetting,
+                 shadowMap.out()});
 
   builder.read(passIn.swapchainExtent);
   passOut.backImg = deferred.out().backImg;

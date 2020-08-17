@@ -74,12 +74,16 @@ private:
   PassCondition passCondition_{[]() { return true; }};
 };
 
-template<typename PassInType, typename PassOutType>
+template<typename PassInT, typename PassOutT>
 class Pass: public BasePass {
 
 public:
+  using PassInType = PassInT;
+  using PassOutType = PassOutT;
+
   virtual auto setup(PassBuilder &builder, const PassInType &inputs) -> PassOutType = 0;
 
+  auto in() -> PassInType & { return passIn; }
   auto out() -> PassOutType & { return passOut; }
 
 protected:
@@ -119,12 +123,6 @@ concept DerivedPass = std::is_base_of<Pass<PassInType, PassOutType>, T>::value;
 template<typename T>
 concept DerivedResource = std::is_base_of<FrameGraphBaseResource, T>::value;
 
-template<typename T, typename PassOutType>
-struct ResultPass {
-  T pass;
-  PassOutType out;
-};
-
 class PassBuilder {
   friend class FrameGraph;
 
@@ -134,7 +132,7 @@ public:
   auto device() -> Device &;
 
   /**
-   * Create new resources as the output of this pass. Resource's name shouldn't already exist.
+   * Create new resources as the output of this pass. Resource's name shouldn't have already existed.
    */
   template<typename T>
   auto create(const std::string &name = "") -> FrameGraphResource<T>;
@@ -152,7 +150,7 @@ public:
   /**
    * Write to the resoruce as one of the output of this pass. Resource's revision will increment by 1.
    *
-   * Error will be thrown when multiple passes write to the same version of resource.
+   * Error will be thrown while multiple passes write to the same version of a resource.
    */
   template<typename T>
   auto write(const FrameGraphResource<T> &input) -> FrameGraphResource<T>;
@@ -162,8 +160,10 @@ public:
     const std::string &name, const PassInType &inputs,
     Pass<PassInType, PassOutType> &pass) -> Pass<PassInType, PassOutType> &;
 
-  template<typename T, typename PassInType, typename... Args>
-  auto newPass(const std::string &name, const PassInType &inputs, Args &&... args) -> T &;
+  template<typename T, typename... Args>
+  auto newPass(
+    const std::string &name, const typename T::PassInType &inputs, Args &&... args)
+    -> T &;
 
   template<typename PassInType, typename PassOutType>
   auto newLambdaPass(
@@ -181,7 +181,7 @@ private:
     return outputs;
   }
 
-  auto nameMangling(std::string name) -> std::string;
+  auto scopedName(std::string name) -> std::string;
 
   FrameGraph &frameGraph;
   const uint32_t id;
@@ -240,8 +240,9 @@ public:
     builder.build<PassInType, PassOutType>(pass, inputs);
     return pass;
   };
-  template<typename T, typename PassInType, typename... Args>
-  auto newPass(const std::string &name, const PassInType &inputs, Args &&... args)
+  template<typename T, typename... Args>
+  auto newPass(
+    const std::string &name, const typename T::PassInType &inputs, Args &&... args)
     -> T & {
     allocated.push_back(std::make_unique<T>(std::forward<Args>(args)...));
     auto idx = allocated.size() - 1;
@@ -346,13 +347,12 @@ template<typename PassInType, typename PassOutType>
 auto PassBuilder::addPass(
   const std::string &name, const PassInType &inputs, Pass<PassInType, PassOutType> &pass)
   -> Pass<PassInType, PassOutType> & {
-  return frameGraph.addPass(nameMangling(name), inputs, pass);
+  return frameGraph.addPass(scopedName(name), inputs, pass);
 }
-template<typename T, typename PassInType, typename... Args>
+template<typename T, typename... Args>
 auto PassBuilder::newPass(
-  const std::string &name, const PassInType &inputs, Args &&... args) -> T & {
-  return frameGraph.newPass<T, PassInType>(
-    nameMangling(name), inputs, std::forward<Args>(args)...);
+  const std::string &name, const typename T::PassInType &inputs, Args &&... args) -> T & {
+  return frameGraph.newPass<T>(scopedName(name), inputs, std::forward<Args>(args)...);
 }
 template<typename PassInType, typename PassOutType>
 auto PassBuilder::newLambdaPass(
@@ -360,6 +360,6 @@ auto PassBuilder::newLambdaPass(
   PassSetup<PassInType, PassOutType> &&setup, PassCompile &&compile, PassExec &&exec)
   -> LambdaPass<PassInType, PassOutType> & {
   return frameGraph.newLambdaPass<PassInType, PassOutType>(
-    nameMangling(name), inputs, std::move(setup), std::move(compile), std::move(exec));
+    scopedName(name), inputs, std::move(setup), std::move(compile), std::move(exec));
 }
 }

@@ -85,8 +85,7 @@ auto Renderer::addScene(SceneConfig sceneConfig, const std::string &name) -> Sce
 void Renderer::onInit() {
   frameGraph = std::make_unique<FrameGraph>(*device_);
 
-  auto &pass =
-    frameGraph->newPass<RendererSetupPass>("RendererSetup", RendererSetupPassIn{}, *this);
+  auto &pass = frameGraph->newPass<RendererSetupPass>("RendererSetup", {}, *this);
 
   RendererPresentPassIn presentPassIn;
   for(auto &[name, scene]: scenes) {

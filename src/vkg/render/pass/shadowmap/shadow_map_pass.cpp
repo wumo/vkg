@@ -27,17 +27,16 @@ auto ShadowMapPass::setup(PassBuilder &builder, const ShadowMapPassIn &inputs)
   -> ShadowMapPassOut {
   passIn = inputs;
 
-  auto &frustum = builder.newPass<CSMFrustumPass>("CSMFrustumPass", CSMFrustumPassIn{});
+  auto &frustum = builder.newPass<CSMFrustumPass>("CSMFrustumPass", {});
 
   auto &cull = builder.newPass<ComputeCullDrawCMD>(
-    "ShadowMapCull", ComputeCullDrawCMDPassIn{
-                       .frustums = frustum.out().frustums,
-                       .meshInstances = passIn.meshInstances,
-                       .meshInstancesCount = passIn.meshInstancesCount,
-                       .sceneConfig = passIn.sceneConfig,
-                       .primitives = passIn.primitives,
-                       .matrices = passIn.matrices,
-                       .maxPerGroup = passIn.maxPerGroup});
+    "ShadowMapCull", {.frustums = frustum.out().frustums,
+                      .meshInstances = passIn.meshInstances,
+                      .meshInstancesCount = passIn.meshInstancesCount,
+                      .sceneConfig = passIn.sceneConfig,
+                      .primitives = passIn.primitives,
+                      .matrices = passIn.matrices,
+                      .maxPerGroup = passIn.maxPerGroup});
   cull.setPassCondition([]() { return false; });
   cullPassOut = cull.out();
   builder.read(passIn.shadowMapSetting);
