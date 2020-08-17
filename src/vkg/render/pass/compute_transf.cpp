@@ -59,14 +59,15 @@ void ComputeTransf::execute(RenderContext &ctx, Resources &resources) {
     pipeDef.layout(), vk::ShaderStageFlagBits::eCompute, 0, total);
   cb.dispatch(dx, dy, dz);
 
+  auto bufInfo = matrices->bufferInfo();
   vk::BufferMemoryBarrier barrier{
     vk::AccessFlagBits::eShaderWrite,
     vk::AccessFlagBits::eShaderRead,
     VK_QUEUE_FAMILY_IGNORED,
     VK_QUEUE_FAMILY_IGNORED,
-    matrices->buffer(),
-    0,
-    VK_WHOLE_SIZE};
+    bufInfo.buffer,
+    bufInfo.offset,
+    bufInfo.size};
   cb.pipelineBarrier(
     vk::PipelineStageFlagBits::eComputeShader, vk::PipelineStageFlagBits::eComputeShader,
     {}, nullptr, barrier, nullptr);

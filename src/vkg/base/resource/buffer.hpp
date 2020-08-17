@@ -28,7 +28,6 @@ public:
     return static_cast<T *>(alloc.pMappedData);
   }
 
-  auto buffer() const -> vk::Buffer;
   auto bufferInfo() const -> BufferInfo;
   auto device() const -> Device &;
   auto devMem() const -> std::pair<vk::DeviceMemory, vk::DeviceSize>;

@@ -9,7 +9,7 @@ auto AtmosphereModel::createScatteringDensitySets() -> void {
       .createUnique(nullptr);
 
   scatteringDensitySet = scatteringDensitySetDef.createSet(*descriptorPool);
-  scatteringDensitySetDef.atmosphere(atmosphereUBO_->buffer());
+  scatteringDensitySetDef.atmosphere(atmosphereUBO_->bufferInfo());
   scatteringDensitySetDef.transmittance(*transmittanceTex_);
   scatteringDensitySetDef.delta_rayleigh(*deltaRayleighScatteringTex);
   scatteringDensitySetDef.delta_mie(*deltaMieScatteringTex);

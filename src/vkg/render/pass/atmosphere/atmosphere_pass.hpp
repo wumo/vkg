@@ -10,8 +10,8 @@ struct AtmospherePassIn {
 };
 struct AtmospherePassOut {
   FrameGraphResource<uint64_t> version;
-  FrameGraphResource<vk::Buffer> atmosphere;
-  FrameGraphResource<vk::Buffer> sun;
+  FrameGraphResource<BufferInfo> atmosphere;
+  FrameGraphResource<BufferInfo> sun;
   FrameGraphResource<Texture *> transmittance;
   FrameGraphResource<Texture *> scattering;
   FrameGraphResource<Texture *> irradiance;

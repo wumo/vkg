@@ -25,7 +25,7 @@ Buffer::Buffer(
     (memFlags & VK_MEMORY_PROPERTY_HOST_COHERENT_BIT)) {
     mappable = true;
   }
-  device.name(buffer(), name);
+  device.name(bufferInfo().buffer, name);
 }
 
 void Buffer::barrier(
@@ -40,7 +40,6 @@ void Buffer::barrier(
   cb.pipelineBarrier(
     srcStageMask, dstStageMask, dependencyFlags, nullptr, barrier, nullptr);
 }
-auto Buffer::buffer() const -> vk::Buffer { return vmaBuffer->buffer; }
 auto Buffer::bufferInfo() const -> BufferInfo { return {vmaBuffer->buffer}; }
 auto Buffer::device() const -> Device & { return vmaBuffer->vkezDevice; }
 auto Buffer::devMem() const -> std::pair<vk::DeviceMemory, vk::DeviceSize> {

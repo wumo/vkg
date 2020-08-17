@@ -9,7 +9,7 @@ auto AtmosphereModel::createIndirectIrradianceSets() -> void {
       .createUnique(nullptr);
 
   indirectIrradianceSet = indirectIrradianceSetDef.createSet(*descriptorPool);
-  indirectIrradianceSetDef.atmosphere(atmosphereUBO_->buffer());
+  indirectIrradianceSetDef.atmosphere(atmosphereUBO_->bufferInfo());
   indirectIrradianceSetDef.delta_rayleigh(*deltaRayleighScatteringTex);
   indirectIrradianceSetDef.delta_mie(*deltaMieScatteringTex);
   indirectIrradianceSetDef.multpli_scattering(*deltaRayleighScatteringTex);

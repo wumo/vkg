@@ -245,7 +245,7 @@ void upload(
   updateBytes(*tmp, value, sizeInBytes);
   device.execSyncInGraphicsQueue([&](vk::CommandBuffer cb) {
     vk::BufferCopy copy{0, dstOffsetInBytes, sizeInBytes};
-    cb.copyBuffer(tmp->buffer(), buffer.buffer(), copy);
+    cb.copyBuffer(tmp->bufferInfo().buffer, buffer.bufferInfo().buffer, copy);
   });
 }
 

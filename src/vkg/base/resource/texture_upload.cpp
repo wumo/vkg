@@ -12,7 +12,7 @@ auto upload(Texture &texture, std::span<std::byte> bytes, bool transitToShaderRe
   device.execSyncInGraphicsQueue([&](vk::CommandBuffer cb) {
     copy(
       cb, texture, {vk::ImageAspectFlagBits::eColor, 0, 0}, texture.extent(),
-      stagingBuffer->buffer(), 0);
+      stagingBuffer->bufferInfo().buffer, 0);
     if(transitToShaderRead)
       transitTo(
         cb, texture, vk::ImageLayout::eShaderReadOnlyOptimal,

@@ -9,7 +9,7 @@ auto AtmosphereModel::createDirectIrradianceSets() -> void {
       .createUnique(nullptr);
 
   directIrradianceSet = directIrradianceSetDef.createSet(*descriptorPool);
-  directIrradianceSetDef.atmosphere(atmosphereUBO_->buffer());
+  directIrradianceSetDef.atmosphere(atmosphereUBO_->bufferInfo());
   directIrradianceSetDef.transmittance(*transmittanceTex_);
   directIrradianceSetDef.delta_irradiance(deltaIrradianceTex->imageView());
   directIrradianceSetDef.irradiance(irradianceTex_->imageView());

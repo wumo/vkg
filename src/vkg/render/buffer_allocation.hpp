@@ -21,7 +21,7 @@ public:
     const BufferAllocator &allocator, Device &device, uint32_t maxNum, std::string name)
     : maxNum_{maxNum}, count_{0}, name{std::move(name)} {
     buffer_ = allocator(device, maxNum * sizeof(T), this->name);
-    device.name(buffer_->buffer(), this->name);
+    device.name(buffer_->bufferInfo().buffer, this->name);
   }
 
   auto add(std::span<T> data) -> UIntRange {
@@ -48,7 +48,6 @@ public:
   }
 
   auto count() const -> uint32_t { return count_; }
-  auto buffer() const -> vk::Buffer { return buffer_->buffer(); }
   auto bufferInfo() const -> BufferInfo { return buffer_->bufferInfo(); }
 
 private:
@@ -88,7 +87,6 @@ public:
     buffer::updateSingle(*buffer_, data, offset * sizeof(T));
   }
 
-  auto buffer() const { return buffer_->buffer(); }
   auto bufferInfo() const -> BufferInfo { return buffer_->bufferInfo(); }
   auto count() const { return uint32_t(maxNum - freeSlots.size()); }
   auto size() const { return count() * sizeof(T); }
@@ -118,7 +116,6 @@ public:
     return {offset, hostBuffer.data() + offset};
   }
 
-  auto buffer() const { return buffer_->buffer(); }
   auto count() const { return count_; }
   auto size() const { return count() * sizeof(T); }
 

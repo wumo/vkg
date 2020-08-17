@@ -67,13 +67,13 @@ void ComputeCullDrawCMD::compile(RenderContext &ctx, Resources &resources) {
     resources.set(passOut.drawCMDBuffer, drawCMD->bufferInfo());
     resources.set(passOut.drawGroupCountBuffer, countPerGroupBuffer->bufferInfo());
 
-    setDef.frustums(frustumsBuf->buffer());
+    setDef.frustums(frustumsBuf->bufferInfo());
     setDef.meshInstances(resources.get(passIn.meshInstances));
     setDef.primitives(resources.get(passIn.primitives));
     setDef.matrices(resources.get(passIn.matrices));
-    setDef.drawCMD(drawCMD->buffer());
-    setDef.cmdOffsetPerGroup(cmdOffsetPerGroupBuffer->buffer());
-    setDef.drawCMDCount(countPerGroupBuffer->buffer());
+    setDef.drawCMD(drawCMD->bufferInfo());
+    setDef.cmdOffsetPerGroup(cmdOffsetPerGroupBuffer->bufferInfo());
+    setDef.drawCMDCount(countPerGroupBuffer->bufferInfo());
     setDef.update(set);
   }
   errorIf(frustums.size() != numFrustums, "number of frustums changed!");
@@ -112,11 +112,11 @@ void ComputeCullDrawCMD::execute(RenderContext &ctx, Resources &resources) {
   auto _countOffset = resources.get(passOut.countOffset);
 
   cb.updateBuffer(
-    frustumsBuf->buffer(), ctx.frameIndex * frustums.size_bytes(), frustums.size_bytes(),
-    frustums.data());
+    frustumsBuf->bufferInfo().buffer, ctx.frameIndex * frustums.size_bytes(),
+    frustums.size_bytes(), frustums.data());
 
   cb.updateBuffer(
-    cmdOffsetPerGroupBuffer->buffer(), sizeof(uint32_t) * _countOffset,
+    cmdOffsetPerGroupBuffer->bufferInfo().buffer, sizeof(uint32_t) * _countOffset,
     _cmdOffsetPerGroup.size_bytes(), _cmdOffsetPerGroup.data());
 
   /**
@@ -126,7 +126,7 @@ void ComputeCullDrawCMD::execute(RenderContext &ctx, Resources &resources) {
        * this may invalidate other host coherent memories that will be accessed by compute shader.
        */
   cb.fillBuffer(
-    countPerGroupBuffer->buffer(), sizeof(uint32_t) * _countOffset,
+    countPerGroupBuffer->bufferInfo().buffer, sizeof(uint32_t) * _countOffset,
     sizeof(uint32_t) * numDrawGroups, 0u);
 
   pushConstant = {

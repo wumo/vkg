@@ -9,7 +9,7 @@ auto AtmosphereModel::createMultipleScatteringSets() -> void {
       .createUnique(nullptr);
 
   multipleScatteringSet = multipleScatteringSetDef.createSet(*descriptorPool);
-  multipleScatteringSetDef.atmosphere(atmosphereUBO_->buffer());
+  multipleScatteringSetDef.atmosphere(atmosphereUBO_->bufferInfo());
   multipleScatteringSetDef.transmittance(*transmittanceTex_);
   multipleScatteringSetDef.scattering_density(*deltaScatteringDensityTex);
   multipleScatteringSetDef.delta_multiple_scattering(

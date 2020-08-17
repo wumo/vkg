@@ -7,8 +7,8 @@ auto AtmospherePass::setup(PassBuilder &builder, const AtmospherePassIn &inputs)
   builder.read(passIn.atmosphere);
   passOut = {
     .version = builder.create<uint64_t>("atmosphereVersion"),
-    .atmosphere = builder.create<vk::Buffer>("atmosphere"),
-    .sun = builder.create<vk::Buffer>("sun"),
+    .atmosphere = builder.create<BufferInfo>("atmosphere"),
+    .sun = builder.create<BufferInfo>("sun"),
     .transmittance = builder.create<Texture *>("transmittance"),
     .scattering = builder.create<Texture *>("scattering"),
     .irradiance = builder.create<Texture *>("irradiance"),

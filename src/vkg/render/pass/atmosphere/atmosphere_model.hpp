@@ -93,8 +93,8 @@ public:
 
   auto init(uint32_t num_scattering_orders = 4) -> void;
 
-  auto atmosphereUBO() const -> vk::Buffer;
-  auto sunUBO() const -> vk::Buffer;
+  auto atmosphereUBO() const -> BufferInfo;
+  auto sunUBO() const -> BufferInfo;
   auto transmittanceTex() -> Texture &;
   auto scatteringTex() -> Texture &;
   auto irradianceTex() -> Texture &;

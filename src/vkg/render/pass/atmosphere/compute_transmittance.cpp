@@ -8,7 +8,7 @@ auto AtmosphereModel::createTransmittanceSets() -> void {
       .shader(Shader{shader::atmosphere::transmittance_comp_span, 8, 8, 1})
       .createUnique(nullptr);
   transmittanceSet = transmittanceSetDef.createSet(*descriptorPool);
-  transmittanceSetDef.atmosphere(atmosphereUBO_->buffer());
+  transmittanceSetDef.atmosphere(atmosphereUBO_->bufferInfo());
   transmittanceSetDef.transmittance(transmittanceTex_->imageView());
   transmittanceSetDef.update(transmittanceSet);
 }

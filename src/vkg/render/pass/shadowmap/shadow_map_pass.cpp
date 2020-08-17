@@ -112,7 +112,7 @@ public:
       cascades->ptr<CascadeDesc>()[i] = {lightViewProj, sunDir, f};
       frustums[i] = Frustum{lightViewProj};
     }
-    resources.set(passOut.cascades, {cascades->buffer()});
+    resources.set(passOut.cascades, cascades->bufferInfo());
   }
   void execute(RenderContext &ctx, Resources &resources) override {}
 
@@ -159,7 +159,7 @@ void ShadowMapPass::compile(RenderContext &ctx, Resources &resources) {
     createDescriptorSets(ctx.device, setting);
     createPipeline(ctx.device, setting);
 
-    resources.set(passOut.setting, {shadowMapSetting->buffer()});
+    resources.set(passOut.setting, shadowMapSetting->bufferInfo());
     resources.set(passOut.shadowMaps, shadowMaps.get());
   }
 }

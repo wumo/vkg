@@ -277,10 +277,10 @@ AtmosphereModel::AtmosphereModel(
     exposure_scale, -glm::normalize(sunDirection), earthCenter);
 }
 
-auto AtmosphereModel::atmosphereUBO() const -> vk::Buffer {
-  return atmosphereUBO_->buffer();
+auto AtmosphereModel::atmosphereUBO() const -> BufferInfo {
+  return atmosphereUBO_->bufferInfo();
 }
-auto AtmosphereModel::sunUBO() const -> vk::Buffer { return sunUBO_->buffer(); }
+auto AtmosphereModel::sunUBO() const -> BufferInfo { return sunUBO_->bufferInfo(); }
 auto AtmosphereModel::transmittanceTex() -> Texture & { return *transmittanceTex_; }
 auto AtmosphereModel::scatteringTex() -> Texture & { return *scatteringTex_; }
 auto AtmosphereModel::irradianceTex() -> Texture & { return *irradianceTex_; }
@@ -520,7 +520,6 @@ auto AtmosphereModel::initParameter(
       }
 
       sunUBO_ = buffer::hostUniformBuffer(device, sizeof(SunUniform), "sunUBO");
-      device.name(sunUBO_->buffer(), "sunUbo");
       auto ptr = sunUBO_->ptr<SunUniform>();
 
       ptr->white_point = {white_point_r, white_point_g, white_point_b, 0};
