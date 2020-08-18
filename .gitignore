@@ -14,6 +14,8 @@
 !/src/**
 !/test
 !/test/**
+!/doc
+!/doc/**
 
 !/.gitignore
 !/.gitlab-ci.yml

@@ -192,7 +192,7 @@ auto main() -> int {
     //  t.translation = -center;
     scene.newModelInstance(animModel, t);
 
-    uint32_t num = 200;
+    uint32_t num = 300;
     insts.reserve(num * num);
     float unit = -5;
     for(int a = 0; a < num; ++a) {
