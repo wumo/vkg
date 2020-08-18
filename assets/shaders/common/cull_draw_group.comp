@@ -77,7 +77,7 @@ void main() {
 
   uint frustumIdx = id / totalMeshInstances;
   if(frustumIdx >= totalFrustums) return;
-  Frustum frustum = frustums[frustumIdx];
+  Frustum frustum = frustums[frame * totalFrustums + frustumIdx];
 
   MeshInstanceUBO mesh = meshInstances[id];
 

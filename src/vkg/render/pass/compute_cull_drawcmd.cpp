@@ -135,8 +135,9 @@ void ComputeCullDrawCMD::execute(RenderContext &ctx, Resources &resources) {
       vk::AccessFlagBits::eTransferWrite, vk::AccessFlagBits::eShaderRead},
     nullptr, nullptr);
 
+  auto totalDispatch = totalMeshInstances * numFrustums;
   auto maxCG = ctx.device.limits().maxComputeWorkGroupCount;
-  auto totalGroup = uint32_t(std::ceil(totalMeshInstances / double(local_size)));
+  auto totalGroup = uint32_t(std::ceil(totalDispatch / double(local_size)));
   auto dx = std::min(totalGroup, maxCG[0]);
   totalGroup = uint32_t(totalGroup / double(dx));
   auto dy = std::min(std::max(totalGroup, 1u), maxCG[1]);
