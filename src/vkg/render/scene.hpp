@@ -28,7 +28,7 @@ struct ScenePassIn {
   FrameGraphResource<uint64_t> swapchainVersion;
 };
 struct ScenePassOut {
-  FrameGraphResource<Texture *> backImg;
+  FrameGraphResource<std::span<Texture *>> backImgs;
   FrameGraphResource<vk::Rect2D> renderArea;
 };
 
@@ -120,7 +120,7 @@ private:
     std::vector<vk::DescriptorImageInfo> sampler2Ds;
     uint32_t lastUsedSampler2DIndex{};
 
-    std::unique_ptr<Texture> backImg;
+    std::vector<std::unique_ptr<Texture>> backImgs;
   } Dev;
 
   struct {

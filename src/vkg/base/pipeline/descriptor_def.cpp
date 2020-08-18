@@ -18,7 +18,18 @@ auto DescriptorSetDef::update(vk::DescriptorSet set) -> void {
   setUpdater.update(device_, set);
 }
 auto DescriptorSetDef::setLayout() -> vk::DescriptorSetLayout { return *setLayout_; }
-auto DescriptorSetDef::layoutDef()const -> const DescriptorSetLayoutMaker & {
+auto DescriptorSetDef::layoutDef() const -> const DescriptorSetLayoutMaker & {
   return layoutMaker;
+}
+auto DescriptorSetDef::createSets(vk::DescriptorPool pool, uint32_t num)
+  -> std::vector<vk::DescriptorSet> {
+  errorIf(!device_, "device is null, call init() first");
+  errorIf(!setLayout_, "descriptorSetLayout hasn't been created!");
+  DescriptorSetMaker maker;
+  maker.layout(*setLayout_, layoutMaker.variableDescriptorCount());
+  std::vector<vk::DescriptorSet> sets(num);
+  for(int i = 0; i < num; ++i)
+    sets[i] = maker.create(device_, pool)[0];
+  return sets;
 }
 }

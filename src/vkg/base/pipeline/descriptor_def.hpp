@@ -6,6 +6,8 @@ class DescriptorSetDef {
 public:
   auto init(vk::Device device) -> void;
   auto createSet(vk::DescriptorPool pool) -> vk::DescriptorSet;
+  auto createSets(vk::DescriptorPool pool, uint32_t num)
+    -> std::vector<vk::DescriptorSet>;
   auto update(vk::DescriptorSet set) -> void;
 
   auto setLayout() -> vk::DescriptorSetLayout;

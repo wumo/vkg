@@ -47,6 +47,7 @@ public:
     auto desc = camera->desc();
     desc.frame = ctx.frameIndex;
     auto cb = ctx.graphics;
+    ctx.device.begin(cb, "update camera");
     cb.updateBuffer(
       bufInfo.buffer, bufInfo.offset + sizeof(Camera::Desc) * ctx.frameIndex,
       sizeof(desc), &desc);
@@ -55,6 +56,7 @@ public:
       vk::MemoryBarrier{
         vk::AccessFlagBits::eTransferWrite, vk::AccessFlagBits::eShaderRead},
       nullptr, nullptr);
+    ctx.device.end(cb);
   }
 
   std::vector<Frustum> frustums;
@@ -75,6 +77,7 @@ auto DeferredPass::setup(PassBuilder &builder, const DeferredPassIn &inputs)
      passIn.sceneConfig, passIn.primitives, passIn.matrices, passIn.drawGroupCount});
   cullPassOut = cull.out();
 
+  builder.read(passIn.backImgVersion);
   builder.read(passIn.sceneConfig);
   builder.read(cam.out().camBuffer);
   builder.read(passIn.meshInstances);
@@ -90,12 +93,12 @@ auto DeferredPass::setup(PassBuilder &builder, const DeferredPassIn &inputs)
   builder.read(passIn.atmosphere);
   builder.read(passIn.shadowMapSetting);
   builder.read(passIn.shadowmap);
-  passOut.backImg = builder.write(passIn.backImg);
+  passOut.backImgs = builder.write(passIn.backImgs);
 
   return passOut;
 }
 void DeferredPass::compile(RenderContext &ctx, Resources &resources) {
-  auto *backImg = resources.get(passIn.backImg);
+  auto backImgs = resources.get(passIn.backImgs);
   auto samplers = resources.get(passIn.samplers);
   auto numValidSampler = resources.get(passIn.numValidSampler);
 
@@ -115,11 +118,11 @@ void DeferredPass::compile(RenderContext &ctx, Resources &resources) {
     deferredPipeDef.init(resources.device);
 
     descriptorPool = DescriptorPoolMaker()
-                       .pipelineLayout(deferredPipeDef)
+                       .pipelineLayout(deferredPipeDef, ctx.numFrames)
                        .createUnique(resources.device);
 
     sceneSet = sceneSetDef.createSet(*descriptorPool);
-    gbSet = gbufferSetDef.createSet(*descriptorPool);
+    gbSets = gbufferSetDef.createSets(*descriptorPool, ctx.numFrames);
     shadowMapSet = csmSetDef.createSet(*descriptorPool);
     atmosphereSet = atmosphereSetDef.createSet(*descriptorPool);
 
@@ -135,15 +138,17 @@ void DeferredPass::compile(RenderContext &ctx, Resources &resources) {
     sceneSetDef.lights(resources.get(passIn.lights));
     sceneSetDef.update(sceneSet);
 
-    createRenderPass(resources.device, backImg->format());
+    createRenderPass(resources.device, backImgs[0]->format());
     createGbufferPass(resources.device, sceneConfig);
     createLightingPass(resources.device, sceneConfig);
     createUnlitPass(resources.device, sceneConfig);
     createTransparentPass(resources.device, sceneConfig);
   }
 
-  if(backImg != backImg_) {
-    backImg_ = backImg;
+  if(auto backImgVersion = resources.get(passIn.backImgVersion);
+     backImgVersion > lastBackImgVersion) {
+    lastBackImgVersion = backImgVersion;
+    backImgs_ = backImgs;
     createAttachments(resources.device);
   }
   if(numValidSampler > lastNumValidSampler) {
@@ -177,45 +182,60 @@ void DeferredPass::compile(RenderContext &ctx, Resources &resources) {
 }
 
 auto DeferredPass::createAttachments(Device &device) -> void {
-  auto w = backImg_->extent().width;
-  auto h = backImg_->extent().height;
-  using vkUsage = vk::ImageUsageFlagBits;
-  positionAtt = image::make2DTex(
-    "positionAtt", device, w, h, vkUsage::eColorAttachment | vkUsage::eInputAttachment,
-    vk::Format::eR32G32B32A32Sfloat);
-  normalAtt = image::make2DTex(
-    "normalAtt", device, w, h, vkUsage::eColorAttachment | vkUsage::eInputAttachment,
-    vk::Format::eR32G32B32A32Sfloat);
-  diffuseAtt = image::make2DTex(
-    "diffuseAtt", device, w, h, vkUsage::eColorAttachment | vkUsage::eInputAttachment,
-    vk::Format::eR8G8B8A8Unorm);
-  specularAtt = image::make2DTex(
-    "specularAtt", device, w, h, vkUsage::eColorAttachment | vkUsage::eInputAttachment,
-    vk::Format::eR8G8B8A8Unorm);
-  emissiveAtt = image::make2DTex(
-    "emissiveAtt", device, w, h, vkUsage::eColorAttachment | vkUsage::eInputAttachment,
-    vk::Format::eR8G8B8A8Unorm);
-  depthAtt = image::make2DTex(
-    "depthAtt", device, w, h,
-    vkUsage::eDepthStencilAttachment | vkUsage::eInputAttachment, vk::Format::eD32Sfloat,
-    vk::SampleCountFlagBits::e1, vk::ImageAspectFlagBits::eDepth);
+  auto nFrames = uint32_t(backImgs_.size());
+  depthAtts.resize(nFrames);
+  positionAtts.resize(nFrames);
+  normalAtts.resize(nFrames);
+  diffuseAtts.resize(nFrames);
+  specularAtts.resize(nFrames);
+  emissiveAtts.resize(nFrames);
+  framebuffers.resize(nFrames);
+  for(int i = 0; i < nFrames; ++i) {
+    auto w = backImgs_[i]->extent().width;
+    auto h = backImgs_[i]->extent().height;
+    using vkUsage = vk::ImageUsageFlagBits;
+    positionAtts[i] = image::make2DTex(
+      toString("positionAtt_", i), device, w, h,
+      vkUsage::eColorAttachment | vkUsage::eInputAttachment,
+      vk::Format::eR32G32B32A32Sfloat);
+    normalAtts[i] = image::make2DTex(
+      toString("normalAtt", i), device, w, h,
+      vkUsage::eColorAttachment | vkUsage::eInputAttachment,
+      vk::Format::eR32G32B32A32Sfloat);
+    diffuseAtts[i] = image::make2DTex(
+      toString("diffuseAtt", i), device, w, h,
+      vkUsage::eColorAttachment | vkUsage::eInputAttachment, vk::Format::eR8G8B8A8Unorm);
+    specularAtts[i] = image::make2DTex(
+      toString("specularAtt", i), device, w, h,
+      vkUsage::eColorAttachment | vkUsage::eInputAttachment, vk::Format::eR8G8B8A8Unorm);
+    emissiveAtts[i] = image::make2DTex(
+      toString("emissiveAtt", i), device, w, h,
+      vkUsage::eColorAttachment | vkUsage::eInputAttachment, vk::Format::eR8G8B8A8Unorm);
+    depthAtts[i] = image::make2DTex(
+      toString("depthAtt", i), device, w, h,
+      vkUsage::eDepthStencilAttachment | vkUsage::eInputAttachment,
+      vk::Format::eD32Sfloat, vk::SampleCountFlagBits::e1,
+      vk::ImageAspectFlagBits::eDepth);
 
-  gbufferSetDef.position(positionAtt->imageView());
-  gbufferSetDef.normal(normalAtt->imageView());
-  gbufferSetDef.diffuse(diffuseAtt->imageView());
-  gbufferSetDef.specular(specularAtt->imageView());
-  gbufferSetDef.emissive(emissiveAtt->imageView());
-  gbufferSetDef.depth(depthAtt->imageView());
-  gbufferSetDef.update(gbSet);
+    gbufferSetDef.position(positionAtts[i]->imageView());
+    gbufferSetDef.normal(normalAtts[i]->imageView());
+    gbufferSetDef.diffuse(diffuseAtts[i]->imageView());
+    gbufferSetDef.specular(specularAtts[i]->imageView());
+    gbufferSetDef.emissive(emissiveAtts[i]->imageView());
+    gbufferSetDef.depth(depthAtts[i]->imageView());
+    gbufferSetDef.update(gbSets[i]);
 
-  std::vector<vk::ImageView> attachments = {
-    backImg_->imageView(),   positionAtt->imageView(), normalAtt->imageView(),
-    diffuseAtt->imageView(), specularAtt->imageView(), emissiveAtt->imageView(),
-    depthAtt->imageView()};
+    std::vector<vk::ImageView> attachments = {
+      backImgs_[i]->imageView(),    positionAtts[i]->imageView(),
+      normalAtts[i]->imageView(),   diffuseAtts[i]->imageView(),
+      specularAtts[i]->imageView(), emissiveAtts[i]->imageView(),
+      depthAtts[i]->imageView()};
 
-  vk::FramebufferCreateInfo info{
-    {}, *renderPass, uint32_t(attachments.size()), attachments.data(), w, h, 1};
-  framebuffer = device.vkDevice().createFramebufferUnique(info);
+    vk::FramebufferCreateInfo info{
+      {}, *renderPass, uint32_t(attachments.size()), attachments.data(), w, h, 1};
+
+    framebuffers[i] = device.vkDevice().createFramebufferUnique(info);
+  }
 }
 auto DeferredPass::createRenderPass(Device &device, vk::Format format) -> void {
   RenderPassMaker maker;

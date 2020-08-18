@@ -11,7 +11,8 @@
 
 namespace vkg {
 struct DeferredPassIn {
-  FrameGraphResource<Texture *> backImg;
+  FrameGraphResource<uint64_t> backImgVersion;
+  FrameGraphResource<std::span<Texture *>> backImgs;
   FrameGraphResource<Camera *> camera;
   FrameGraphResource<SceneConfig> sceneConfig;
   FrameGraphResource<BufferInfo> meshInstances;
@@ -37,7 +38,7 @@ struct DeferredPassIn {
   ShadowMapPassOut shadowmap;
 };
 struct DeferredPassOut {
-  FrameGraphResource<Texture *> backImg;
+  FrameGraphResource<std::span<Texture *>> backImgs;
 };
 
 class DeferredPass: public Pass<DeferredPassIn, DeferredPassOut> {
@@ -57,9 +58,10 @@ private:
 
   ComputeCullDrawCMDPassOut cullPassOut;
   FrameGraphResource<BufferInfo> camBuffer;
-  uint32_t lastNumValidSampler{0};
-  uint32_t lastAtmosVersion{0};
-  uint32_t lastShadowMapVersion{0};
+  uint64_t lastNumValidSampler{0};
+  uint64_t lastAtmosVersion{0};
+  uint64_t lastShadowMapVersion{0};
+  uint64_t lastBackImgVersion{0};
 
   struct SceneSetDef: DescriptorSetDef {
     __buffer__(cameras, vkStage::eVertex | vkStage::eFragment);
@@ -109,12 +111,14 @@ private:
 
   bool init{false};
 
-  Texture *backImg_{nullptr};
-  std::unique_ptr<Texture> backImgAtt, depthAtt, positionAtt, normalAtt, diffuseAtt,
-    specularAtt, emissiveAtt;
+  std::span<Texture *> backImgs_;
+  std::vector<std::unique_ptr<Texture>> depthAtts, positionAtts, normalAtts, diffuseAtts,
+    specularAtts, emissiveAtts;
 
   vk::UniqueDescriptorPool descriptorPool;
-  vk::DescriptorSet sceneSet, gbSet, shadowMapSet, atmosphereSet;
+  vk::DescriptorSet sceneSet, shadowMapSet, atmosphereSet;
+
+  std::vector<vk::DescriptorSet> gbSets;
 
   uint32_t gbPass{}, litPass{}, unlitPass{}, transPass{};
   vk::UniqueRenderPass renderPass;
@@ -122,6 +126,6 @@ private:
   vk::UniquePipeline unlitTriPipe, unlitLinePipe;
   vk::UniquePipeline transTriPipe, transLinePipe;
   vk::UniquePipeline litPipe, litAtmosPipe, litCSMPipe, litAtmosCSMPipe;
-  vk::UniqueFramebuffer framebuffer;
+  std::vector<vk::UniqueFramebuffer> framebuffers;
 };
 }

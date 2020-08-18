@@ -8,7 +8,7 @@ void DeferredPass::execute(RenderContext &ctx, Resources &resources) {
 
   auto cb = ctx.graphics;
   image::transitTo(
-    cb, *backImg_, vk::ImageLayout::eColorAttachmentOptimal,
+    cb, *backImgs_[ctx.frameIndex], vk::ImageLayout::eColorAttachmentOptimal,
     vk::AccessFlagBits::eColorAttachmentWrite,
     vk::PipelineStageFlagBits::eColorAttachmentOutput);
 
@@ -23,14 +23,25 @@ void DeferredPass::execute(RenderContext &ctx, Resources &resources) {
   };
 
   vk::RenderPassBeginInfo renderPassBeginInfo{
-    *renderPass, *framebuffer,
-    vk::Rect2D{{0, 0}, {backImg_->extent().width, backImg_->extent().height}},
+    *renderPass, *framebuffers[ctx.frameIndex],
+    vk::Rect2D{
+      {0, 0},
+      {backImgs_[ctx.frameIndex]->extent().width,
+       backImgs_[ctx.frameIndex]->extent().height}},
     uint32_t(clearValues.size()), clearValues.data()};
   cb.beginRenderPass(renderPassBeginInfo, vk::SubpassContents::eInline);
   vk::Viewport viewport{
-    0, 0, float(backImg_->extent().width), float(backImg_->extent().height), 0.0f, 1.0f};
+    0,
+    0,
+    float(backImgs_[ctx.frameIndex]->extent().width),
+    float(backImgs_[ctx.frameIndex]->extent().height),
+    0.0f,
+    1.0f};
   cb.setViewport(0, viewport);
-  vk::Rect2D scissor{{0, 0}, {backImg_->extent().width, backImg_->extent().height}};
+  vk::Rect2D scissor{
+    {0, 0},
+    {backImgs_[ctx.frameIndex]->extent().width,
+     backImgs_[ctx.frameIndex]->extent().height}};
   cb.setScissor(0, scissor);
 
   auto &dev = resources.device;
@@ -43,7 +54,7 @@ void DeferredPass::execute(RenderContext &ctx, Resources &resources) {
     deferredPipeDef.scene.set(), sceneSet, nullptr);
   cb.bindDescriptorSets(
     vk::PipelineBindPoint::eGraphics, deferredPipeDef.layout(),
-    deferredPipeDef.gbuffer.set(), gbSet, nullptr);
+    deferredPipeDef.gbuffer.set(), gbSets[ctx.frameIndex], nullptr);
   if(atmosSetting.isEnabled())
     cb.bindDescriptorSets(
       vk::PipelineBindPoint::eGraphics, deferredPipeDef.layout(),

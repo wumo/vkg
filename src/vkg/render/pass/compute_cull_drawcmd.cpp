@@ -101,7 +101,7 @@ void ComputeCullDrawCMD::execute(RenderContext &ctx, Resources &resources) {
   auto cb = ctx.compute;
 
   auto frustums = resources.get(passIn.frustums);
-
+  ctx.device.begin(cb, "update frustums");
   cb.updateBuffer(
     frustumsBuf->bufferInfo().buffer, ctx.frameIndex * frustums.size_bytes(),
     frustums.size_bytes(), frustums.data());
@@ -119,6 +119,7 @@ void ComputeCullDrawCMD::execute(RenderContext &ctx, Resources &resources) {
   cb.fillBuffer(
     countPerGroupBuffer->bufferInfo().buffer, sizeof(uint32_t) * countOffset,
     sizeof(uint32_t) * numDrawGroups, 0u);
+  ctx.device.end(cb);
 
   pushConstant = {
     .totalFrustums = numFrustums,

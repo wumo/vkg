@@ -12,7 +12,8 @@ struct SceneSetupPassIn {
   FrameGraphResource<uint64_t> swapchainVersion;
 };
 struct SceneSetupPassOut {
-  FrameGraphResource<Texture *> backImg;
+  FrameGraphResource<uint64_t> backImgVersion;
+  FrameGraphResource<std::span<Texture *>> backImgs;
   FrameGraphResource<SceneConfig> sceneConfig;
   FrameGraphResource<BufferInfo> positions;
   FrameGraphResource<BufferInfo> normals;
@@ -45,7 +46,8 @@ public:
     builder.read(passIn.swapchainFormat);
     builder.read(passIn.swapchainVersion);
     passOut = {
-      .backImg = builder.create<Texture *>("backImg"),
+      .backImgVersion = builder.create<uint64_t>("backImgVersion"),
+      .backImgs = builder.create<std::span<Texture *>>("backImgs"),
       .sceneConfig = builder.create<SceneConfig>("sceneConfig"),
       .positions = builder.create<BufferInfo>("positions"),
       .normals = builder.create<BufferInfo>("normals"),
@@ -95,13 +97,20 @@ public:
 
     if(version > scene.swapchainVersion) {
       scene.swapchainVersion = version;
-      using vkUsage = vk::ImageUsageFlagBits;
-      scene.Dev.backImg = image::make2DTex(
-        "backImg", scene.device, extent.width, extent.height,
-        vkUsage::eSampled | vkUsage::eStorage | vkUsage::eTransferSrc |
-          vkUsage ::eTransferDst | vkUsage ::eColorAttachment,
-        format);
-      resources.set(passOut.backImg, scene.Dev.backImg.get());
+      scene.Dev.backImgs.resize(ctx.numFrames);
+      backImgs.resize(ctx.numFrames);
+      for(int i = 0; i < ctx.numFrames; ++i) {
+        using vkUsage = vk::ImageUsageFlagBits;
+        scene.Dev.backImgs[i] = image::make2DTex(
+          toString("backImg_", i), scene.device, extent.width, extent.height,
+          vkUsage::eSampled | vkUsage::eStorage | vkUsage::eTransferSrc |
+            vkUsage ::eTransferDst | vkUsage ::eColorAttachment,
+          format);
+        backImgs[i] = scene.Dev.backImgs[i].get();
+      }
+
+      resources.set(passOut.backImgVersion, scene.swapchainVersion);
+      resources.set(passOut.backImgs, {backImgs});
     }
 
     scene.Host.camera_->resize(extent.width, extent.height);
@@ -113,6 +122,7 @@ public:
 private:
   Scene &scene;
   bool boundPassData{false};
+  std::vector<Texture *> backImgs;
 };
 
 auto Scene::setup(PassBuilder &builder, const ScenePassIn &inputs) -> ScenePassOut {
@@ -146,7 +156,8 @@ auto Scene::setup(PassBuilder &builder, const ScenePassIn &inputs) -> ScenePassO
     shadowMap.enableIf([&]() { return Host.shadowMap.isEnabled(); });
 
     auto &deferred = builder.newPass<DeferredPass>(
-      "Deferred", {sceneSetup.out().backImg,
+      "Deferred", {sceneSetup.out().backImgVersion,
+                   sceneSetup.out().backImgs,
                    sceneSetup.out().camera,
                    sceneSetup.out().sceneConfig,
                    sceneSetup.out().meshInstances,
@@ -169,7 +180,7 @@ auto Scene::setup(PassBuilder &builder, const ScenePassIn &inputs) -> ScenePassO
                    shadowMap.out()});
 
     builder.read(passIn.swapchainExtent);
-    passOut.backImg = deferred.out().backImg;
+    passOut.backImgs = deferred.out().backImgs;
   }
   passOut.renderArea = builder.create<vk::Rect2D>("renderArea");
 
