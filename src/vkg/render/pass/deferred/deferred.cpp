@@ -72,9 +72,9 @@ auto DeferredPass::setup(PassBuilder &builder, const DeferredPassIn &inputs)
   camBuffer = cam.out().camBuffer;
 
   auto &cull = builder.newPass<ComputeCullDrawCMD>(
-    "Cull",
-    {cam.out().camFrustum, passIn.meshInstances, passIn.meshInstancesCount,
-     passIn.sceneConfig, passIn.primitives, passIn.matrices, passIn.drawGroupCount});
+    "Cull", {cam.out().camFrustum, passIn.meshInstances, passIn.meshInstancesCount,
+             passIn.sceneConfig, passIn.primitives, passIn.matrices,
+             passIn.transformStride, passIn.drawGroupCount});
   cullPassOut = cull.out();
 
   builder.read(passIn.backImgVersion);
@@ -83,6 +83,7 @@ auto DeferredPass::setup(PassBuilder &builder, const DeferredPassIn &inputs)
   builder.read(passIn.meshInstances);
   builder.read(passIn.primitives);
   builder.read(passIn.matrices);
+  builder.read(passIn.transformStride);
   builder.read(passIn.materials);
   builder.read(passIn.samplers);
   builder.read(passIn.lighting);

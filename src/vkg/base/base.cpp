@@ -145,7 +145,7 @@ void Base::loop(const std::function<void(double)> &updater) {
 
     fpsMeter.update(elapsed);
     syncReverse(elapsed, updater);
-    //    syncTimeline(elapsed, updater);
+    //        syncTimeline(elapsed, updater);
   }
 
   device_->vkDevice().waitIdle();

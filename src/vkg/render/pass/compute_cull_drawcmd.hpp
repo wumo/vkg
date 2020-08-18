@@ -20,6 +20,7 @@ struct ComputeCullDrawCMDPassIn {
   FrameGraphResource<SceneConfig> sceneConfig;
   FrameGraphResource<BufferInfo> primitives;
   FrameGraphResource<BufferInfo> matrices;
+  FrameGraphResource<uint32_t> transformStride;
   FrameGraphResource<std::span<uint32_t>> maxPerGroup;
 };
 struct ComputeCullDrawCMDPassOut {
@@ -49,6 +50,7 @@ private:
     uint32_t cmdFrameStride;
     uint32_t cmdFrustumStride;
     uint32_t groupFrameStride;
+    uint32_t transformStride;
     uint32_t frame;
   } pushConstant;
   struct ComputeTransfPipeDef: PipelineLayoutDef {

@@ -1,6 +1,6 @@
 #include "compute_transf.hpp"
 
-#include "deferred/comp/transform_comp.hpp"
+#include "common/transform_comp.hpp"
 
 namespace vkg {
 
@@ -14,21 +14,25 @@ auto ComputeTransf::setup(PassBuilder &builder, const ComputeTransfPassIn &input
 
   pipe = ComputePipelineMaker(builder.device())
            .layout(pipeDef.layout())
-           .shader(Shader{shader::deferred::comp::transform_comp_span, local_size, 1, 1})
+           .shader(Shader{shader::common::transform_comp_span, local_size, 1, 1})
            .createUnique();
 
   builder.read(passIn.transforms);
   builder.read(passIn.meshInstances);
   builder.read(passIn.meshInstancesCount);
   builder.read(passIn.sceneConfig);
-  passOut.matrices = builder.create<BufferInfo>("matrices");
+  passOut = {
+    .matrices = builder.create<BufferInfo>("matrices"),
+    .transformStride = builder.create<uint32_t>("transformStride"),
+  };
   return passOut;
 }
 void ComputeTransf::compile(RenderContext &ctx, Resources &resources) {
   if(!set) {
     auto sceneConfig = resources.get(passIn.sceneConfig);
     matrices = buffer::devStorageBuffer(
-      resources.device, sizeof(glm::mat4) * sceneConfig.maxNumMeshInstances,
+      resources.device,
+      sizeof(glm::mat4) * sceneConfig.maxNumMeshInstances * ctx.numFrames,
       name + "_matrices");
     set = setDef.createSet(*descriptorPool);
     setDef.transforms(resources.get(passIn.transforms));
@@ -36,6 +40,7 @@ void ComputeTransf::compile(RenderContext &ctx, Resources &resources) {
     setDef.matrices(matrices->bufferInfo());
     setDef.update(set);
     resources.set(passOut.matrices, matrices->bufferInfo());
+    resources.set(passOut.transformStride, sceneConfig.maxNumMeshInstances);
   }
 }
 void ComputeTransf::execute(RenderContext &ctx, Resources &resources) {
@@ -55,8 +60,9 @@ void ComputeTransf::execute(RenderContext &ctx, Resources &resources) {
   cb.bindDescriptorSets(
     vk::PipelineBindPoint::eCompute, pipeDef.layout(), pipeDef.transf.set(), set,
     nullptr);
-  cb.pushConstants<uint32_t>(
-    pipeDef.layout(), vk::ShaderStageFlagBits::eCompute, 0, total);
+  pushConstant = {total, resources.get(passOut.transformStride), ctx.frameIndex};
+  cb.pushConstants<PushConstant>(
+    pipeDef.layout(), vk::ShaderStageFlagBits::eCompute, 0, pushConstant);
   cb.dispatch(dx, dy, dz);
 
   auto bufInfo = matrices->bufferInfo();

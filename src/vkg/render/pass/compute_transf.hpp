@@ -13,6 +13,7 @@ struct ComputeTransfPassIn {
 };
 struct ComputeTransfPassOut {
   FrameGraphResource<BufferInfo> matrices;
+  FrameGraphResource<uint32_t> transformStride;
 };
 
 class ComputeTransf: public Pass<ComputeTransfPassIn, ComputeTransfPassOut> {
@@ -25,13 +26,18 @@ public:
 private:
   std::unique_ptr<Buffer> matrices;
 
+  struct PushConstant {
+    uint32_t totalMeshInstances;
+    uint32_t frameStride;
+    uint32_t frame;
+  } pushConstant{};
   struct ComputeTransfSetDef: DescriptorSetDef {
     __buffer__(meshInstances, vkStage::eCompute);
     __buffer__(transforms, vkStage::eCompute);
     __buffer__(matrices, vkStage::eCompute);
   } setDef;
   struct ComputeTransfPipeDef: PipelineLayoutDef {
-    __push_constant__(instCount, vkStage::eCompute, uint32_t);
+    __push_constant__(constant, vkStage::eCompute, PushConstant);
     __set__(transf, ComputeTransfSetDef);
   } pipeDef;
   vk::UniqueDescriptorPool descriptorPool;

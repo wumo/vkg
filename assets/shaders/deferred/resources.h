@@ -6,7 +6,10 @@
 #include "deferred_common.h"
 layout(constant_id = 0) const uint maxNumTextures = 1;
 
-layout(push_constant) uniform PushConstant { uint frame; };
+layout(push_constant) uniform PushConstant {
+  uint transformStride;
+  uint frame;
+};
 
 layout(set = 0, binding = 0, scalar) readonly buffer Camera { CameraUBO cameras[]; };
 layout(set = 0, binding = 1, scalar) readonly buffer MeshesBuffer {

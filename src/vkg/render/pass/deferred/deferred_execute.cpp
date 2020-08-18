@@ -45,10 +45,11 @@ void DeferredPass::execute(RenderContext &ctx, Resources &resources) {
   cb.setScissor(0, scissor);
 
   auto &dev = resources.device;
-  cb.pushConstants<uint32_t>(
+  pushContant = {resources.get(passIn.transformStride), ctx.frameIndex};
+  cb.pushConstants<PushContant>(
     deferredPipeDef.layout(),
     vk::ShaderStageFlagBits::eVertex | vk::ShaderStageFlagBits::eFragment, 0,
-    ctx.frameIndex);
+    pushContant);
   cb.bindDescriptorSets(
     vk::PipelineBindPoint::eGraphics, deferredPipeDef.layout(),
     deferredPipeDef.scene.set(), sceneSet, nullptr);

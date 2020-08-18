@@ -127,6 +127,7 @@ void ComputeCullDrawCMD::execute(RenderContext &ctx, Resources &resources) {
     .cmdFrameStride = numDrawCMDsPerFrustum * numFrustums,
     .cmdFrustumStride = numDrawCMDsPerFrustum,
     .groupFrameStride = numDrawGroups * numFrustums,
+    .transformStride = resources.get(passIn.transformStride),
     .frame = ctx.frameIndex};
 
   cb.pipelineBarrier(

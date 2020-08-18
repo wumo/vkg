@@ -23,6 +23,7 @@ struct DeferredPassIn {
   FrameGraphResource<BufferInfo> indices;
   FrameGraphResource<BufferInfo> primitives;
   FrameGraphResource<BufferInfo> matrices;
+  FrameGraphResource<uint32_t> transformStride;
   FrameGraphResource<BufferInfo> materials;
   FrameGraphResource<std::span<vk::DescriptorImageInfo>> samplers;
   FrameGraphResource<uint32_t> numValidSampler;
@@ -98,8 +99,12 @@ private:
     __sampler2D__(irradiance, vkStage::eFragment);
   } atmosphereSetDef;
 
+  struct PushContant {
+    uint32_t transformStride;
+    uint32_t frame;
+  } pushContant;
   struct DeferredPipeDef: PipelineLayoutDef {
-    __push_constant__(frame, vkStage::eVertex | vkStage ::eFragment, uint32_t);
+    __push_constant__(frame, vkStage::eVertex | vkStage ::eFragment, PushContant);
     __set__(scene, SceneSetDef);
     __set__(gbuffer, GBufferSetDef);
     __set__(atmosphere, AtmosphereSetDef);

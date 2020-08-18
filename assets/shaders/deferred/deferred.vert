@@ -13,7 +13,7 @@ layout(location = 3) out flat uint outMaterialID;
 
 void main() {
   MeshInstanceUBO mesh = meshInstances[gl_InstanceIndex];
-  mat4 model = matrices[gl_InstanceIndex];
+  mat4 model = matrices[frame * transformStride + gl_InstanceIndex];
   vec4 pos = model * vec4(inPos, 1.0);
   pos = pos / pos.w;
   outWorldPos = pos.xyz;

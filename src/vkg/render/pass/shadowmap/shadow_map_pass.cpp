@@ -134,6 +134,7 @@ auto ShadowMapPass::setup(PassBuilder &builder, const ShadowMapPassIn &inputs)
                       .sceneConfig = passIn.sceneConfig,
                       .primitives = passIn.primitives,
                       .matrices = passIn.matrices,
+                      .transformStride = passIn.transformStride,
                       .maxPerGroup = passIn.maxPerGroup});
   cull.enableIf([]() { return false; });
   cullPassOut = cull.out();

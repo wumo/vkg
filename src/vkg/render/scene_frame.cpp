@@ -151,6 +151,7 @@ auto Scene::setup(PassBuilder &builder, const ScenePassIn &inputs) -> ScenePassO
                      sceneSetup.out().meshInstancesCount,
                      sceneSetup.out().primitives,
                      transf.out().matrices,
+                     transf.out().transformStride,
                      sceneSetup.out().maxPerGroup,
                    });
     shadowMap.enableIf([&]() { return Host.shadowMap.isEnabled(); });
@@ -168,6 +169,7 @@ auto Scene::setup(PassBuilder &builder, const ScenePassIn &inputs) -> ScenePassO
                    sceneSetup.out().indices,
                    sceneSetup.out().primitives,
                    transf.out().matrices,
+                   transf.out().transformStride,
                    sceneSetup.out().materials,
                    sceneSetup.out().samplers,
                    sceneSetup.out().numValidSampler,

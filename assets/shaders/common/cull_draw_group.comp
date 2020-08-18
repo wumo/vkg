@@ -15,6 +15,7 @@ layout(push_constant) uniform PushConstant {
   uint cmdFrameStride;
   uint cmdFrustumStride;
   uint groupFrameStride;
+  uint transformStride;
   uint frame;
 };
 
@@ -85,7 +86,7 @@ void main() {
 
   PrimitiveUBO prim = primitives[mesh.primitive];
   AABB aabb = prim.aabb;
-  mat4 model = matrices[id];
+  mat4 model = matrices[frame * transformStride + id];
   transformAABB(aabb, model);
   vec3 center = (aabb.min + aabb.max) / 2;
   float radius = length(aabb.max - aabb.min) / 2;

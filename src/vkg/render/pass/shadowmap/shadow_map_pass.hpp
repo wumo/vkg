@@ -20,6 +20,7 @@ struct ShadowMapPassIn {
   FrameGraphResource<uint32_t> meshInstancesCount;
   FrameGraphResource<BufferInfo> primitives;
   FrameGraphResource<BufferInfo> matrices;
+  FrameGraphResource<uint32_t> transformStride;
   FrameGraphResource<std::span<uint32_t>> maxPerGroup;
 };
 struct ShadowMapPassOut {
