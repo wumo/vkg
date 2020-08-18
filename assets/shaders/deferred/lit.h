@@ -40,7 +40,7 @@ vec3 view_ray(CameraUBO cam) {
   return normalize(v + c.x * r + c.y * u);
 }
 
-vec3 shadeBackground() {
+vec3 shadeBackground(CameraUBO cam) {
 #ifdef USE_ATMOSPHERE
   vec3 view_direction = view_ray(cam);
   return skyBackground(cam.eye.xyz, view_direction);
@@ -68,8 +68,9 @@ PointInfo unpack() {
 
 void main() {
   PointInfo p = unpack();
+  CameraUBO cam = cameras[frame];
   if(p.depth == 1) { //
-    outColor.rgb = LINEARtoSRGB(shadeBackground());
+    outColor.rgb = LINEARtoSRGB(shadeBackground(cam));
   } else {
     if(isZero(p.normal)) {
       outColor.rgb = LINEARtoSRGB(p.diffuseColor);
@@ -107,7 +108,7 @@ void main() {
     if(p.useSky) {
       vec3 rayDir = sun_direction.xyz;
   #ifdef USE_SHADOW_MAP
-      bool shadowed = shadowTrace(p.position);
+      bool shadowed = shadowTrace(cam, p.position);
   #else
       bool shadowed = false;
   #endif
@@ -119,7 +120,7 @@ void main() {
 
     color = color * p.ao;
     color += p.emissive;
-
+  
     outColor.rgb = LINEARtoSRGB(color);
 
     //    uint cIdx = cascadeIndex(p.position);

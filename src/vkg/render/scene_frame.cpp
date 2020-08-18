@@ -83,7 +83,6 @@ public:
       resources.set(passOut.lighting, scene.Dev.lighting->bufferInfo());
       resources.set(passOut.lights, scene.Dev.lights->bufferInfo());
       resources.set(passOut.camera, scene.Host.camera_.get());
-      resources.set(passOut.cameraBuffer, scene.Dev.camera->bufferInfo());
       resources.set(passOut.samplers, {scene.Dev.sampler2Ds});
     }
     resources.set(passOut.numValidSampler, uint32_t(scene.Dev.textures.size()));
@@ -106,7 +105,6 @@ public:
     }
 
     scene.Host.camera_->resize(extent.width, extent.height);
-    scene.Host.camera_->updateUBO();
 
     resources.set(passOut.meshInstancesCount, scene.Dev.meshInstances->count());
     resources.set(passOut.maxPerGroup, {scene.Host.drawGroupInstCount});
@@ -150,7 +148,6 @@ auto Scene::setup(PassBuilder &builder, const ScenePassIn &inputs) -> ScenePassO
     auto &deferred = builder.newPass<DeferredPass>(
       "Deferred", {sceneSetup.out().backImg,
                    sceneSetup.out().camera,
-                   sceneSetup.out().cameraBuffer,
                    sceneSetup.out().sceneConfig,
                    sceneSetup.out().meshInstances,
                    sceneSetup.out().meshInstancesCount,

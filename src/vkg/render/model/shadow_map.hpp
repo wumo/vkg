@@ -10,13 +10,13 @@ public:
   void setNumCascades(uint32_t numCascades);
   auto textureSize() const -> uint32_t;
   void setTextureSize(uint32_t textureSize);
-  auto far() const -> float;
-  void setFar(float far);
+  auto zFar() const -> float;
+  void setZFar(float far);
 
 private:
   bool enabled_{false};
   uint32_t numCascades_{4};
   uint32_t textureSize_{4096};
-  float far_{0};
+  float zfar_{0};
 };
 }

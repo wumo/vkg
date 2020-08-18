@@ -2,12 +2,7 @@
 
 namespace vkg {
 void DeferredPass::execute(RenderContext &ctx, Resources &resources) {
-  auto drawCMDBuffer = resources.get(cullPassOut.drawCMDBuffer);
-  auto drawCMDCountBuffer = resources.get(cullPassOut.drawGroupCountBuffer);
-  auto cmdOffsetPerFrustum = resources.get(cullPassOut.cmdOffsetPerFrustum);
-  auto cmdOffsetPerGroup = resources.get(cullPassOut.cmdOffsetPerGroup);
-  auto countOffset = resources.get(cullPassOut.countOffset);
-  auto drawGroupCount = resources.get(passIn.drawGroupCount);
+  auto drawInfos = resources.get(cullPassOut.drawInfos);
   auto atmosSetting = resources.get(passIn.atmosSetting);
   auto shadowMapSetting = resources.get(passIn.shadowMapSetting);
 
@@ -39,6 +34,10 @@ void DeferredPass::execute(RenderContext &ctx, Resources &resources) {
   cb.setScissor(0, scissor);
 
   auto &dev = resources.device;
+  cb.pushConstants<uint32_t>(
+    deferredPipeDef.layout(),
+    vk::ShaderStageFlagBits::eVertex | vk::ShaderStageFlagBits::eFragment, 0,
+    ctx.frameIndex);
   cb.bindDescriptorSets(
     vk::PipelineBindPoint::eGraphics, deferredPipeDef.layout(),
     deferredPipeDef.scene.set(), sceneSet, nullptr);
@@ -67,14 +66,11 @@ void DeferredPass::execute(RenderContext &ctx, Resources &resources) {
 
   auto draw = [&](DrawGroup drawGroup) {
     auto drawGroupIdx = value(drawGroup);
-    if(drawGroupCount[drawGroupIdx] == 0) return;
+    auto drawInfo = drawInfos.drawInfo[0][drawGroupIdx];
+    if(drawInfo.maxCount == 0) return;
     cb.drawIndexedIndirectCount(
-      drawCMDBuffer.buffer,
-      drawCMDBuffer.offset + sizeof(vk::DrawIndexedIndirectCommand) *
-                               (cmdOffsetPerFrustum[0] + cmdOffsetPerGroup[drawGroupIdx]),
-      drawCMDCountBuffer.buffer,
-      drawCMDCountBuffer.offset + sizeof(uint32_t) * (countOffset + drawGroupIdx),
-      drawGroupCount[drawGroupIdx], sizeof(vk::DrawIndexedIndirectCommand));
+      drawInfo.drawCMD.buffer, drawInfo.drawCMD.offset, drawInfo.drawCMDCount.buffer,
+      drawInfo.drawCMDCount.offset, drawInfo.maxCount, drawInfo.stride);
   };
 
   dev.begin(cb, "Subpass gbuffer brdf triangles");

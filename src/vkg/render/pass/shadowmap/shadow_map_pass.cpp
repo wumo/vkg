@@ -39,9 +39,9 @@ public:
     frustums.resize(numCascades);
 
     auto zNear = camera->zNear();
-    auto zFar = setting.far() == 0 ?
+    auto zFar = setting.zFar() == 0 ?
                   camera->zFar() :
-                  glm::clamp(setting.far(), camera->zNear(), camera->zFar());
+                  glm::clamp(setting.zFar(), camera->zNear(), camera->zFar());
     auto p = camera->location();
     auto a = camera->width() / float(camera->height());
     auto tf = glm::tan(camera->fov() / 2);

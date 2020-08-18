@@ -9,6 +9,7 @@ struct CamFrustumPassIn {
 };
 struct CamFrustumPassOut {
   FrameGraphResource<std::span<Frustum>> camFrustum;
+  FrameGraphResource<BufferInfo> camBuffer;
 };
 
 class CamFrustumPass: public Pass<CamFrustumPassIn, CamFrustumPassOut> {
@@ -17,12 +18,22 @@ public:
     -> CamFrustumPassOut override {
     passIn = inputs;
     builder.read(passIn.camera);
-    passOut.camFrustum = builder.create<std::span<Frustum>>("camFrustum");
+    passOut = {
+      .camFrustum = builder.create<std::span<Frustum>>("camFrustum"),
+      .camBuffer = builder.create<BufferInfo>("camBuffer"),
+    };
 
     frustums.resize(1);
     return passOut;
   }
   void compile(RenderContext &ctx, Resources &resources) override {
+    if(!init) {
+      init = true;
+      camBuffer = buffer::devStorageBuffer(
+        resources.device, sizeof(Camera::Desc) * ctx.numFrames, "camBuffer");
+      resources.set(passOut.camBuffer, camBuffer->bufferInfo());
+    }
+
     auto *camera = resources.get(passIn.camera);
     Frustum frustum{camera->proj() * camera->view()};
 
@@ -30,7 +41,25 @@ public:
     resources.set(passOut.camFrustum, {frustums});
   }
 
+  void execute(RenderContext &ctx, Resources &resources) override {
+    auto bufInfo = camBuffer->bufferInfo();
+    auto *camera = resources.get(passIn.camera);
+    auto desc = camera->desc();
+    desc.frame = ctx.frameIndex;
+    auto cb = ctx.graphics;
+    cb.updateBuffer(
+      bufInfo.buffer, bufInfo.offset + sizeof(Camera::Desc) * ctx.frameIndex,
+      sizeof(desc), &desc);
+    cb.pipelineBarrier(
+      vk::PipelineStageFlagBits::eTransfer, vk::PipelineStageFlagBits::eAllCommands, {},
+      vk::MemoryBarrier{
+        vk::AccessFlagBits::eTransferWrite, vk::AccessFlagBits::eShaderRead},
+      nullptr, nullptr);
+  }
+
   std::vector<Frustum> frustums;
+  std::unique_ptr<Buffer> camBuffer;
+  bool init{false};
 };
 
 auto DeferredPass::setup(PassBuilder &builder, const DeferredPassIn &inputs)
@@ -38,6 +67,7 @@ auto DeferredPass::setup(PassBuilder &builder, const DeferredPassIn &inputs)
   passIn = inputs;
 
   auto &cam = builder.newPass<CamFrustumPass>("CamFrustum", {passIn.camera});
+  camBuffer = cam.out().camBuffer;
 
   auto &cull = builder.newPass<ComputeCullDrawCMD>(
     "Cull",
@@ -46,7 +76,7 @@ auto DeferredPass::setup(PassBuilder &builder, const DeferredPassIn &inputs)
   cullPassOut = cull.out();
 
   builder.read(passIn.sceneConfig);
-  builder.read(passIn.cameraBuffer);
+  builder.read(cam.out().camBuffer);
   builder.read(passIn.meshInstances);
   builder.read(passIn.primitives);
   builder.read(passIn.matrices);
@@ -93,7 +123,7 @@ void DeferredPass::compile(RenderContext &ctx, Resources &resources) {
     shadowMapSet = csmSetDef.createSet(*descriptorPool);
     atmosphereSet = atmosphereSetDef.createSet(*descriptorPool);
 
-    sceneSetDef.cam(resources.get(passIn.cameraBuffer));
+    sceneSetDef.cameras(resources.get(camBuffer));
     sceneSetDef.meshInstances(resources.get(passIn.meshInstances));
     sceneSetDef.primitives(resources.get(passIn.primitives));
     sceneSetDef.matrices(resources.get(passIn.matrices));
@@ -124,17 +154,21 @@ void DeferredPass::compile(RenderContext &ctx, Resources &resources) {
     lastNumValidSampler = numValidSampler;
   }
 
-  auto atmosSetting = resources.get(passIn.atmosSetting);
-  if(atmosSetting.isEnabled()) {
-    atmosphereSetDef.atmosphere(resources.get(passIn.atmosphere.atmosphere));
-    atmosphereSetDef.sun(resources.get(passIn.atmosphere.sun));
-    atmosphereSetDef.transmittance(*resources.get(passIn.atmosphere.transmittance));
-    atmosphereSetDef.scattering(*resources.get(passIn.atmosphere.scattering));
-    atmosphereSetDef.irradiance(*resources.get(passIn.atmosphere.irradiance));
-    atmosphereSetDef.update(atmosphereSet);
+  if(auto atmosSetting = resources.get(passIn.atmosSetting); atmosSetting.isEnabled()) {
+    if(auto version = resources.get(passIn.atmosphere.version);
+       version > lastAtmosVersion) {
+      lastAtmosVersion = version;
+      atmosphereSetDef.atmosphere(resources.get(passIn.atmosphere.atmosphere));
+      atmosphereSetDef.sun(resources.get(passIn.atmosphere.sun));
+      atmosphereSetDef.transmittance(*resources.get(passIn.atmosphere.transmittance));
+      atmosphereSetDef.scattering(*resources.get(passIn.atmosphere.scattering));
+      atmosphereSetDef.irradiance(*resources.get(passIn.atmosphere.irradiance));
+      atmosphereSetDef.update(atmosphereSet);
+    }
   }
-  auto shadowMapSetting = resources.get(passIn.shadowMapSetting);
-  if(shadowMapSetting.isEnabled()) {
+
+  if(auto shadowMapSetting = resources.get(passIn.shadowMapSetting);
+     shadowMapSetting.isEnabled()) {
     csmSetDef.setting(resources.get(passIn.shadowmap.setting));
     csmSetDef.cascades(resources.get(passIn.shadowmap.cascades));
     csmSetDef.shadowMaps(*resources.get(passIn.shadowmap.shadowMaps));

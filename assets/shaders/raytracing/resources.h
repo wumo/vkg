@@ -10,7 +10,7 @@ layout(constant_id = 1) const uint maxLights = 1;
 layout(constant_id = 2) const int MAX_RECURSION = 1;
 layout(constant_id = 3) const uint NBSamples = 1;
 
-layout(set = 0, binding = 0) uniform Camera { CameraUBO cam; };
+layout(set = 0, binding = 0, scalar) readonly buffer Camera { CameraUBO cam; };
 layout(set = 0, binding = 1, scalar) readonly buffer MeshesBuffer {
   MeshInstanceUBO meshInstances[];
 };

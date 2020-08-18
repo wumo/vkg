@@ -37,10 +37,7 @@ Scene::Scene(Renderer &renderer, SceneConfig sceneConfig, std::string name)
   Host.lighting = std::make_unique<Lighting>(*this);
   Dev.lights = std::make_unique<RandomHostAllocation<Light::Desc>>(
     buffer::hostStorageBuffer, device, sceneConfig.maxNumLights, "lights");
-  Dev.camera = std::make_unique<RandomHostAllocation<Camera::Desc>>(
-    buffer::hostUniformBuffer, device, 1, "camera");
-  Host.camera_ = std::make_unique<Camera>(
-    Dev.camera->allocate(), glm::vec3{10, 10, 10}, glm::vec3{0, 0, 0}, glm::vec3{0, 1, 0},
+  Host.camera_ = std::make_unique<Camera>(glm::vec3{10, 10, 10}, glm::vec3{0, 0, 0}, glm::vec3{0, 1, 0},
     glm::radians(45.f), 0.1f, 1000.f, 1, 1);
 
   Dev.textures.push_back(image::makeSampler2DTex("empty tex", device, 1, 1));

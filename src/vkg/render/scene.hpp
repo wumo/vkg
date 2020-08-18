@@ -116,8 +116,6 @@ private:
     std::unique_ptr<RandomHostAllocation<Lighting::Desc>> lighting;
     std::unique_ptr<RandomHostAllocation<Light::Desc>> lights;
 
-    std::unique_ptr<RandomHostAllocation<Camera::Desc>> camera;
-
     std::vector<std::unique_ptr<Texture>> textures;
     std::vector<vk::DescriptorImageInfo> sampler2Ds;
     uint32_t lastUsedSampler2DIndex{};

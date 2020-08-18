@@ -91,7 +91,7 @@ vec3 skyBackground(vec3 eye, vec3 viewDir) {
   float ground_alpha = 0.0;
   vec3 ground_radiance = vec3(0.0);
   if(distance_to_intersection > 0.0) {
-    vec3 point = cam.eye.xyz + viewDir * distance_to_intersection;
+    vec3 point = eye + viewDir * distance_to_intersection;
     vec3 normal = normalize(point - earth_center.xyz);
 
     // Compute the radiance reflected by the ground.

@@ -3,7 +3,7 @@
 
 #include "../resources.h"
 
-uint cascadeIndex(vec3 pos) {
+uint cascadeIndex(CameraUBO cam, vec3 pos) {
   float z = dot(pos - cam.eye.xyz, cam.v.xyz);
 
   uint cascadeIdx = 0;
@@ -16,8 +16,8 @@ uint cascadeIndex(vec3 pos) {
   return cascadeIdx;
 }
 
-float shadowCoordDepth(vec3 pos) {
-  uint cascadeIdx = cascadeIndex(pos);
+float shadowCoordDepth(CameraUBO cam, vec3 pos) {
+  uint cascadeIdx = cascadeIndex(cam, pos);
 
   CascadeDesc cascade = cascades[cascadeIdx];
 
@@ -29,8 +29,8 @@ float shadowCoordDepth(vec3 pos) {
   return shadowCoord.z;
 }
 
-float shadowMapDepth(vec3 pos) {
-  uint cascadeIdx = cascadeIndex(pos);
+float shadowMapDepth(CameraUBO cam, vec3 pos) {
+  uint cascadeIdx = cascadeIndex(cam, pos);
 
   CascadeDesc cascade = cascades[cascadeIdx];
 
@@ -43,8 +43,8 @@ float shadowMapDepth(vec3 pos) {
   return depth;
 }
 
-bool shadowTrace(vec3 pos) {
-  uint cascadeIdx = cascadeIndex(pos);
+bool shadowTrace(CameraUBO cam, vec3 pos) {
+  uint cascadeIdx = cascadeIndex(cam, pos);
 
   CascadeDesc cascade = cascades[cascadeIdx];
 

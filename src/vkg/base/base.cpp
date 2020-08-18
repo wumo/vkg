@@ -14,9 +14,9 @@ Base::Base(WindowConfig windowConfig, FeatureConfig featureConfig)
   createDebugUtils();
   device_ = std::make_unique<Device>(*instance, window_->vkSurface(), featureConfig);
   swapchain_ = std::make_unique<Swapchain>(*device_, window_->vkSurface(), windowConfig);
-  Base::resize();
   createSyncObjects();
   createCommandBuffers();
+  Base::resize();
 }
 
 auto Base::featureConfig() const -> const FeatureConfig & { return featureConfig_; }
@@ -107,6 +107,13 @@ auto Base::createCommandBuffers() -> void {
 auto Base::resize() -> void {
   device_->vkDevice().waitIdle();
   swapchain_->resize(window_->width(), window_->height(), window_->isVsync());
+  //empty cb for syncReverse
+  for(int i = 0; i < uint32_t(swapchain_->imageCount()); ++i) {
+    graphicsCmdBuffers[i].begin({vk::CommandBufferUsageFlagBits::eSimultaneousUse});
+    graphicsCmdBuffers[i].end();
+    computeCmdBuffers[i].begin({vk::CommandBufferUsageFlagBits::eSimultaneousUse});
+    computeCmdBuffers[i].end();
+  }
 }
 
 void Base::onFrame(uint32_t imageIndex, float elapsed) {
@@ -138,6 +145,7 @@ void Base::loop(const std::function<void(double)> &updater) {
 
     fpsMeter.update(elapsed);
     syncReverse(elapsed, updater);
+    //    syncTimeline(elapsed, updater);
   }
 
   device_->vkDevice().waitIdle();
@@ -316,6 +324,6 @@ auto Base::syncTimeline(double elapsed, const std::function<void(double)> &updat
   } catch(const vk::OutOfDateKHRError &) { resize(); }
 
   frameIndex = (frameIndex + 1) % swapchain_->imageCount();
-//  dev.waitIdle();
+  //  dev.waitIdle();
 }
 }

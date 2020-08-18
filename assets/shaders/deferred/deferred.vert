@@ -20,5 +20,5 @@ void main() {
   outNormal = normalize(transpose(inverse(mat3(model))) * inNormal);
   outUV0 = inUV0;
   outMaterialID = mesh.material;
-  gl_Position = cam.projView * vec4(outWorldPos, 1.0);
+  gl_Position = cameras[frame].projView * vec4(outWorldPos, 1.0);
 }

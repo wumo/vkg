@@ -13,7 +13,6 @@ namespace vkg {
 struct DeferredPassIn {
   FrameGraphResource<Texture *> backImg;
   FrameGraphResource<Camera *> camera;
-  FrameGraphResource<BufferInfo> cameraBuffer;
   FrameGraphResource<SceneConfig> sceneConfig;
   FrameGraphResource<BufferInfo> meshInstances;
   FrameGraphResource<uint32_t> meshInstancesCount;
@@ -57,10 +56,13 @@ private:
   auto createTransparentPass(Device &device, SceneConfig sceneConfig) -> void;
 
   ComputeCullDrawCMDPassOut cullPassOut;
+  FrameGraphResource<BufferInfo> camBuffer;
   uint32_t lastNumValidSampler{0};
+  uint32_t lastAtmosVersion{0};
+  uint32_t lastShadowMapVersion{0};
 
   struct SceneSetDef: DescriptorSetDef {
-    __uniform__(cam, vkStage::eVertex | vkStage::eFragment);
+    __buffer__(cameras, vkStage::eVertex | vkStage::eFragment);
     __buffer__(meshInstances, vkStage::eVertex);
     __buffer__(primitives, vkStage::eVertex);
     __buffer__(matrices, vkStage::eVertex);
@@ -95,6 +97,7 @@ private:
   } atmosphereSetDef;
 
   struct DeferredPipeDef: PipelineLayoutDef {
+    __push_constant__(frame, vkStage::eVertex | vkStage ::eFragment, uint32_t);
     __set__(scene, SceneSetDef);
     __set__(gbuffer, GBufferSetDef);
     __set__(atmosphere, AtmosphereSetDef);

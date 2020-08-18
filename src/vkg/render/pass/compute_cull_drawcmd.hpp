@@ -5,6 +5,14 @@
 #include "vkg/math/frustum.hpp"
 
 namespace vkg {
+struct DrawInfo {
+  BufferInfo drawCMD, drawCMDCount;
+  uint32_t maxCount{0};
+  uint32_t stride{sizeof(vk::DrawIndexedIndirectCommand)};
+};
+struct DrawInfos {
+  std::vector<std::vector<DrawInfo>> drawInfo;
+};
 struct ComputeCullDrawCMDPassIn {
   FrameGraphResource<std::span<Frustum>> frustums;
   FrameGraphResource<BufferInfo> meshInstances;
@@ -15,11 +23,7 @@ struct ComputeCullDrawCMDPassIn {
   FrameGraphResource<std::span<uint32_t>> maxPerGroup;
 };
 struct ComputeCullDrawCMDPassOut {
-  FrameGraphResource<BufferInfo> drawCMDBuffer;
-  FrameGraphResource<BufferInfo> drawGroupCountBuffer;
-  FrameGraphResource<std::span<uint32_t>> cmdOffsetPerFrustum;
-  FrameGraphResource<std::span<uint32_t>> cmdOffsetPerGroup;
-  FrameGraphResource<uint32_t> countOffset;
+  FrameGraphResource<DrawInfos> drawInfos;
 };
 class ComputeCullDrawCMD
   : public Pass<ComputeCullDrawCMDPassIn, ComputeCullDrawCMDPassOut> {
@@ -48,7 +52,7 @@ private:
     uint32_t frame;
   } pushConstant;
   struct ComputeTransfPipeDef: PipelineLayoutDef {
-    __push_constant__(instCount, vk::ShaderStageFlagBits::eCompute, PushConstant);
+    __push_constant__(pushConst, vk::ShaderStageFlagBits::eCompute, PushConstant);
     __set__(transf, ComputeTransfSetDef);
   } pipeDef;
 
@@ -62,9 +66,8 @@ private:
   std::unique_ptr<Buffer> cmdOffsetPerGroupBuffer;
   std::unique_ptr<Buffer> countPerGroupBuffer;
 
-  std::vector<uint32_t> cmdOffsetPerFrustum;
   std::vector<uint32_t> cmdOffsetPerGroup;
-  std::vector<uint32_t> countOffsetPerGroup;
+  uint32_t countOffset;
 
   uint32_t numFrustums{0};
   uint32_t numDrawCMDsPerFrustum;

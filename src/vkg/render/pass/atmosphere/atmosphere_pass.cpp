@@ -34,6 +34,8 @@ void AtmospherePass::compile(RenderContext &ctx, Resources &resources) {
     auto tDiff = std::chrono::duration<double, std::milli>(tEnd - tStart).count();
     debugLog("Generating sky map took ", tDiff, " ms");
 
+    version++;
+    resources.set(passOut.version, version);
     resources.set(passOut.atmosphere, model_->atmosphereUBO());
     resources.set(passOut.sun, model_->sunUBO());
     resources.set(passOut.transmittance, &model_->transmittanceTex());

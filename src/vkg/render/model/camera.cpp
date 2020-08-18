@@ -3,11 +3,9 @@
 namespace vkg {
 
 Camera::Camera(
-  Allocation<Desc> desc, const glm::vec3 &location, const glm::vec3 &focus,
-  const glm::vec3 &worldUp, float fov, float zNear, float zFar, uint32_t width,
-  uint32_t height)
-  : desc{desc},
-    location_(location),
+  const glm::vec3 &location, const glm::vec3 &focus, const glm::vec3 &worldUp, float fov,
+  float zNear, float zFar, uint32_t width, uint32_t height)
+  : location_(location),
     focus_(focus),
     worldUp_(worldUp),
     fov_(fov),
@@ -24,8 +22,8 @@ auto Camera::proj() const -> glm::mat4 {
 }
 auto Camera::width() const -> uint32_t { return width_; }
 auto Camera::height() const -> uint32_t { return height_; }
-auto Camera::zFar() -> float { return zFar_; }
-auto Camera::zNear() -> float { return zNear_; }
+auto Camera::zFar() const -> float { return zFar_; }
+auto Camera::zNear() const -> float { return zNear_; }
 
 auto Camera::setLocation(glm::vec3 location) -> void { location_ = location; }
 auto Camera::setDirection(glm::vec3 direction) -> void { focus_ = location_ + direction; }
@@ -37,15 +35,15 @@ auto Camera::resize(uint32_t width, uint32_t height) -> void {
 auto Camera::setZFar(float zFar) -> void { zFar_ = zFar; }
 auto Camera::setZNear(float zNear) -> void { zNear_ = zNear; }
 
-auto Camera::updateUBO() -> void {
+auto Camera::desc() -> Desc {
   auto proj_ = proj();
   auto view_ = view();
   auto projView = proj_ * view_;
   auto v = glm::vec4(normalize(focus_ - location_), 1);
   auto r = glm::vec4(normalize(cross(glm::vec3(v), worldUp_)), 1);
-  *desc.ptr = {view_, proj_,  projView,      glm::vec4(location_, 1.0),
-               r,     v,      float(width_), float(height_),
-               fov_,  zNear_, zFar_};
+  return {view_, proj_,  projView,      glm::vec4(location_, 1.0),
+          r,     v,      float(width_), float(height_),
+          fov_,  zNear_, zFar_};
 }
 auto Camera::fov() -> float { return fov_; }
 

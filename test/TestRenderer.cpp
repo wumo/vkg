@@ -335,23 +335,23 @@ auto main() -> int {
       mat.setColorFactor(unif(rng) > 0.5 ? glm::vec4{1, 0, 0, 1} : glm::vec4{0, 1, 0, 1});
     }
 
-    // update vertices
-    auto rot = glm::angleAxis(glm::radians(float(elapsed) * 0.1f), glm::vec3(-1, 0, 1));
-    for(int i = 0; i < positions.size(); ++i) {
-      positions[i] = rot * positions[i];
-      normals[i] = rot * normals[i];
-    }
-    scene.primitive(dynamicPrim).update(positions, normals);
-
-    {
-      static float totalElapsed = 0;
-      totalElapsed += elapsed / 1000;
-      auto p = PrimitiveBuilder();
-      auto s = glm::abs(10 * glm::sin(totalElapsed));
-      p.box({}, glm::vec3{0, 0, s}, glm::vec3{s, 0, 0}, s)
-        .newPrimitive(PrimitiveTopology::Triangles, vkg::DynamicType::Dynamic);
-      scene.primitive(dynamicPrim2).update(p);
-    }
+//    // update vertices
+//    auto rot = glm::angleAxis(glm::radians(float(elapsed) * 0.1f), glm::vec3(-1, 0, 1));
+//    for(int i = 0; i < positions.size(); ++i) {
+//      positions[i] = rot * positions[i];
+//      normals[i] = rot * normals[i];
+//    }
+//    scene.primitive(dynamicPrim).update(positions, normals);
+//
+//    {
+//      static float totalElapsed = 0;
+//      totalElapsed += elapsed / 1000;
+//      auto p = PrimitiveBuilder();
+//      auto s = glm::abs(10 * glm::sin(totalElapsed));
+//      p.box({}, glm::vec3{0, 0, s}, glm::vec3{s, 0, 0}, s)
+//        .newPrimitive(PrimitiveTopology::Triangles, vkg::DynamicType::Dynamic);
+//      scene.primitive(dynamicPrim2).update(p);
+//    }
   });
   return 0;
 }
