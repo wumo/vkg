@@ -29,6 +29,7 @@ auto main() -> int {
   sky.setSunDirection(sunDir);
 
   scene.shadowmap().enable(true);
+  scene.shadowmap().setNumCascades(4);
   scene.shadowmap().setZFar(1e3);
   //  auto lightId = scene.newLight();
   //  auto &light = scene.light(lightId);
@@ -193,7 +194,7 @@ auto main() -> int {
     //  t.translation = -center;
     scene.newModelInstance(animModel, t);
 
-    uint32_t num = 100;
+    uint32_t num = 300;
     insts.reserve(num * num);
     float unit = -5;
     for(int a = 0; a < num; ++a) {
@@ -284,7 +285,7 @@ auto main() -> int {
 
   auto &input = app.window().input();
   auto &camera = scene.camera();
-  //  camera.setLocation({20.f, 20.f, 20.f});
+  //  camera.setLocation({20.f, 0.f, 20.f});
   camera.setLocation({22.759, 8.61548, 26.1782});
   camera.setZFar(1e9);
   PanningCamera panningCamera{camera};
@@ -336,23 +337,23 @@ auto main() -> int {
       mat.setColorFactor(unif(rng) > 0.5 ? glm::vec4{1, 0, 0, 1} : glm::vec4{0, 1, 0, 1});
     }
 
-    //    // update vertices
-    //    auto rot = glm::angleAxis(glm::radians(float(elapsed) * 0.1f), glm::vec3(-1, 0, 1));
-    //    for(int i = 0; i < positions.size(); ++i) {
-    //      positions[i] = rot * positions[i];
-    //      normals[i] = rot * normals[i];
-    //    }
-    //    scene.primitive(dynamicPrim).update(positions, normals);
-    //
-    //    {
-    //      static float totalElapsed = 0;
-    //      totalElapsed += elapsed / 1000;
-    //      auto p = PrimitiveBuilder();
-    //      auto s = glm::abs(10 * glm::sin(totalElapsed));
-    //      p.box({}, glm::vec3{0, 0, s}, glm::vec3{s, 0, 0}, s)
-    //        .newPrimitive(PrimitiveTopology::Triangles, vkg::DynamicType::Dynamic);
-    //      scene.primitive(dynamicPrim2).update(p);
-    //    }
+    // update vertices
+    auto rot = glm::angleAxis(glm::radians(float(elapsed) * 0.1f), glm::vec3(-1, 0, 1));
+    for(int i = 0; i < positions.size(); ++i) {
+      positions[i] = rot * positions[i];
+      normals[i] = rot * normals[i];
+    }
+    scene.primitive(dynamicPrim).update(positions, normals);
+
+    {
+      static float totalElapsed = 0;
+      totalElapsed += elapsed / 1000;
+      auto p = PrimitiveBuilder();
+      auto s = glm::abs(10 * glm::sin(totalElapsed));
+      p.box({}, glm::vec3{0, 0, s}, glm::vec3{s, 0, 0}, s)
+        .newPrimitive(PrimitiveTopology::Triangles, vkg::DynamicType::Dynamic);
+      scene.primitive(dynamicPrim2).update(p);
+    }
   });
   return 0;
 }

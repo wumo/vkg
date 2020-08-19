@@ -52,7 +52,7 @@ void ComputeCullDrawCMD::compile(RenderContext &ctx, Resources &resources) {
         sizeof(vk::DrawIndexedIndirectCommand) * numDrawCMDsPerFrustum * numFrustums,
         toString(name, "_drawCMD_", i));
       frame.cmdOffsetPerGroupBuffer = buffer::devStorageBuffer(
-        resources.device, sizeof(uint32_t) * numDrawGroups * numFrustums,
+        resources.device, sizeof(uint32_t) * numDrawGroups,
         toString(name, "_drawCMDOffset_", i));
       frame.countOfGroupBuffer = buffer::devIndirectStorageBuffer(
         resources.device, sizeof(uint32_t) * numDrawGroups * numFrustums,
@@ -96,7 +96,8 @@ void ComputeCullDrawCMD::compile(RenderContext &ctx, Resources &resources) {
           sizeof(vk::DrawIndexedIndirectCommand) *
             (f * numDrawCMDsPerFrustum + cmdOffsetOfGroupInFrustum[g])};
       drawInfo.drawCMDCount = {
-        countOfGroupBufInfo.buffer, countOfGroupBufInfo.offset + sizeof(uint32_t) * g};
+        countOfGroupBufInfo.buffer,
+        countOfGroupBufInfo.offset + sizeof(uint32_t) * (f * numDrawGroups + g)};
       drawInfo.maxCount = maxPerGroup[g];
       drawInfos.drawInfo[f][g] = drawInfo;
     }

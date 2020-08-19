@@ -16,7 +16,7 @@ layout(push_constant) uniform PushConstant {
   uint groupStride;
 };
 
-layout(set = 0, binding = 0) buffer Frustums { Frustum frustums[]; };
+layout(set = 0, binding = 0, scalar) buffer Frustums { Frustum frustums[]; };
 layout(set = 0, binding = 1, scalar) readonly buffer MeshesBuffer {
   MeshInstanceUBO meshInstances[];
 };

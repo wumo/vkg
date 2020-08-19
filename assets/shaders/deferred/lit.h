@@ -122,24 +122,23 @@ void main() {
 
     outColor.rgb = LINEARtoSRGB(color);
 
-//#ifdef USE_SHADOW_MAP
-//    uint cIdx = cascadeIndex(camera, p.position);
-//    switch(cIdx) {
-//      case 0: outColor.rgb = vec3(1, 0, 0); break;
-//      case 1: outColor.rgb = vec3(0, 1, 0); break;
-//      case 2: outColor.rgb = vec3(0, 0, 1); break;
-//      case 3: outColor.rgb = vec3(1, 1, 0); break;
-//      default: outColor.rgb = vec3(1, 1, 1); break;
-//    }
-//#endif
-    //
-    //    if(gl_FragCoord.x > cam.w / 2) {
-    //      float sZ = shadowCoordDepth(p.position);
+    //#ifdef USE_SHADOW_MAP
+    //    uint cIdx = cascadeIndex(camera, p.position);
+    //    switch(cIdx) {
+    //      case 0: outColor.rgb = vec3(1, 0, 0); break;
+    //      case 1: outColor.rgb = vec3(0, 1, 0); break;
+    //      case 2: outColor.rgb = vec3(0, 0, 1); break;
+    //      case 3: outColor.rgb = vec3(1, 1, 0); break;
+    //      default: outColor.rgb = vec3(1, 1, 1); break;
+    //    }
+    //    if(gl_FragCoord.x > camera.w / 2) {
+    //      float sZ = shadowCoordDepth(camera, p.position);
     //      outColor.rgb = vec3(sZ, sZ, sZ);
     //    } else {
-    //      float smZ = shadowMapDepth(p.position);
+    //      float smZ = shadowMapDepth(camera, p.position);
     //      outColor.rgb = vec3(smZ, smZ, smZ);
     //    }
+    //#endif
   }
 }
 

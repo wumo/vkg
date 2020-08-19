@@ -326,14 +326,15 @@ void ShadowMapPass::execute(RenderContext &ctx, Resources &resources) {
   auto cb = ctx.graphics;
 
   auto drawInfos = resources.get(cullPassOut.drawInfos);
-  auto atmosSetting = resources.get(passIn.atmosSetting);
   auto setting = resources.get(passIn.shadowMapSetting);
+
+  auto &frame = frames[ctx.frameIndex];
 
   std::vector<vk::ClearValue> clearValues(setting.numCascades());
   for(int i = 0; i < setting.numCascades(); ++i)
     clearValues[i] = vk::ClearDepthStencilValue{1.0f, 0};
   vk::RenderPassBeginInfo renderPassBeginInfo{
-    *renderPass, *frames[ctx.frameIndex].framebuffer,
+    *renderPass, *frame.framebuffer,
     vk::Rect2D{{0, 0}, {setting.textureSize(), setting.textureSize()}},
     uint32_t(clearValues.size()), clearValues.data()};
 
@@ -349,7 +350,7 @@ void ShadowMapPass::execute(RenderContext &ctx, Resources &resources) {
 
   cb.bindDescriptorSets(
     vk::PipelineBindPoint::eGraphics, calcPipeDef.layout(), calcPipeDef.set.set(),
-    frames[ctx.frameIndex].calcSet, nullptr);
+    frame.calcSet, nullptr);
   auto bufInfo = resources.get(passIn.positions);
   cb.bindVertexBuffers(0, bufInfo.buffer, bufInfo.offset);
   bufInfo = resources.get(passIn.normals);
