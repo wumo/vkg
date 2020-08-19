@@ -62,6 +62,8 @@ public:
     auto v = glm::normalize(camera->direction());
     auto r = normalize(cross(v, camera->worldUp()));
     auto u = glm::normalize(glm::cross(r, v));
+    auto fov = camera->fov();
+    auto camView = camera->view();
 
     auto lambda = 0.5f;
     for(int i = 0; i < numCascades; ++i) {
@@ -124,7 +126,9 @@ public:
 
       auto lightViewProj = lightProj * lightView;
       cascades[i] = {lightViewProj, sunDir, f};
-      frustums[i] = Frustum{lightViewProj};
+      //cull using camera near far frustum
+      auto camFruProj = perspectiveMatrix(fov, a, n, f);
+      frustums[i] = Frustum{camFruProj * camView};
     }
     resources.set(passOut.cascades, cascadesBuffers[ctx.frameIndex]->bufferInfo());
   }
