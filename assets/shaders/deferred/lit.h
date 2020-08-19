@@ -122,14 +122,16 @@ void main() {
 
     outColor.rgb = LINEARtoSRGB(color);
 
-    //    uint cIdx = cascadeIndex(p.position);
-    //    switch(cIdx) {
-    //      case 0: outColor.rgb = vec3(1, 0, 0); break;
-    //      case 1: outColor.rgb = vec3(0, 1, 0); break;
-    //      case 2: outColor.rgb = vec3(0, 0, 1); break;
-    //      case 3: outColor.rgb = vec3(1, 1, 0); break;
-    //      default: outColor.rgb = vec3(1, 1, 1); break;
-    //    }
+//#ifdef USE_SHADOW_MAP
+//    uint cIdx = cascadeIndex(camera, p.position);
+//    switch(cIdx) {
+//      case 0: outColor.rgb = vec3(1, 0, 0); break;
+//      case 1: outColor.rgb = vec3(0, 1, 0); break;
+//      case 2: outColor.rgb = vec3(0, 0, 1); break;
+//      case 3: outColor.rgb = vec3(1, 1, 0); break;
+//      default: outColor.rgb = vec3(1, 1, 1); break;
+//    }
+//#endif
     //
     //    if(gl_FragCoord.x > cam.w / 2) {
     //      float sZ = shadowCoordDepth(p.position);

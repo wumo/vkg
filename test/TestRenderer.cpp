@@ -29,6 +29,7 @@ auto main() -> int {
   sky.setSunDirection(sunDir);
 
   scene.shadowmap().enable(true);
+  scene.shadowmap().setZFar(1e3);
   //  auto lightId = scene.newLight();
   //  auto &light = scene.light(lightId);
   //  light.setColor(White);
@@ -192,7 +193,7 @@ auto main() -> int {
     //  t.translation = -center;
     scene.newModelInstance(animModel, t);
 
-    uint32_t num = 20;
+    uint32_t num = 100;
     insts.reserve(num * num);
     float unit = -5;
     for(int a = 0; a < num; ++a) {

@@ -129,7 +129,8 @@ void ComputeCullDrawCMD::execute(RenderContext &ctx, Resources &resources) {
        * this may invalidate other host coherent memories that will be accessed by compute shader.
        */
   bufInfo = frame.countOfGroupBuffer->bufferInfo();
-  cb.fillBuffer(bufInfo.buffer, bufInfo.offset, sizeof(uint32_t) * numDrawGroups, 0u);
+  cb.fillBuffer(
+    bufInfo.buffer, bufInfo.offset, sizeof(uint32_t) * numFrustums * numDrawGroups, 0u);
 
   cb.pipelineBarrier(
     vk::PipelineStageFlagBits::eTransfer, vk::PipelineStageFlagBits::eAllCommands, {},
@@ -156,6 +157,7 @@ void ComputeCullDrawCMD::execute(RenderContext &ctx, Resources &resources) {
     .totalFrustums = numFrustums,
     .totalMeshInstances = totalMeshInstances,
     .cmdFrustumStride = numDrawCMDsPerFrustum,
+    .groupStride = numDrawGroups,
   };
   cb.pushConstants<PushConstant>(
     pipeDef.layout(), vk::ShaderStageFlagBits::eCompute, 0, pushConstant);

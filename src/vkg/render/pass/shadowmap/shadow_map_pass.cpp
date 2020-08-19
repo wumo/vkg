@@ -188,7 +188,8 @@ void ShadowMapPass::compile(RenderContext &ctx, Resources &resources) {
 
   if(!init) {
     init = true;
-    shadowMapSetting = buffer::devUniformBuffer(ctx.device, sizeof(UBOShadowMapSetting));
+    shadowMapSetting = buffer::hostUniformBuffer(ctx.device, sizeof(UBOShadowMapSetting));
+    shadowMapSetting->ptr<UBOShadowMapSetting>()->numCascades = setting.numCascades();
     createPipeline(ctx.device, setting);
     createTextures(ctx.device, setting, ctx.numFrames);
 

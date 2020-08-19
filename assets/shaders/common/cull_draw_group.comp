@@ -13,6 +13,7 @@ layout(push_constant) uniform PushConstant {
   uint totalFrustums;
   uint totalMeshInstances;
   uint cmdFrustumStride;
+  uint groupStride;
 };
 
 layout(set = 0, binding = 0) buffer Frustums { Frustum frustums[]; };
@@ -69,10 +70,10 @@ void transformAABB(inout AABB aabb, mat4 m) {
 void main() {
   uint NX = gl_NumWorkGroups.x * gl_WorkGroupSize.x;
   uint NY = gl_NumWorkGroups.y * gl_WorkGroupSize.y;
-  uint id = gl_GlobalInvocationID.z * (NX * NY) + gl_GlobalInvocationID.y * NX +
-            gl_GlobalInvocationID.x;
-
-  uint frustumIdx = id / totalMeshInstances;
+  uint dispatchId = gl_GlobalInvocationID.z * (NX * NY) + gl_GlobalInvocationID.y * NX +
+                    gl_GlobalInvocationID.x;
+  uint id = dispatchId % totalMeshInstances;
+  uint frustumIdx = dispatchId / totalMeshInstances;
   if(frustumIdx >= totalFrustums) return;
   Frustum frustum = frustums[frustumIdx];
 
@@ -97,7 +98,7 @@ void main() {
     drawCMD.instanceCount = 1;
 
     uint groupID = mesh.drawGroupID;
-    uint groupIdx = atomicAdd(drawCMDCount[groupID], 1);
+    uint groupIdx = atomicAdd(drawCMDCount[frustumIdx * groupStride + groupID], 1);
     uint groupOffset = cmdOffsetPerGroup[groupID];
     uint cmdIdx = frustumIdx * cmdFrustumStride + groupOffset + groupIdx;
     drawCMDs[cmdIdx] = drawCMD;

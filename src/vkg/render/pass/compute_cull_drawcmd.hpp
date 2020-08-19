@@ -47,6 +47,7 @@ private:
     uint32_t totalFrustums;
     uint32_t totalMeshInstances;
     uint32_t cmdFrustumStride;
+    uint32_t groupStride;
   } pushConstant;
   struct ComputeTransfPipeDef: PipelineLayoutDef {
     __push_constant__(pushConst, vk::ShaderStageFlagBits::eCompute, PushConstant);
