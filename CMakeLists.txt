@@ -100,6 +100,7 @@ set(sources
   src/vkg/render/pass/atmosphere/compute_single_scattering.cpp
   src/vkg/render/pass/atmosphere/compute_transmittance.cpp
   src/vkg/render/pass/shadowmap/shadow_map_pass.cpp
+  src/vkg/render/pass/raytracing/raytracing_pass.cpp
   )
 
 set(definitions "")

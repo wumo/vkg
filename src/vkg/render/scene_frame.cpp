@@ -3,6 +3,7 @@
 #include "vkg/render/pass/deferred/deferred.hpp"
 #include "vkg/render/pass/atmosphere/atmosphere_pass.hpp"
 #include "vkg/render/pass/shadowmap/shadow_map_pass.hpp"
+#include "vkg/render/pass/raytracing/raytracing_pass.hpp"
 
 namespace vkg {
 
@@ -133,7 +134,31 @@ auto Scene::setup(PassBuilder &builder, const ScenePassIn &inputs) -> ScenePassO
   auto &atmosphere =
     builder.newPass<AtmospherePass>("Atmosphere", {sceneSetup.out().atmosphereSetting});
 
-  if(!sceneConfig.rayTraced) {
+  if(sceneConfig.rayTrace) {
+    auto &rayTracing = builder.newPass<RayTracingPass>(
+      "RayTracing", {
+                      sceneSetup.out().backImg,
+                      sceneSetup.out().camera,
+                      sceneSetup.out().sceneConfig,
+                      sceneSetup.out().meshInstances,
+                      sceneSetup.out().meshInstancesCount,
+                      sceneSetup.out().positions,
+                      sceneSetup.out().normals,
+                      sceneSetup.out().uvs,
+                      sceneSetup.out().indices,
+                      sceneSetup.out().primitives,
+                      transf.out().matrices,
+                      sceneSetup.out().materials,
+                      sceneSetup.out().samplers,
+                      sceneSetup.out().numValidSampler,
+                      sceneSetup.out().lighting,
+                      sceneSetup.out().lights,
+                      sceneSetup.out().maxPerGroup,
+                      sceneSetup.out().atmosphereSetting,
+                      atmosphere.out(),
+                    });
+    passOut.backImg = rayTracing.out().backImg;
+  } else {
     auto &shadowMap = builder.newPass<ShadowMapPass>(
       "ShadowMap", {
                      sceneSetup.out().atmosphereSetting,
@@ -175,9 +200,9 @@ auto Scene::setup(PassBuilder &builder, const ScenePassIn &inputs) -> ScenePassO
                    sceneSetup.out().shadowMapSetting,
                    shadowMap.out()});
 
-    builder.read(passIn.swapchainExtent);
     passOut.backImg = deferred.out().backImg;
   }
+  builder.read(passIn.swapchainExtent);
   passOut.renderArea = builder.create<vk::Rect2D>("renderArea");
 
   return passOut;

@@ -37,8 +37,9 @@ Scene::Scene(Renderer &renderer, SceneConfig sceneConfig, std::string name)
   Host.lighting = std::make_unique<Lighting>(*this);
   Dev.lights = std::make_unique<RandomHostAllocation<Light::Desc>>(
     buffer::hostStorageBuffer, device, sceneConfig.maxNumLights, "lights");
-  Host.camera_ = std::make_unique<Camera>(glm::vec3{10, 10, 10}, glm::vec3{0, 0, 0}, glm::vec3{0, 1, 0},
-    glm::radians(45.f), 0.1f, 1000.f, 1, 1);
+  Host.camera_ = std::make_unique<Camera>(
+    glm::vec3{10, 10, 10}, glm::vec3{0, 0, 0}, glm::vec3{0, 1, 0}, glm::radians(45.f),
+    0.1f, 1000.f, 1, 1);
 
   Dev.textures.push_back(image::makeSampler2DTex("empty tex", device, 1, 1));
   glm::vec4 color{1.f, 1.f, 1.f, 1.f};
@@ -75,7 +76,12 @@ auto Scene::newPrimitive(
   auto index = Dev.indices->add(indices);
   auto id = uint32_t(Host.primitives.size());
   Host.primitives.emplace_back(*this, id, index, pos, normal, uv, topology, type);
-  Host.primitives.back().setAABB(aabb);
+  auto &primitive = Host.primitives.back();
+  primitive.setAABB(aabb);
+
+  if(sceneConfig.rayTrace) {
+  
+  }
   return id;
 }
 
@@ -170,6 +176,7 @@ auto Scene::light(uint32_t index) -> Light & { return Host.lights.at(index); }
 auto Scene::lighting() -> Lighting & { return *Host.lighting; }
 
 auto Scene::atmosphere() -> AtmosphereSetting & { return Host.atmosphere; }
+auto Scene::shadowmap() -> ShadowMapSetting & { return Host.shadowMap; }
 
 auto Scene::allocateLightingDesc() -> Allocation<Lighting::Desc> {
   return Dev.lighting->allocate();
@@ -221,5 +228,4 @@ auto Scene::addToDrawGroup(uint32_t meshId, DrawGroup oldGroupID) -> DrawGroup {
   Host.drawGroupInstCount[value(gID)]++;
   return gID;
 }
-auto Scene::shadowmap() -> ShadowMapSetting & { return Host.shadowMap; }
 }
