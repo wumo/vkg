@@ -1,5 +1,5 @@
 #include "scene.hpp"
-#include "pass/compute_transf.hpp"
+#include "vkg/render/pass/transf/compute_transf.hpp"
 #include "vkg/render/pass/deferred/deferred.hpp"
 #include "vkg/render/pass/atmosphere/atmosphere_pass.hpp"
 #include "vkg/render/pass/shadowmap/shadow_map_pass.hpp"

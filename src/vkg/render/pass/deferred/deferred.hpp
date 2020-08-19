@@ -3,7 +3,7 @@
 #include "vkg/render/scene_config.hpp"
 #include "vkg/render/graph/frame_graph.hpp"
 #include "vkg/render/model/camera.hpp"
-#include "vkg/render/pass/compute_cull_drawcmd.hpp"
+#include "vkg/render/pass/cull/compute_cull_drawcmd.hpp"
 #include "vkg/render/model/vertex.hpp"
 #include "vkg/render/draw_group.hpp"
 #include "vkg/render/pass/atmosphere/atmosphere_pass.hpp"
