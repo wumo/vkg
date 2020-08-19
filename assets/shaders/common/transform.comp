@@ -9,11 +9,7 @@ layout(constant_id = 1) const uint ly = 1;
 layout(constant_id = 2) const uint lz = 1;
 layout(local_size_x_id = 0, local_size_y_id = 1, local_size_z_id = 2) in;
 
-layout(push_constant) uniform PushConstant {
-  uint totalMeshInstances;
-  uint transformStride;
-  uint frame;
-};
+layout(push_constant) uniform PushConstant { uint totalMeshInstances; };
 
 layout(set = 0, binding = 0, scalar) buffer MeshesBuffer {
   MeshInstanceUBO meshInstances[];
@@ -31,5 +27,5 @@ void main() {
 
   MeshInstanceUBO mesh = meshInstances[id];
   mat4 t = toMatrix(transforms[mesh.instance]) * toMatrix(transforms[mesh.node]);
-  matrices[frame * transformStride + id] = t;
+  matrices[id] = t;
 }

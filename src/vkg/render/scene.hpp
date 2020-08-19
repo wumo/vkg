@@ -28,7 +28,7 @@ struct ScenePassIn {
   FrameGraphResource<uint64_t> swapchainVersion;
 };
 struct ScenePassOut {
-  FrameGraphResource<std::span<Texture *>> backImgs;
+  FrameGraphResource<Texture *> backImg;
   FrameGraphResource<vk::Rect2D> renderArea;
 };
 

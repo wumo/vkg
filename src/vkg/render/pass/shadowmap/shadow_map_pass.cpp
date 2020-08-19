@@ -1,5 +1,8 @@
 #include "shadow_map_pass.hpp"
 #include "vkg/render/model/aabb.hpp"
+#include "vkg/render/model/vertex.hpp"
+#include "deferred/csm/csm_vert.hpp"
+
 namespace vkg {
 
 struct CSMFrustumPassIn {
@@ -36,7 +39,18 @@ public:
     auto sunDir = atmos.sunDirection();
 
     const auto numCascades = setting.numCascades();
-    frustums.resize(numCascades);
+
+    if(!init) {
+      init = true;
+
+      frustums.resize(numCascades);
+      cascades.resize(numCascades);
+      cascadesBuffers.resize(ctx.numFrames);
+      for(int i = 0; i < ctx.numFrames; ++i)
+        cascadesBuffers[i] = buffer::devStorageBuffer(
+          ctx.device, sizeof(CascadeDesc) * numCascades, toString("cascades_", i));
+      resources.set(passOut.frustums, {frustums});
+    }
 
     auto zNear = camera->zNear();
     auto zFar = setting.zFar() == 0 ?
@@ -109,15 +123,33 @@ public:
         orthoMatrix(-range.x / 2, range.x / 2, -range.y / 2, range.y / 2, 0, zFar);
 
       auto lightViewProj = lightProj * lightView;
-      cascades->ptr<CascadeDesc>()[i] = {lightViewProj, sunDir, f};
+      cascades[i] = {lightViewProj, sunDir, f};
       frustums[i] = Frustum{lightViewProj};
     }
-    resources.set(passOut.cascades, cascades->bufferInfo());
+    resources.set(passOut.cascades, cascadesBuffers[ctx.frameIndex]->bufferInfo());
   }
-  void execute(RenderContext &ctx, Resources &resources) override {}
+  void execute(RenderContext &ctx, Resources &resources) override {
+    auto cb = ctx.graphics;
 
+    ctx.device.begin(cb, "update light frustums");
+    auto bufInfo = cascadesBuffers[ctx.frameIndex]->bufferInfo();
+    cb.updateBuffer(
+      bufInfo.buffer, bufInfo.offset, sizeof(CascadeDesc) * cascades.size(),
+      cascades.data());
+    ctx.device.end(cb);
+
+    cb.pipelineBarrier(
+      vk::PipelineStageFlagBits::eTransfer, vk::PipelineStageFlagBits::eAllGraphics, {},
+      vk::MemoryBarrier{
+        vk::AccessFlagBits::eTransferWrite, vk::AccessFlagBits::eShaderRead},
+      nullptr, nullptr);
+  }
+
+private:
   std::vector<Frustum> frustums;
-  std::unique_ptr<Buffer> cascades;
+  std::vector<CascadeDesc> cascades;
+  std::vector<std::unique_ptr<Buffer>> cascadesBuffers;
+  bool init{false};
 };
 
 auto ShadowMapPass::setup(PassBuilder &builder, const ShadowMapPassIn &inputs)
@@ -134,13 +166,16 @@ auto ShadowMapPass::setup(PassBuilder &builder, const ShadowMapPassIn &inputs)
                       .sceneConfig = passIn.sceneConfig,
                       .primitives = passIn.primitives,
                       .matrices = passIn.matrices,
-                      .transformStride = passIn.transformStride,
                       .maxPerGroup = passIn.maxPerGroup});
-  cull.enableIf([]() { return false; });
+
   cullPassOut = cull.out();
+  cascades = frustum.out().cascades;
+
   builder.read(passIn.shadowMapSetting);
+  builder.read(cascades);
+  builder.read(cullPassOut);
   passOut = {
-    .setting = builder.create<BufferInfo>("ShadowMapSetting"),
+    .settingBuffer = builder.create<BufferInfo>("ShadowMapSetting"),
     .cascades = frustum.out().cascades,
     .shadowMaps = builder.create<Texture *>("ShadowMaps"),
   };
@@ -149,137 +184,200 @@ auto ShadowMapPass::setup(PassBuilder &builder, const ShadowMapPassIn &inputs)
 void ShadowMapPass::compile(RenderContext &ctx, Resources &resources) {
   auto setting = resources.get(passIn.shadowMapSetting);
 
-  if(!setting.isEnabled() || setting.numCascades() == 0) return;
+  if(!setting.isEnabled()) return;
 
-  if(
-    shadowMaps == nullptr || shadowMaps->extent().width != setting.textureSize() ||
-    shadowMaps->extent().depth != setting.numCascades()) {
-    shadowMapSetting = buffer::hostUniformBuffer(ctx.device, sizeof(UBOShadowMapSetting));
-    createRenderPass(ctx.device, setting);
-    createTextures(ctx.device, setting);
-    createDescriptorSets(ctx.device, setting);
+  if(!init) {
+    init = true;
+    shadowMapSetting = buffer::devUniformBuffer(ctx.device, sizeof(UBOShadowMapSetting));
     createPipeline(ctx.device, setting);
+    createTextures(ctx.device, setting, ctx.numFrames);
 
-    resources.set(passOut.setting, shadowMapSetting->bufferInfo());
-    resources.set(passOut.shadowMaps, shadowMaps.get());
-  }
-}
-
-auto ShadowMapPass::createRenderPass(Device &device, ShadowMapSetting &setting) -> void {
-  RenderPassMaker maker;
-
-  std::vector<uint32_t> depths;
-
-  depths.resize(setting.numCascades());
-  subpasses.resize(setting.numCascades());
-  for(int i = 0; i < setting.numCascades(); ++i) {
-    depths[i] = maker.attachment(vk::Format::eD32Sfloat)
-                  .samples(vk::SampleCountFlagBits::e1)
-                  .loadOp(vk::AttachmentLoadOp::eClear)
-                  .storeOp(vk::AttachmentStoreOp::eStore)
-                  .stencilLoadOp(vk::AttachmentLoadOp::eDontCare)
-                  .stencilStoreOp(vk::AttachmentStoreOp::eDontCare)
-                  .initialLayout(vk::ImageLayout::eUndefined)
-                  .finalLayout(vk::ImageLayout::eShaderReadOnlyOptimal)
-                  .index();
-    subpasses[i] =
-      maker.subpass(vk::PipelineBindPoint::eGraphics).depthStencil(depths[i]).index();
-    maker.dependency(VK_SUBPASS_EXTERNAL, subpasses[i])
-      .srcStage(vk::PipelineStageFlagBits::eFragmentShader)
-      .dstStage(vk::PipelineStageFlagBits::eEarlyFragmentTests)
-      .srcAccess(vk::AccessFlagBits::eShaderRead)
-      .dstAccess(vk::AccessFlagBits::eDepthStencilAttachmentWrite)
-      .flags(vk::DependencyFlagBits::eByRegion);
-    maker.dependency(subpasses[i], VK_SUBPASS_EXTERNAL)
-      .srcStage(vk::PipelineStageFlagBits::eLateFragmentTests)
-      .dstStage(vk::PipelineStageFlagBits::eFragmentShader)
-      .srcAccess(vk::AccessFlagBits::eDepthStencilAttachmentWrite)
-      .dstAccess(vk::AccessFlagBits::eShaderRead)
-      .flags(vk::DependencyFlagBits::eByRegion);
+    resources.set(passOut.settingBuffer, shadowMapSetting->bufferInfo());
   }
 
-  renderPass = maker.createUnique(device.vkDevice());
+  auto &frame = frames[ctx.frameIndex];
+
+  calcSetDef.cascades(resources.get(cascades));
+  calcSetDef.matrices(resources.get(passIn.matrices));
+  calcSetDef.update(frame.calcSet);
+
+  resources.set(passOut.shadowMaps, frame.shadowMaps.get());
 }
 
-auto ShadowMapPass::createTextures(Device &device, ShadowMapSetting &setting) -> void {
-  shadowMaps = image::make2DArrayTex(
-    "shadowMaps", device, setting.textureSize(), setting.textureSize(),
-    setting.numCascades(),
-    vk::ImageUsageFlagBits::eDepthStencilAttachment | vk::ImageUsageFlagBits::eSampled,
-    vk::Format::eD32Sfloat, vk::SampleCountFlagBits::e1, vk::ImageAspectFlagBits::eDepth,
-    false);
-  shadowMaps->setSampler(
-    {{}, vk::Filter::eLinear, vk::Filter::eLinear, vk::SamplerMipmapMode::eLinear});
+void ShadowMapPass::createTextures(
+  Device &device, ShadowMapSetting &setting, uint32_t numFrames) {
+  descriptorPool = DescriptorPoolMaker()
+                     .pipelineLayout(calcPipeDef, numFrames)
+                     .createUnique(device.vkDevice());
 
-  shadowMapLayerViews.resize(setting.numCascades());
-  std::vector<vk::ImageView> attachments;
-  attachments.resize(setting.numCascades());
-  for(int i = 0; i < setting.numCascades(); ++i) {
-    shadowMapLayerViews[i] = shadowMaps->createLayerImageView(i);
-    attachments[i] = *shadowMapLayerViews[i];
+  frames.resize(numFrames);
+  for(auto &frame: frames) {
+    frame.calcSet = calcSetDef.createSet(*descriptorPool);
+
+    frame.shadowMaps = image::make2DArrayTex(
+      "shadowMaps", device, setting.textureSize(), setting.textureSize(),
+      setting.numCascades(),
+      vk::ImageUsageFlagBits::eDepthStencilAttachment | vk::ImageUsageFlagBits::eSampled,
+      vk::Format::eD32Sfloat, vk::SampleCountFlagBits::e1,
+      vk::ImageAspectFlagBits::eDepth, false);
+    frame.shadowMaps->setSampler(
+      {{}, vk::Filter::eLinear, vk::Filter::eLinear, vk::SamplerMipmapMode::eLinear});
+
+    frame.shadowMapLayerViews.resize(setting.numCascades());
+    std::vector<vk::ImageView> attachments(setting.numCascades());
+    for(int c = 0; c < setting.numCascades(); ++c) {
+      frame.shadowMapLayerViews[c] = frame.shadowMaps->createLayerImageView(c);
+      attachments[c] = *frame.shadowMapLayerViews[c];
+    }
+    vk::FramebufferCreateInfo info{
+      {},
+      *renderPass,
+      uint32_t(attachments.size()),
+      attachments.data(),
+      setting.textureSize(),
+      setting.textureSize(),
+      1};
+    frame.framebuffer = device.vkDevice().createFramebufferUnique(info);
   }
-  vk::FramebufferCreateInfo info{
-    {},
-    *renderPass,
-    uint32_t(attachments.size()),
-    attachments.data(),
-    setting.textureSize(),
-    setting.textureSize(),
-    1};
-  framebuffer = device.vkDevice().createFramebufferUnique(info);
-}
-
-auto ShadowMapPass::createDescriptorSets(Device &device, ShadowMapSetting &setting)
-  -> void {
-  calcSetDef.init(device);
-
-  calcPipeDef.set(calcSetDef);
-  calcPipeDef.init(device);
-
-  descriptorPool =
-    DescriptorPoolMaker().pipelineLayout(calcPipeDef).createUnique(device.vkDevice());
-
-  calcSet = calcSetDef.createSet(*descriptorPool);
-
-  //  auto &drawQueue = dev.drawQueue;
-  //
-  //  calcSetDef.cascades(cascades->buffer());
-  //  calcSetDef.matrices(dev.matrices->buffer());
-  //  calcSetDef.update(calcSet);
 }
 
 auto ShadowMapPass::createPipeline(Device &device, ShadowMapSetting &setting) -> void {
-  GraphicsPipelineMaker maker(device.vkDevice());
 
-  //  maker.layout(calcPipeDef.layout())
-  //    .renderPass(*renderPass)
-  //    .vertexInputAuto(
-  //      {{.stride = sizeof(Vertex::Position),
-  //        .attributes = {{vk::Format::eR32G32B32Sfloat}}},
-  //       {.stride = sizeof(Vertex::Normal), .attributes = {{vk::Format::eR32G32B32Sfloat}}},
-  //       {.stride = sizeof(Vertex::UV), .attributes = {{vk::Format::eR32G32Sfloat}}}})
-  //    .inputAssembly(vk::PrimitiveTopology::eTriangleList)
-  //    .polygonMode(vk::PolygonMode::eFill)
-  //    .cullMode(vk::CullModeFlagBits::eBack)
-  //    .frontFace(vk::FrontFace::eCounterClockwise)
-  //    .depthTestEnable(true)
-  //    .depthWriteEnable(true)
-  //    .depthCompareOp(vk::CompareOp::eLessOrEqual)
-  //    .viewport({})
-  //    .scissor({})
-  //    .dynamicState(vk::DynamicState::eViewport)
-  //    .dynamicState(vk::DynamicState::eScissor);
-  //
-  //  maker.shader(
-  //    vk::ShaderStageFlagBits::eVertex,
-  //    Shader{res::deferred::csm::csm_vert_span, sceneConfig.numCascades});
-  //
-  //  pipes.resize(sceneConfig.numCascades);
-  //  for(int i = 0; i < sceneConfig.numCascades; ++i) {
-  //    maker.subpass(subpasses[i]);
-  //    pipes[i] = maker.createUnique();
-  //  }
+  {
+    RenderPassMaker maker;
+
+    std::vector<uint32_t> depths;
+
+    depths.resize(setting.numCascades());
+    subpasses.resize(setting.numCascades());
+    for(int i = 0; i < setting.numCascades(); ++i) {
+      depths[i] = maker.attachment(vk::Format::eD32Sfloat)
+                    .samples(vk::SampleCountFlagBits::e1)
+                    .loadOp(vk::AttachmentLoadOp::eClear)
+                    .storeOp(vk::AttachmentStoreOp::eStore)
+                    .stencilLoadOp(vk::AttachmentLoadOp::eDontCare)
+                    .stencilStoreOp(vk::AttachmentStoreOp::eDontCare)
+                    .initialLayout(vk::ImageLayout::eUndefined)
+                    .finalLayout(vk::ImageLayout::eShaderReadOnlyOptimal)
+                    .index();
+      subpasses[i] =
+        maker.subpass(vk::PipelineBindPoint::eGraphics).depthStencil(depths[i]).index();
+      maker.dependency(VK_SUBPASS_EXTERNAL, subpasses[i])
+        .srcStage(vk::PipelineStageFlagBits::eFragmentShader)
+        .dstStage(vk::PipelineStageFlagBits::eEarlyFragmentTests)
+        .srcAccess(vk::AccessFlagBits::eShaderRead)
+        .dstAccess(vk::AccessFlagBits::eDepthStencilAttachmentWrite)
+        .flags(vk::DependencyFlagBits::eByRegion);
+      maker.dependency(subpasses[i], VK_SUBPASS_EXTERNAL)
+        .srcStage(vk::PipelineStageFlagBits::eLateFragmentTests)
+        .dstStage(vk::PipelineStageFlagBits::eFragmentShader)
+        .srcAccess(vk::AccessFlagBits::eDepthStencilAttachmentWrite)
+        .dstAccess(vk::AccessFlagBits::eShaderRead)
+        .flags(vk::DependencyFlagBits::eByRegion);
+    }
+
+    renderPass = maker.createUnique(device.vkDevice());
+  }
+
+  {
+    calcSetDef.init(device);
+
+    calcPipeDef.set(calcSetDef);
+    calcPipeDef.init(device);
+  }
+
+  {
+    GraphicsPipelineMaker maker(device.vkDevice());
+
+    maker.layout(calcPipeDef.layout())
+      .renderPass(*renderPass)
+      .vertexInputAuto(
+        {{.stride = sizeof(Vertex::Position),
+          .attributes = {{vk::Format::eR32G32B32Sfloat}}},
+         {.stride = sizeof(Vertex::Normal),
+          .attributes = {{vk::Format::eR32G32B32Sfloat}}},
+         {.stride = sizeof(Vertex::UV), .attributes = {{vk::Format::eR32G32Sfloat}}}})
+      .inputAssembly(vk::PrimitiveTopology::eTriangleList)
+      .polygonMode(vk::PolygonMode::eFill)
+      .cullMode(vk::CullModeFlagBits::eBack)
+      .frontFace(vk::FrontFace::eCounterClockwise)
+      .depthTestEnable(true)
+      .depthWriteEnable(true)
+      .depthCompareOp(vk::CompareOp::eLessOrEqual)
+      .viewport({})
+      .scissor({})
+      .dynamicState(vk::DynamicState::eViewport)
+      .dynamicState(vk::DynamicState::eScissor);
+
+    maker.shader(
+      vk::ShaderStageFlagBits::eVertex,
+      Shader{shader::deferred::csm::csm_vert_span, setting.numCascades()});
+
+    pipes.resize(setting.numCascades());
+    for(int i = 0; i < setting.numCascades(); ++i) {
+      maker.subpass(subpasses[i]);
+      pipes[i] = maker.createUnique();
+    }
+  }
 }
 
-void ShadowMapPass::execute(RenderContext &ctx, Resources &resources) {}
+void ShadowMapPass::execute(RenderContext &ctx, Resources &resources) {
+  auto cb = ctx.graphics;
+
+  auto drawInfos = resources.get(cullPassOut.drawInfos);
+  auto atmosSetting = resources.get(passIn.atmosSetting);
+  auto setting = resources.get(passIn.shadowMapSetting);
+
+  std::vector<vk::ClearValue> clearValues(setting.numCascades());
+  for(int i = 0; i < setting.numCascades(); ++i)
+    clearValues[i] = vk::ClearDepthStencilValue{1.0f, 0};
+  vk::RenderPassBeginInfo renderPassBeginInfo{
+    *renderPass, *frames[ctx.frameIndex].framebuffer,
+    vk::Rect2D{{0, 0}, {setting.textureSize(), setting.textureSize()}},
+    uint32_t(clearValues.size()), clearValues.data()};
+
+  vk::Viewport viewport{
+    0, 0, float(setting.textureSize()), float(setting.textureSize()), 0.0f, 1.0f};
+  vk::Rect2D scissor{{0, 0}, {setting.textureSize(), setting.textureSize()}};
+
+  ctx.device.begin(cb, "shadow map");
+
+  cb.beginRenderPass(renderPassBeginInfo, vk::SubpassContents::eInline);
+  cb.setViewport(0, viewport);
+  cb.setScissor(0, scissor);
+
+  cb.bindDescriptorSets(
+    vk::PipelineBindPoint::eGraphics, calcPipeDef.layout(), calcPipeDef.set.set(),
+    frames[ctx.frameIndex].calcSet, nullptr);
+  auto bufInfo = resources.get(passIn.positions);
+  cb.bindVertexBuffers(0, bufInfo.buffer, bufInfo.offset);
+  bufInfo = resources.get(passIn.normals);
+  cb.bindVertexBuffers(1, bufInfo.buffer, bufInfo.offset);
+  bufInfo = resources.get(passIn.uvs);
+  cb.bindVertexBuffers(2, bufInfo.buffer, bufInfo.offset);
+  bufInfo = resources.get(passIn.indices);
+  cb.bindIndexBuffer(bufInfo.buffer, bufInfo.offset, vk::IndexType::eUint32);
+
+  auto draw = [&](uint32_t frustumIdx, DrawGroup drawGroup) {
+    auto drawGroupIdx = value(drawGroup);
+    auto drawInfo = drawInfos.drawInfo[frustumIdx][drawGroupIdx];
+    if(drawInfo.maxCount == 0) return;
+    cb.drawIndexedIndirectCount(
+      drawInfo.drawCMD.buffer, drawInfo.drawCMD.offset, drawInfo.drawCMDCount.buffer,
+      drawInfo.drawCMDCount.offset, drawInfo.maxCount, drawInfo.stride);
+  };
+  for(auto i = 0u; i < setting.numCascades(); ++i) {
+    pushContant.cascadeIndex = i;
+    cb.pushConstants<PushContant>(
+      calcPipeDef.layout(), vk::ShaderStageFlagBits::eVertex, 0, pushContant);
+
+    cb.bindPipeline(vk::PipelineBindPoint::eGraphics, *pipes[i]);
+    draw(i, DrawGroup::BRDF);
+    draw(i, DrawGroup::Reflective);
+    draw(i, DrawGroup::Refractive);
+    if(i + 1 < setting.numCascades()) cb.nextSubpass(vk::SubpassContents::eInline);
+  }
+  cb.endRenderPass();
+  ctx.device.end(cb);
+}
 }

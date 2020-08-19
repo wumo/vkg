@@ -14,17 +14,19 @@ struct ShadowMapPassIn {
   FrameGraphResource<AtmosphereSetting> atmosSetting;
   FrameGraphResource<ShadowMapSetting> shadowMapSetting;
   FrameGraphResource<Camera *> camera;
-  FrameGraphResource<BufferInfo> cameraBuffer;
   FrameGraphResource<SceneConfig> sceneConfig;
   FrameGraphResource<BufferInfo> meshInstances;
   FrameGraphResource<uint32_t> meshInstancesCount;
+  FrameGraphResource<BufferInfo> positions;
+  FrameGraphResource<BufferInfo> normals;
+  FrameGraphResource<BufferInfo> uvs;
+  FrameGraphResource<BufferInfo> indices;
   FrameGraphResource<BufferInfo> primitives;
   FrameGraphResource<BufferInfo> matrices;
-  FrameGraphResource<uint32_t> transformStride;
   FrameGraphResource<std::span<uint32_t>> maxPerGroup;
 };
 struct ShadowMapPassOut {
-  FrameGraphResource<BufferInfo> setting;
+  FrameGraphResource<BufferInfo> settingBuffer;
   FrameGraphResource<BufferInfo> cascades;
   FrameGraphResource<Texture *> shadowMaps;
 };
@@ -37,18 +39,19 @@ public:
   void execute(RenderContext &ctx, Resources &resources) override;
 
 private:
-  auto createRenderPass(Device &device, ShadowMapSetting &setting) -> void;
-  auto createDescriptorSets(Device &device, ShadowMapSetting &setting) -> void;
   auto createPipeline(Device &device, ShadowMapSetting &setting) -> void;
-  auto createTextures(Device &device, ShadowMapSetting &setting) -> void;
+  void createTextures(Device &device, ShadowMapSetting &setting, uint32_t i);
 
   struct CalcSetDef: DescriptorSetDef {
     __buffer__(cascades, vk::ShaderStageFlagBits::eVertex);
     __buffer__(matrices, vk::ShaderStageFlagBits::eVertex);
   } calcSetDef;
 
+  struct PushContant {
+    uint32_t cascadeIndex;
+  } pushContant;
   struct CalcPipeDef: PipelineLayoutDef {
-    __push_constant__(cascadeIndex, vk::ShaderStageFlagBits::eVertex, uint32_t);
+    __push_constant__(cascadeIndex, vk::ShaderStageFlagBits::eVertex, PushContant);
     __set__(set, CalcSetDef);
   } calcPipeDef;
 
@@ -57,17 +60,22 @@ private:
   };
 
   ComputeCullDrawCMDPassOut cullPassOut;
+  FrameGraphResource<BufferInfo> cascades;
 
   vk::UniqueDescriptorPool descriptorPool;
-  vk::DescriptorSet calcSet;
 
   vk::UniqueRenderPass renderPass;
   std::vector<uint32_t> subpasses{};
   std::vector<vk::UniquePipeline> pipes;
 
+  struct FrameResource {
+    vk::DescriptorSet calcSet;
+    std::unique_ptr<Texture> shadowMaps;
+    std::vector<vk::UniqueImageView> shadowMapLayerViews;
+    vk::UniqueFramebuffer framebuffer;
+  };
   std::unique_ptr<Buffer> shadowMapSetting;
-  std::unique_ptr<Texture> shadowMaps;
-  std::vector<vk::UniqueImageView> shadowMapLayerViews;
-  vk::UniqueFramebuffer framebuffer;
+  std::vector<FrameResource> frames;
+  bool init{false};
 };
 }

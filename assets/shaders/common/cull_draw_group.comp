@@ -12,11 +12,7 @@ layout(local_size_x_id = 0, local_size_y_id = 1, local_size_z_id = 2) in;
 layout(push_constant) uniform PushConstant {
   uint totalFrustums;
   uint totalMeshInstances;
-  uint cmdFrameStride;
   uint cmdFrustumStride;
-  uint groupFrameStride;
-  uint transformStride;
-  uint frame;
 };
 
 layout(set = 0, binding = 0) buffer Frustums { Frustum frustums[]; };
@@ -78,7 +74,7 @@ void main() {
 
   uint frustumIdx = id / totalMeshInstances;
   if(frustumIdx >= totalFrustums) return;
-  Frustum frustum = frustums[frame * totalFrustums + frustumIdx];
+  Frustum frustum = frustums[frustumIdx];
 
   MeshInstanceUBO mesh = meshInstances[id];
 
@@ -86,7 +82,7 @@ void main() {
 
   PrimitiveUBO prim = primitives[mesh.primitive];
   AABB aabb = prim.aabb;
-  mat4 model = matrices[frame * transformStride + id];
+  mat4 model = matrices[id];
   transformAABB(aabb, model);
   vec3 center = (aabb.min + aabb.max) / 2;
   float radius = length(aabb.max - aabb.min) / 2;
@@ -101,10 +97,9 @@ void main() {
     drawCMD.instanceCount = 1;
 
     uint groupID = mesh.drawGroupID;
-    uint groupIdx = atomicAdd(drawCMDCount[frame * groupFrameStride + groupID], 1);
-    uint groupOffset = cmdOffsetPerGroup[frame * groupFrameStride + groupID];
-    uint cmdIdx =
-      frame * cmdFrameStride + frustumIdx * cmdFrustumStride + groupOffset + groupIdx;
+    uint groupIdx = atomicAdd(drawCMDCount[groupID], 1);
+    uint groupOffset = cmdOffsetPerGroup[groupID];
+    uint cmdIdx = frustumIdx * cmdFrustumStride + groupOffset + groupIdx;
     drawCMDs[cmdIdx] = drawCMD;
   }
 }

@@ -68,9 +68,8 @@ PointInfo unpack() {
 
 void main() {
   PointInfo p = unpack();
-  CameraUBO cam = cameras[frame];
   if(p.depth == 1) { //
-    outColor.rgb = LINEARtoSRGB(shadeBackground(cam));
+    outColor.rgb = LINEARtoSRGB(shadeBackground(camera));
   } else {
     if(isZero(p.normal)) {
       outColor.rgb = LINEARtoSRGB(p.diffuseColor);
@@ -94,7 +93,7 @@ void main() {
 
     // LIGHTING
     vec3 color = vec3(0.0, 0.0, 0.0);
-    vec3 view = normalize(cam.eye.xyz - p.position);
+    vec3 view = normalize(camera.eye.xyz - p.position);
 
     vec3 F = vec3(0);
     for(int i = 0; i < lighting.numLights; ++i) {
@@ -108,19 +107,19 @@ void main() {
     if(p.useSky) {
       vec3 rayDir = sun_direction.xyz;
   #ifdef USE_SHADOW_MAP
-      bool shadowed = shadowTrace(cam, p.position);
+      bool shadowed = shadowTrace(camera, p.position);
   #else
       bool shadowed = false;
   #endif
       vec3 directLight = brdf(rayDir, materialInfo, p.normal, view, F) *
-                         atmosphereLight(p.position, p.normal, cam.eye.xyz);
+                         atmosphereLight(p.position, p.normal, camera.eye.xyz);
       color += directLight * (shadowed ? 0.1 : 1);
     }
 #endif
 
     color = color * p.ao;
     color += p.emissive;
-  
+
     outColor.rgb = LINEARtoSRGB(color);
 
     //    uint cIdx = cascadeIndex(p.position);

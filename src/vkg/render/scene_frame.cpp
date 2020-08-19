@@ -12,8 +12,7 @@ struct SceneSetupPassIn {
   FrameGraphResource<uint64_t> swapchainVersion;
 };
 struct SceneSetupPassOut {
-  FrameGraphResource<uint64_t> backImgVersion;
-  FrameGraphResource<std::span<Texture *>> backImgs;
+  FrameGraphResource<Texture *> backImg;
   FrameGraphResource<SceneConfig> sceneConfig;
   FrameGraphResource<BufferInfo> positions;
   FrameGraphResource<BufferInfo> normals;
@@ -29,7 +28,6 @@ struct SceneSetupPassOut {
   FrameGraphResource<std::span<vk::DescriptorImageInfo>> samplers;
   FrameGraphResource<uint32_t> numValidSampler;
   FrameGraphResource<Camera *> camera;
-  FrameGraphResource<BufferInfo> cameraBuffer;
   FrameGraphResource<std::span<uint32_t>> maxPerGroup;
   FrameGraphResource<AtmosphereSetting> atmosphereSetting;
   FrameGraphResource<ShadowMapSetting> shadowMapSetting;
@@ -46,8 +44,7 @@ public:
     builder.read(passIn.swapchainFormat);
     builder.read(passIn.swapchainVersion);
     passOut = {
-      .backImgVersion = builder.create<uint64_t>("backImgVersion"),
-      .backImgs = builder.create<std::span<Texture *>>("backImgs"),
+      .backImg = builder.create<Texture *>("backImg"),
       .sceneConfig = builder.create<SceneConfig>("sceneConfig"),
       .positions = builder.create<BufferInfo>("positions"),
       .normals = builder.create<BufferInfo>("normals"),
@@ -63,7 +60,6 @@ public:
       .samplers = builder.create<std::span<vk::DescriptorImageInfo>>("textures"),
       .numValidSampler = builder.create<uint32_t>("numValidSampler"),
       .camera = builder.create<Camera *>("camera"),
-      .cameraBuffer = builder.create<BufferInfo>("cameraBuffer"),
       .maxPerGroup = builder.create<std::span<uint32_t>>("drawGroupCount"),
       .atmosphereSetting = builder.create<AtmosphereSetting>("atmosphere"),
       .shadowMapSetting = builder.create<ShadowMapSetting>("shadowMapSetting"),
@@ -108,15 +104,13 @@ public:
           format);
         backImgs[i] = scene.Dev.backImgs[i].get();
       }
-
-      resources.set(passOut.backImgVersion, scene.swapchainVersion);
-      resources.set(passOut.backImgs, {backImgs});
     }
 
     scene.Host.camera_->resize(extent.width, extent.height);
 
     resources.set(passOut.meshInstancesCount, scene.Dev.meshInstances->count());
     resources.set(passOut.maxPerGroup, {scene.Host.drawGroupInstCount});
+    resources.set(passOut.backImg, backImgs[ctx.frameIndex]);
   }
 
 private:
@@ -145,20 +139,21 @@ auto Scene::setup(PassBuilder &builder, const ScenePassIn &inputs) -> ScenePassO
                      sceneSetup.out().atmosphereSetting,
                      sceneSetup.out().shadowMapSetting,
                      sceneSetup.out().camera,
-                     sceneSetup.out().cameraBuffer,
                      sceneSetup.out().sceneConfig,
                      sceneSetup.out().meshInstances,
                      sceneSetup.out().meshInstancesCount,
+                     sceneSetup.out().positions,
+                     sceneSetup.out().normals,
+                     sceneSetup.out().uvs,
+                     sceneSetup.out().indices,
                      sceneSetup.out().primitives,
                      transf.out().matrices,
-                     transf.out().transformStride,
                      sceneSetup.out().maxPerGroup,
                    });
     shadowMap.enableIf([&]() { return Host.shadowMap.isEnabled(); });
 
     auto &deferred = builder.newPass<DeferredPass>(
-      "Deferred", {sceneSetup.out().backImgVersion,
-                   sceneSetup.out().backImgs,
+      "Deferred", {sceneSetup.out().backImg,
                    sceneSetup.out().camera,
                    sceneSetup.out().sceneConfig,
                    sceneSetup.out().meshInstances,
@@ -169,7 +164,6 @@ auto Scene::setup(PassBuilder &builder, const ScenePassIn &inputs) -> ScenePassO
                    sceneSetup.out().indices,
                    sceneSetup.out().primitives,
                    transf.out().matrices,
-                   transf.out().transformStride,
                    sceneSetup.out().materials,
                    sceneSetup.out().samplers,
                    sceneSetup.out().numValidSampler,
@@ -182,7 +176,7 @@ auto Scene::setup(PassBuilder &builder, const ScenePassIn &inputs) -> ScenePassO
                    shadowMap.out()});
 
     builder.read(passIn.swapchainExtent);
-    passOut.backImgs = deferred.out().backImgs;
+    passOut.backImg = deferred.out().backImg;
   }
   passOut.renderArea = builder.create<vk::Rect2D>("renderArea");
 

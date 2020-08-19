@@ -6,9 +6,11 @@ void DeferredPass::execute(RenderContext &ctx, Resources &resources) {
   auto atmosSetting = resources.get(passIn.atmosSetting);
   auto shadowMapSetting = resources.get(passIn.shadowMapSetting);
 
+  auto &frame = frames[ctx.frameIndex];
+
   auto cb = ctx.graphics;
   image::transitTo(
-    cb, *backImgs_[ctx.frameIndex], vk::ImageLayout::eColorAttachmentOptimal,
+    cb, *frame.backImg, vk::ImageLayout::eColorAttachmentOptimal,
     vk::AccessFlagBits::eColorAttachmentWrite,
     vk::PipelineStageFlagBits::eColorAttachmentOutput);
 
@@ -23,47 +25,36 @@ void DeferredPass::execute(RenderContext &ctx, Resources &resources) {
   };
 
   vk::RenderPassBeginInfo renderPassBeginInfo{
-    *renderPass, *framebuffers[ctx.frameIndex],
-    vk::Rect2D{
-      {0, 0},
-      {backImgs_[ctx.frameIndex]->extent().width,
-       backImgs_[ctx.frameIndex]->extent().height}},
+    *renderPass, *frame.framebuffer,
+    vk::Rect2D{{0, 0}, {frame.backImg->extent().width, frame.backImg->extent().height}},
     uint32_t(clearValues.size()), clearValues.data()};
   cb.beginRenderPass(renderPassBeginInfo, vk::SubpassContents::eInline);
-  vk::Viewport viewport{
-    0,
-    0,
-    float(backImgs_[ctx.frameIndex]->extent().width),
-    float(backImgs_[ctx.frameIndex]->extent().height),
-    0.0f,
-    1.0f};
+  vk::Viewport viewport{0,
+                        0,
+                        float(frame.backImg->extent().width),
+                        float(frame.backImg->extent().height),
+                        0.0f,
+                        1.0f};
   cb.setViewport(0, viewport);
   vk::Rect2D scissor{
-    {0, 0},
-    {backImgs_[ctx.frameIndex]->extent().width,
-     backImgs_[ctx.frameIndex]->extent().height}};
+    {0, 0}, {frame.backImg->extent().width, frame.backImg->extent().height}};
   cb.setScissor(0, scissor);
 
   auto &dev = resources.device;
-  pushContant = {resources.get(passIn.transformStride), ctx.frameIndex};
-  cb.pushConstants<PushContant>(
-    deferredPipeDef.layout(),
-    vk::ShaderStageFlagBits::eVertex | vk::ShaderStageFlagBits::eFragment, 0,
-    pushContant);
   cb.bindDescriptorSets(
-    vk::PipelineBindPoint::eGraphics, deferredPipeDef.layout(),
-    deferredPipeDef.scene.set(), sceneSet, nullptr);
+    vk::PipelineBindPoint::eGraphics, pipeDef.layout(), pipeDef.scene.set(),
+    frame.sceneSet, nullptr);
   cb.bindDescriptorSets(
-    vk::PipelineBindPoint::eGraphics, deferredPipeDef.layout(),
-    deferredPipeDef.gbuffer.set(), gbSets[ctx.frameIndex], nullptr);
+    vk::PipelineBindPoint::eGraphics, pipeDef.layout(), pipeDef.gbuffer.set(),
+    frame.gbSet, nullptr);
   if(atmosSetting.isEnabled())
     cb.bindDescriptorSets(
-      vk::PipelineBindPoint::eGraphics, deferredPipeDef.layout(),
-      deferredPipeDef.atmosphere.set(), atmosphereSet, nullptr);
+      vk::PipelineBindPoint::eGraphics, pipeDef.layout(), pipeDef.atmosphere.set(),
+      frame.atmosphereSet, nullptr);
   if(shadowMapSetting.isEnabled())
     cb.bindDescriptorSets(
-      vk::PipelineBindPoint::eGraphics, deferredPipeDef.layout(),
-      deferredPipeDef.shadowMap.set(), shadowMapSet, nullptr);
+      vk::PipelineBindPoint::eGraphics, pipeDef.layout(), pipeDef.shadowMap.set(),
+      frame.shadowMapSet, nullptr);
 
   auto bufInfo = resources.get(passIn.positions);
   cb.bindVertexBuffers(0, bufInfo.buffer, bufInfo.offset);

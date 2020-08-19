@@ -11,8 +11,7 @@
 
 namespace vkg {
 struct DeferredPassIn {
-  FrameGraphResource<uint64_t> backImgVersion;
-  FrameGraphResource<std::span<Texture *>> backImgs;
+  FrameGraphResource<Texture *> backImg;
   FrameGraphResource<Camera *> camera;
   FrameGraphResource<SceneConfig> sceneConfig;
   FrameGraphResource<BufferInfo> meshInstances;
@@ -23,7 +22,6 @@ struct DeferredPassIn {
   FrameGraphResource<BufferInfo> indices;
   FrameGraphResource<BufferInfo> primitives;
   FrameGraphResource<BufferInfo> matrices;
-  FrameGraphResource<uint32_t> transformStride;
   FrameGraphResource<BufferInfo> materials;
   FrameGraphResource<std::span<vk::DescriptorImageInfo>> samplers;
   FrameGraphResource<uint32_t> numValidSampler;
@@ -39,7 +37,7 @@ struct DeferredPassIn {
   ShadowMapPassOut shadowmap;
 };
 struct DeferredPassOut {
-  FrameGraphResource<std::span<Texture *>> backImgs;
+  FrameGraphResource<Texture *> backImg;
 };
 
 class DeferredPass: public Pass<DeferredPassIn, DeferredPassOut> {
@@ -50,7 +48,7 @@ public:
   void execute(RenderContext &ctx, Resources &resources) override;
 
 private:
-  auto createAttachments(Device &device) -> void;
+  auto createAttachments(Device &device, uint32_t frameIdx) -> void;
   auto createRenderPass(Device &device, vk::Format format) -> void;
   auto createGbufferPass(Device &device, SceneConfig sceneConfig) -> void;
   auto createLightingPass(Device &device, SceneConfig sceneConfig) -> void;
@@ -59,10 +57,6 @@ private:
 
   ComputeCullDrawCMDPassOut cullPassOut;
   FrameGraphResource<BufferInfo> camBuffer;
-  uint64_t lastNumValidSampler{0};
-  uint64_t lastAtmosVersion{0};
-  uint64_t lastShadowMapVersion{0};
-  uint64_t lastBackImgVersion{0};
 
   struct SceneSetDef: DescriptorSetDef {
     __buffer__(cameras, vkStage::eVertex | vkStage::eFragment);
@@ -99,31 +93,17 @@ private:
     __sampler2D__(irradiance, vkStage::eFragment);
   } atmosphereSetDef;
 
-  struct PushContant {
-    uint32_t transformStride;
-    uint32_t frame;
-  } pushContant;
   struct DeferredPipeDef: PipelineLayoutDef {
-    __push_constant__(frame, vkStage::eVertex | vkStage ::eFragment, PushContant);
     __set__(scene, SceneSetDef);
     __set__(gbuffer, GBufferSetDef);
     __set__(atmosphere, AtmosphereSetDef);
     __set__(shadowMap, CSMSetDef);
-  } deferredPipeDef;
+  } pipeDef;
 
   bool wireframe_{false};
   float lineWidth_{1.f};
 
   bool init{false};
-
-  std::span<Texture *> backImgs_;
-  std::vector<std::unique_ptr<Texture>> depthAtts, positionAtts, normalAtts, diffuseAtts,
-    specularAtts, emissiveAtts;
-
-  vk::UniqueDescriptorPool descriptorPool;
-  vk::DescriptorSet sceneSet, shadowMapSet, atmosphereSet;
-
-  std::vector<vk::DescriptorSet> gbSets;
 
   uint32_t gbPass{}, litPass{}, unlitPass{}, transPass{};
   vk::UniqueRenderPass renderPass;
@@ -131,6 +111,17 @@ private:
   vk::UniquePipeline unlitTriPipe, unlitLinePipe;
   vk::UniquePipeline transTriPipe, transLinePipe;
   vk::UniquePipeline litPipe, litAtmosPipe, litCSMPipe, litAtmosCSMPipe;
-  std::vector<vk::UniqueFramebuffer> framebuffers;
+
+  vk::UniqueDescriptorPool descriptorPool;
+
+  struct FrameResource {
+    Texture *backImg;
+    std::unique_ptr<Texture> depthAtt, positionAtt, normalAtt, diffuseAtt, specularAtt,
+      emissiveAtt;
+    uint64_t lastNumValidSampler{0};
+    vk::DescriptorSet sceneSet, gbSet, shadowMapSet, atmosphereSet;
+    vk::UniqueFramebuffer framebuffer;
+  };
+  std::vector<FrameResource> frames;
 };
 }

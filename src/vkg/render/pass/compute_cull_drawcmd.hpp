@@ -20,7 +20,6 @@ struct ComputeCullDrawCMDPassIn {
   FrameGraphResource<SceneConfig> sceneConfig;
   FrameGraphResource<BufferInfo> primitives;
   FrameGraphResource<BufferInfo> matrices;
-  FrameGraphResource<uint32_t> transformStride;
   FrameGraphResource<std::span<uint32_t>> maxPerGroup;
 };
 struct ComputeCullDrawCMDPassOut {
@@ -47,29 +46,30 @@ private:
   struct PushConstant {
     uint32_t totalFrustums;
     uint32_t totalMeshInstances;
-    uint32_t cmdFrameStride;
     uint32_t cmdFrustumStride;
-    uint32_t groupFrameStride;
-    uint32_t transformStride;
-    uint32_t frame;
   } pushConstant;
   struct ComputeTransfPipeDef: PipelineLayoutDef {
     __push_constant__(pushConst, vk::ShaderStageFlagBits::eCompute, PushConstant);
     __set__(transf, ComputeTransfSetDef);
   } pipeDef;
 
-  vk::UniqueDescriptorPool descriptorPool;
-  vk::DescriptorSet set;
   vk::UniquePipeline pipe;
   const uint32_t local_size = 64;
 
-  std::unique_ptr<Buffer> frustumsBuf;
-  std::unique_ptr<Buffer> drawCMD;
-  std::unique_ptr<Buffer> cmdOffsetPerGroupBuffer;
-  std::unique_ptr<Buffer> countPerGroupBuffer;
+  vk::UniqueDescriptorPool descriptorPool;
 
-  std::vector<uint32_t> cmdOffsetPerGroup;
-  uint32_t countOffset;
+  struct FrameResource {
+    vk::DescriptorSet set;
+
+    std::unique_ptr<Buffer> frustumsBuf;
+    std::unique_ptr<Buffer> drawCMD;
+    std::unique_ptr<Buffer> cmdOffsetPerGroupBuffer;
+    std::unique_ptr<Buffer> countOfGroupBuffer;
+  };
+
+  std::vector<FrameResource> frames;
+
+  std::vector<uint32_t> cmdOffsetOfGroupInFrustum;
 
   uint32_t numFrustums{0};
   uint32_t numDrawCMDsPerFrustum;

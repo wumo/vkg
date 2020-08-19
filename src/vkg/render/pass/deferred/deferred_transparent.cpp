@@ -7,7 +7,7 @@ auto DeferredPass::createTransparentPass(Device &device, SceneConfig sceneConfig
   -> void {
   GraphicsPipelineMaker maker(device.vkDevice());
 
-  maker.layout(deferredPipeDef.layout())
+  maker.layout(pipeDef.layout())
     .renderPass(*renderPass)
     .subpass(transPass)
     .vertexInputAuto(

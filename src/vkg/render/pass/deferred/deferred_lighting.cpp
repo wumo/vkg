@@ -9,7 +9,7 @@ namespace vkg {
 auto DeferredPass::createLightingPass(Device &device, SceneConfig sceneConfig) -> void {
   GraphicsPipelineMaker maker(device.vkDevice());
 
-  maker.layout(deferredPipeDef.layout())
+  maker.layout(pipeDef.layout())
     .renderPass(*renderPass)
     .subpass(litPass)
     .inputAssembly(vk::PrimitiveTopology::eTriangleList)

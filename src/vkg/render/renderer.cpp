@@ -30,7 +30,7 @@ private:
 };
 
 struct RendererPresentPassIn {
-  std::vector<FrameGraphResource<std::span<Texture *>>> backImgs;
+  std::vector<FrameGraphResource<Texture *>> backImgs;
   std::vector<FrameGraphResource<vk::Rect2D>> renderAreas;
 };
 struct RendererPresentPassOut {};
@@ -57,7 +57,7 @@ public:
 
     auto n = passIn.backImgs.size();
     for(int i = 0; i < n; ++i) {
-      auto backImg = resources.get(passIn.backImgs[i])[ctx.frameIndex];
+      auto backImg = resources.get(passIn.backImgs[i]);
       auto renderArea = resources.get(passIn.renderAreas[i]);
       image::transitTo(
         cb, *backImg, vk::ImageLayout::eTransferSrcOptimal,
@@ -95,7 +95,7 @@ void Renderer::onInit() {
         pass.out().swapchainExtent, pass.out().swapchainFormat,
         pass.out().swapchainVersion},
       *scene);
-    presentPassIn.backImgs.push_back(scenePass.out().backImgs);
+    presentPassIn.backImgs.push_back(scenePass.out().backImg);
     presentPassIn.renderAreas.push_back(scenePass.out().renderArea);
   }
 

@@ -7,15 +7,6 @@ namespace vkg {
 auto ComputeTransf::setup(PassBuilder &builder, const ComputeTransfPassIn &inputs)
   -> ComputeTransfPassOut {
   passIn = inputs;
-  setDef.init(builder.device());
-  pipeDef.transf(setDef);
-  pipeDef.init(builder.device());
-  descriptorPool = DescriptorPoolMaker().setLayout(setDef).createUnique(builder.device());
-
-  pipe = ComputePipelineMaker(builder.device())
-           .layout(pipeDef.layout())
-           .shader(Shader{shader::common::transform_comp_span, local_size, 1, 1})
-           .createUnique();
 
   builder.read(passIn.transforms);
   builder.read(passIn.meshInstances);
@@ -23,29 +14,52 @@ auto ComputeTransf::setup(PassBuilder &builder, const ComputeTransfPassIn &input
   builder.read(passIn.sceneConfig);
   passOut = {
     .matrices = builder.create<BufferInfo>("matrices"),
-    .transformStride = builder.create<uint32_t>("transformStride"),
   };
   return passOut;
 }
 void ComputeTransf::compile(RenderContext &ctx, Resources &resources) {
-  if(!set) {
+  if(!init) {
+    init = true;
+
+    setDef.init(ctx.device);
+    pipeDef.transf(setDef);
+    pipeDef.init(ctx.device);
+
+    pipe = ComputePipelineMaker(ctx.device)
+             .layout(pipeDef.layout())
+             .shader(Shader{shader::common::transform_comp_span, local_size, 1, 1})
+             .createUnique();
+
+    descriptorPool = DescriptorPoolMaker()
+                       .pipelineLayout(pipeDef, ctx.numFrames)
+                       .createUnique(ctx.device);
+
     auto sceneConfig = resources.get(passIn.sceneConfig);
-    matrices = buffer::devStorageBuffer(
-      resources.device,
-      sizeof(glm::mat4) * sceneConfig.maxNumMeshInstances * ctx.numFrames,
-      name + "_matrices");
-    set = setDef.createSet(*descriptorPool);
-    setDef.transforms(resources.get(passIn.transforms));
-    setDef.meshInstances(resources.get(passIn.meshInstances));
-    setDef.matrices(matrices->bufferInfo());
-    setDef.update(set);
-    resources.set(passOut.matrices, matrices->bufferInfo());
-    resources.set(passOut.transformStride, sceneConfig.maxNumMeshInstances);
+
+    frames.resize(ctx.numFrames);
+    for(int i = 0; i < ctx.numFrames; ++i) {
+      auto &frame = frames[i];
+      frame.matrices = buffer::devStorageBuffer(
+        resources.device, sizeof(glm::mat4) * sceneConfig.maxNumMeshInstances,
+        name + "_matrices");
+      frame.set = setDef.createSet(*descriptorPool);
+    }
   }
+  auto &frame = frames[ctx.frameIndex];
+
+  setDef.transforms(resources.get(passIn.transforms));
+  setDef.meshInstances(resources.get(passIn.meshInstances));
+  setDef.matrices(frame.matrices->bufferInfo());
+  setDef.update(frame.set);
+
+  resources.set(passOut.matrices, frame.matrices->bufferInfo());
 }
 void ComputeTransf::execute(RenderContext &ctx, Resources &resources) {
   auto total = resources.get(passIn.meshInstancesCount);
   if(total == 0) return;
+
+  auto &frame = frames[ctx.frameIndex];
+
   auto maxCG = ctx.device.limits().maxComputeWorkGroupCount;
   auto totalGroup = uint32_t(std::ceil(total / double(local_size)));
   auto dx = std::min(totalGroup, maxCG[0]);
@@ -58,14 +72,14 @@ void ComputeTransf::execute(RenderContext &ctx, Resources &resources) {
   ctx.device.begin(cb, "compute transform");
   cb.bindPipeline(vk::PipelineBindPoint::eCompute, *pipe);
   cb.bindDescriptorSets(
-    vk::PipelineBindPoint::eCompute, pipeDef.layout(), pipeDef.transf.set(), set,
+    vk::PipelineBindPoint::eCompute, pipeDef.layout(), pipeDef.transf.set(), frame.set,
     nullptr);
-  pushConstant = {total, resources.get(passOut.transformStride), ctx.frameIndex};
+  pushConstant = {total};
   cb.pushConstants<PushConstant>(
     pipeDef.layout(), vk::ShaderStageFlagBits::eCompute, 0, pushConstant);
   cb.dispatch(dx, dy, dz);
 
-  auto bufInfo = matrices->bufferInfo();
+  auto bufInfo = frame.matrices->bufferInfo();
   vk::BufferMemoryBarrier barrier{
     vk::AccessFlagBits::eShaderWrite,
     vk::AccessFlagBits::eShaderRead,
