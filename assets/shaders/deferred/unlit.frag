@@ -14,7 +14,7 @@ layout(location = 0) out vec4 outColor;
 void main() {
   MaterialUBO material = materials[inMaterialID];
   vec4 albedo = material.colorTex != nullIdx ?
-                  SRGBtoLINEAR(texture(textures[material.colorTex], inUV0)) :
+                  SRGBtoLINEAR4(texture(textures[material.colorTex], inUV0)) :
                   vec4(1, 1, 1, 1);
   albedo = material.baseColorFactor.rgba * albedo;
   outColor = albedo;

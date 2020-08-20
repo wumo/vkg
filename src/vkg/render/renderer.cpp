@@ -60,7 +60,15 @@ public:
         cb, *backImg, vk::ImageLayout::eTransferSrcOptimal,
         vk::AccessFlagBits::eTransferRead, vk::PipelineStageFlagBits::eTransfer);
 
-      image::copy(cb, present, *backImg);
+      image::blit(
+        cb, present,
+        {vk::Offset3D{renderArea.offset, 0},
+         vk::Offset3D{
+           int32_t(renderArea.extent.width), int32_t(renderArea.extent.height), 1}},
+        *backImg,
+        {vk::Offset3D{},
+         vk::Offset3D{
+           int32_t(renderArea.extent.width), int32_t(renderArea.extent.height), 1}});
     }
     image::setLayout(
       cb, present, vk::ImageLayout::eTransferDstOptimal, vk::ImageLayout::ePresentSrcKHR,
@@ -108,5 +116,4 @@ void Renderer::onFrame(uint32_t imageIndex, float elapsed) {
                     graphicsCB, computeCB};
   frameGraph->onFrame(ctx);
 }
-
 }

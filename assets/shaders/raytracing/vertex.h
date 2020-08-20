@@ -78,7 +78,7 @@ void getVertexState(
 void getMaterialInfo(
   in MaterialUBO material, in vec2 texcoord0, inout MaterialInfo materialInfo) {
   vec3 baseColor = material.colorTex != nullIdx ?
-                     SRGBtoLINEAR(texture(textures[material.colorTex], texcoord0)).xyz :
+                     SRGBtoLINEAR4(texture(textures[material.colorTex], texcoord0)).xyz :
                      vec3(1, 1, 1);
   baseColor = material.baseColorFactor.rgb * baseColor;
 
@@ -93,7 +93,7 @@ void getMaterialInfo(
 
   if(material.type == MaterialType_BRDFSG) {
     vec4 specular = material.pbrTex != nullIdx ?
-                      SRGBtoLINEAR(texture(textures[material.pbrTex], texcoord0)) :
+                      SRGBtoLINEAR4(texture(textures[material.pbrTex], texcoord0)) :
                       vec4(1, 1, 1, 1);
     vec3 f0 = specular.rgb * material.pbrFactor.rgb;
     specularColor = f0;
@@ -120,7 +120,7 @@ void getMaterialInfo(
   ao = mix(1, ao, material.occlusionStrength);
 
   vec3 emissive = material.emissiveTex != nullIdx ?
-                    SRGBtoLINEAR(texture(textures[material.emissiveTex], texcoord0)).rgb :
+                    SRGBtoLINEAR4(texture(textures[material.emissiveTex], texcoord0)).rgb :
                     vec3(0, 0, 0);
   emissive = material.emissiveFactor.rgb * emissive;
 

@@ -9,7 +9,8 @@ vec3 LINEARtoSRGB(vec3 color) { return pow(color, vec3(INV_GAMMA)); }
 
 // sRGB to linear approximation
 // see http://chilliant.blogspot.com/2012/08/srgb-approximations-for-hlsl.html
-vec4 SRGBtoLINEAR(vec4 srgbIn) { return vec4(pow(srgbIn.xyz, vec3(GAMMA)), srgbIn.w); }
+vec3 SRGBtoLINEAR(vec3 srgbIn) { return pow(srgbIn, vec3(GAMMA)); }
+vec4 SRGBtoLINEAR4(vec4 srgbIn) { return vec4(SRGBtoLINEAR(srgbIn.rgb), srgbIn.w); }
 
 // Uncharted 2 tone map
 // see: http://filmicworlds.com/blog/filmic-tonemapping-operators/

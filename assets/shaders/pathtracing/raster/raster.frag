@@ -16,7 +16,7 @@ void main() {
   if(pos.z >= d) discard;
   MaterialUBO material = materials[inMaterialID];
   vec3 albedo = material.colorTex != nullIdx ?
-                  SRGBtoLINEAR(texture(textures[material.colorTex], inUV0)).rgb :
+                  SRGBtoLINEAR4(texture(textures[material.colorTex], inUV0)).rgb :
                   vec3(1, 1, 1);
   albedo = material.baseColorFactor.rgb * albedo;
   outColor.rgb = LINEARtoSRGB(albedo);

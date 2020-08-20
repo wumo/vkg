@@ -37,6 +37,7 @@ set(sources
   src/vkg/base/resource/texture_layout.cpp
   src/vkg/base/resource/texture_creator.cpp
   src/vkg/base/resource/texture_copy.cpp
+  src/vkg/base/resource/texture_blit.cpp
   src/vkg/base/resource/texture_upload.cpp
   src/vkg/base/resource/texture_mipmap.cpp
   

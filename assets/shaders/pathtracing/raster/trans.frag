@@ -16,9 +16,11 @@ void main() {
   float d = texture(depth, gl_FragCoord.xy / vec2(textureSize(depth, 0))).r;
   if(pos.z >= d) discard;
   MaterialUBO material = materials[inMaterialID];
-  vec4 albedo = material.colorTex != nullIdx ?
-                  SRGBtoLINEAR(texture(textures[material.colorTex], inUV0)) :
-                  vec4(1, 1, 1, 1);
+  vec4 albedo = vec4(1, 1, 1, 1);
+  if(material.colorTex != nullIdx) {
+    albedo = texture(textures[material.colorTex], inUV0);
+    albedo.rgb = SRGBtoLINEAR(albedo.rgb);
+  }
   albedo = material.baseColorFactor * albedo;
   if(albedo.a < material.alphaCutoff) discard;
   outColor.rgb = LINEARtoSRGB(albedo.rgb);

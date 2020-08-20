@@ -30,7 +30,7 @@ vec3 computeNormal(vec3 sampledNormal) {
 void main() {
   MaterialUBO material = materials[inMaterialID];
   vec3 albedo = material.colorTex != nullIdx ?
-                  SRGBtoLINEAR(texture(textures[material.colorTex], inUV0)).rgb :
+                  SRGBtoLINEAR(texture(textures[material.colorTex], inUV0).rgb) :
                   vec3(1, 1, 1);
   albedo = material.baseColorFactor.rgb * albedo;
   vec3 normal;
@@ -47,7 +47,7 @@ void main() {
   float perceptualRoughness;
   if(material.type == MaterialType_BRDFSG) {
     vec4 specular = material.pbrTex != nullIdx ?
-                      SRGBtoLINEAR(texture(textures[material.pbrTex], inUV0)) :
+                      SRGBtoLINEAR4(texture(textures[material.pbrTex], inUV0)) :
                       vec4(1, 1, 1, 1);
     vec3 f0 = specular.rgb * material.pbrFactor.rgb;
     specularColor = f0;
@@ -71,7 +71,7 @@ void main() {
   ao = mix(1, ao, material.occlusionStrength);
 
   vec3 emissive = material.emissiveTex != nullIdx ?
-                    SRGBtoLINEAR(texture(textures[material.emissiveTex], inUV0)).rgb :
+                    SRGBtoLINEAR4(texture(textures[material.emissiveTex], inUV0)).rgb :
                     vec3(0, 0, 0);
   emissive = material.emissiveFactor.rgb * emissive;
 

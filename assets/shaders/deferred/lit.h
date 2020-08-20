@@ -120,7 +120,7 @@ void main() {
     color = color * p.ao;
     color += p.emissive;
 
-    outColor.rgb = color;
+    outColor = vec4(color, 1.0);
     //    outColor.rgb = LINEARtoSRGB(color);
 
     //#ifdef USE_SHADOW_MAP

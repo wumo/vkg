@@ -100,7 +100,7 @@ public:
           toString("backImg_", i), scene.device, extent.width, extent.height,
           vkUsage::eSampled | vkUsage::eStorage | vkUsage::eTransferSrc |
             vkUsage ::eTransferDst | vkUsage ::eColorAttachment,
-          format);
+          vk::Format::eR32G32B32A32Sfloat);
         backImgs[i] = scene.Dev.backImgs[i].get();
       }
     }
