@@ -83,8 +83,8 @@ set(sources
   src/vkg/render/scene.cpp
   src/vkg/render/scene_config.hpp
   src/vkg/render/scene_frame.cpp
-  src/vkg/render/pass/compute_transf.cpp
-  src/vkg/render/pass/compute_cull_drawcmd.cpp
+  src/vkg/render/pass/transf/compute_transf.cpp
+  src/vkg/render/pass/cull/compute_cull_drawcmd.cpp
   src/vkg/render/pass/deferred/deferred.cpp
   src/vkg/render/pass/deferred/deferred_execute.cpp
   src/vkg/render/pass/deferred/deferred_gbuffer.cpp
@@ -100,6 +100,7 @@ set(sources
   src/vkg/render/pass/atmosphere/compute_single_scattering.cpp
   src/vkg/render/pass/atmosphere/compute_transmittance.cpp
   src/vkg/render/pass/shadowmap/shadow_map_pass.cpp
+  src/vkg/render/pass/raytracing/raytracing_pass.cpp
   )
 
 set(definitions "")

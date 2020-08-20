@@ -6,7 +6,7 @@
 #include "vkg/render/scene_config.hpp"
 #include "vkg/render/model/camera.hpp"
 #include "vkg/render/draw_group.hpp"
-#include "vkg/render/pass/compute_cull_drawcmd.hpp"
+#include "vkg/render/pass/cull/compute_cull_drawcmd.hpp"
 #include "vkg/render/pass/atmosphere/atmosphere_pass.hpp"
 
 namespace vkg {
