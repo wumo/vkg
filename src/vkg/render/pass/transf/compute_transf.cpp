@@ -4,10 +4,7 @@
 
 namespace vkg {
 
-auto ComputeTransf::setup(PassBuilder &builder, const ComputeTransfPassIn &inputs)
-  -> ComputeTransfPassOut {
-  passIn = inputs;
-
+void ComputeTransf::setup(PassBuilder &builder) {
   builder.read(passIn.transforms);
   builder.read(passIn.meshInstances);
   builder.read(passIn.meshInstancesCount);
@@ -15,7 +12,6 @@ auto ComputeTransf::setup(PassBuilder &builder, const ComputeTransfPassIn &input
   passOut = {
     .matrices = builder.create<BufferInfo>("matrices"),
   };
-  return passOut;
 }
 void ComputeTransf::compile(RenderContext &ctx, Resources &resources) {
   if(!init) {
@@ -37,7 +33,7 @@ void ComputeTransf::compile(RenderContext &ctx, Resources &resources) {
     auto sceneConfig = resources.get(passIn.sceneConfig);
 
     frames.resize(ctx.numFrames);
-    for(int i = 0; i < ctx.numFrames; ++i) {
+    for(auto i = 0u; i < ctx.numFrames; ++i) {
       auto &frame = frames[i];
       frame.matrices = buffer::devStorageBuffer(
         resources.device, sizeof(glm::mat4) * sceneConfig.maxNumMeshInstances,

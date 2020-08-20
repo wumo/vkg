@@ -403,7 +403,7 @@ auto AtmosphereModel::precompute(
     recordSingleScatteringCMD(cb, luminance_from_radiance, _cumulate);
   });
 
-  for(auto scatteringOrder = 2; scatteringOrder <= num_scattering_orders;
+  for(auto scatteringOrder = 2u; scatteringOrder <= num_scattering_orders;
       ++scatteringOrder) {
     device.execSyncInComputeQueue(
       [&](vk::CommandBuffer cb) { recordScatteringDensityCMD(cb, scatteringOrder); });

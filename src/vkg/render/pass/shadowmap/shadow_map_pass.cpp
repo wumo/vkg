@@ -23,14 +23,11 @@ class CSMFrustumPass: public Pass<CSMFrustumPassIn, CSMFrustumPassOut> {
   };
 
 public:
-  auto setup(PassBuilder &builder, const CSMFrustumPassIn &inputs)
-    -> CSMFrustumPassOut override {
-    passIn = inputs;
+  void setup(PassBuilder &builder) override {
     builder.read(passIn);
     passOut = {
       .frustums = builder.create<std::span<Frustum>>("CSMFrustums"),
       .cascades = builder.create<BufferInfo>("cascades")};
-    return passOut;
   }
   void compile(RenderContext &ctx, Resources &resources) override {
     auto atmos = resources.get(passIn.atmosSetting);
@@ -46,7 +43,7 @@ public:
       frustums.resize(numCascades);
       cascades.resize(numCascades);
       cascadesBuffers.resize(ctx.numFrames);
-      for(int i = 0; i < ctx.numFrames; ++i)
+      for(auto i = 0u; i < ctx.numFrames; ++i)
         cascadesBuffers[i] = buffer::devStorageBuffer(
           ctx.device, sizeof(CascadeDesc) * numCascades, toString("cascades_", i));
       resources.set(passOut.frustums, {frustums});
@@ -66,7 +63,7 @@ public:
     auto camView = camera->view();
 
     auto lambda = 0.5f;
-    for(int i = 0; i < numCascades; ++i) {
+    for(auto i = 0u; i < numCascades; ++i) {
       auto n = lambda * zNear * glm::pow(zFar / zNear, float(i) / numCascades) +
                (1 - lambda) * (zNear + (zFar - zNear) * (float(i) / numCascades));
       auto f = lambda * zNear * glm::pow(zFar / zNear, float(i + 1) / numCascades) +
@@ -156,10 +153,7 @@ private:
   bool init{false};
 };
 
-auto ShadowMapPass::setup(PassBuilder &builder, const ShadowMapPassIn &inputs)
-  -> ShadowMapPassOut {
-  passIn = inputs;
-
+void ShadowMapPass::setup(PassBuilder &builder) {
   auto &frustum = builder.newPass<CSMFrustumPass>(
     "CSMFrustumPass", {passIn.atmosSetting, passIn.shadowMapSetting, passIn.camera});
 
@@ -183,7 +177,6 @@ auto ShadowMapPass::setup(PassBuilder &builder, const ShadowMapPassIn &inputs)
     .cascades = frustum.out().cascades,
     .shadowMaps = builder.create<Texture *>("ShadowMaps"),
   };
-  return passOut;
 }
 void ShadowMapPass::compile(RenderContext &ctx, Resources &resources) {
   auto setting = resources.get(passIn.shadowMapSetting);
@@ -230,7 +223,7 @@ void ShadowMapPass::createTextures(
 
     frame.shadowMapLayerViews.resize(setting.numCascades());
     std::vector<vk::ImageView> attachments(setting.numCascades());
-    for(int c = 0; c < setting.numCascades(); ++c) {
+    for(auto c = 0u; c < setting.numCascades(); ++c) {
       frame.shadowMapLayerViews[c] = frame.shadowMaps->createLayerImageView(c);
       attachments[c] = *frame.shadowMapLayerViews[c];
     }
@@ -255,7 +248,7 @@ auto ShadowMapPass::createPipeline(Device &device, ShadowMapSetting &setting) ->
 
     depths.resize(setting.numCascades());
     subpasses.resize(setting.numCascades());
-    for(int i = 0; i < setting.numCascades(); ++i) {
+    for(auto i = 0u; i < setting.numCascades(); ++i) {
       depths[i] = maker.attachment(vk::Format::eD32Sfloat)
                     .samples(vk::SampleCountFlagBits::e1)
                     .loadOp(vk::AttachmentLoadOp::eClear)
@@ -319,7 +312,7 @@ auto ShadowMapPass::createPipeline(Device &device, ShadowMapSetting &setting) ->
       Shader{shader::deferred::csm::csm_vert_span, setting.numCascades()});
 
     pipes.resize(setting.numCascades());
-    for(int i = 0; i < setting.numCascades(); ++i) {
+    for(auto i = 0u; i < setting.numCascades(); ++i) {
       maker.subpass(subpasses[i]);
       pipes[i] = maker.createUnique();
     }
@@ -335,7 +328,7 @@ void ShadowMapPass::execute(RenderContext &ctx, Resources &resources) {
   auto &frame = frames[ctx.frameIndex];
 
   std::vector<vk::ClearValue> clearValues(setting.numCascades());
-  for(int i = 0; i < setting.numCascades(); ++i)
+  for(auto i = 0u; i < setting.numCascades(); ++i)
     clearValues[i] = vk::ClearDepthStencilValue{1.0f, 0};
   vk::RenderPassBeginInfo renderPassBeginInfo{
     *renderPass, *frame.framebuffer,

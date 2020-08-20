@@ -33,8 +33,7 @@ struct ShadowMapPassOut {
 
 class ShadowMapPass: public Pass<ShadowMapPassIn, ShadowMapPassOut> {
 public:
-  auto setup(PassBuilder &builder, const ShadowMapPassIn &inputs)
-    -> ShadowMapPassOut override;
+  void setup(PassBuilder &builder) override;
   void compile(RenderContext &ctx, Resources &resources) override;
   void execute(RenderContext &ctx, Resources &resources) override;
 

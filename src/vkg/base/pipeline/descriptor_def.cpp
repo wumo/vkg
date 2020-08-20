@@ -28,7 +28,7 @@ auto DescriptorSetDef::createSets(vk::DescriptorPool pool, uint32_t num)
   DescriptorSetMaker maker;
   maker.layout(*setLayout_, layoutMaker.variableDescriptorCount());
   std::vector<vk::DescriptorSet> sets(num);
-  for(int i = 0; i < num; ++i)
+  for(auto i = 0u; i < num; ++i)
     sets[i] = maker.create(device_, pool)[0];
   return sets;
 }

@@ -38,9 +38,7 @@ class SceneSetupPass: public Pass<SceneSetupPassIn, SceneSetupPassOut> {
 public:
   explicit SceneSetupPass(Scene &scene): scene(scene) {}
 
-  auto setup(PassBuilder &builder, const SceneSetupPassIn &inputs)
-    -> SceneSetupPassOut override {
-    passIn = inputs;
+  void setup(PassBuilder &builder) override {
     builder.read(passIn.swapchainExtent);
     builder.read(passIn.swapchainFormat);
     builder.read(passIn.swapchainVersion);
@@ -65,7 +63,6 @@ public:
       .atmosphereSetting = builder.create<AtmosphereSetting>("atmosphere"),
       .shadowMapSetting = builder.create<ShadowMapSetting>("shadowMapSetting"),
     };
-    return passOut;
   }
   void compile(RenderContext &ctx, Resources &resources) override {
     if(!boundPassData) {
@@ -96,7 +93,7 @@ public:
       scene.swapchainVersion = version;
       scene.Dev.backImgs.resize(ctx.numFrames);
       backImgs.resize(ctx.numFrames);
-      for(int i = 0; i < ctx.numFrames; ++i) {
+      for(auto i = 0u; i < ctx.numFrames; ++i) {
         using vkUsage = vk::ImageUsageFlagBits;
         scene.Dev.backImgs[i] = image::make2DTex(
           toString("backImg_", i), scene.device, extent.width, extent.height,
@@ -120,12 +117,10 @@ private:
   std::vector<Texture *> backImgs;
 };
 
-auto Scene::setup(PassBuilder &builder, const ScenePassIn &inputs) -> ScenePassOut {
-  passIn = inputs;
-
+void Scene::setup(PassBuilder &builder) {
   auto &sceneSetup = builder.newPass<SceneSetupPass>(
     "SceneSetup",
-    {inputs.swapchainExtent, inputs.swapchainFormat, inputs.swapchainVersion}, *this);
+    {passIn.swapchainExtent, passIn.swapchainFormat, passIn.swapchainVersion}, *this);
 
   auto &transf = builder.newPass<ComputeTransf>(
     "Transf", {sceneSetup.out().transforms, sceneSetup.out().meshInstances,
@@ -204,8 +199,6 @@ auto Scene::setup(PassBuilder &builder, const ScenePassIn &inputs) -> ScenePassO
   }
   builder.read(passIn.swapchainExtent);
   passOut.renderArea = builder.create<vk::Rect2D>("renderArea");
-
-  return passOut;
 }
 
 void Scene::compile(RenderContext &ctx, Resources &resources) {

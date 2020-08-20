@@ -28,8 +28,7 @@ struct ComputeCullDrawCMDPassOut {
 class ComputeCullDrawCMD
   : public Pass<ComputeCullDrawCMDPassIn, ComputeCullDrawCMDPassOut> {
 public:
-  auto setup(PassBuilder &builder, const ComputeCullDrawCMDPassIn &inputs)
-    -> ComputeCullDrawCMDPassOut override;
+  void setup(PassBuilder &builder) override;
   void compile(RenderContext &ctx, Resources &resources) override;
   void execute(RenderContext &ctx, Resources &resources) override;
 

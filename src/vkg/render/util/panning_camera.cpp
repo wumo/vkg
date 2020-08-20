@@ -32,14 +32,14 @@ auto PanningCamera::update(Input &input) -> void {
 
   if(input.mouseButtonPressed[MouseButton::MouseButtonLeft]) {
     if(!rotate.start) {
-      rotate.lastX = input.mousePosX;
-      rotate.lastY = input.mousePosY;
+      rotate.lastX = float(input.mousePosX);
+      rotate.lastY = float(input.mousePosY);
       rotate.start = true;
     }
     auto xoffset = float(input.mousePosX - rotate.lastX);
     auto yoffset = float(input.mousePosY - rotate.lastY);
-    rotate.lastX = input.mousePosX;
-    rotate.lastY = input.mousePosY;
+    rotate.lastX = float(input.mousePosX);
+    rotate.lastY = float(input.mousePosY);
 
     xoffset *= -rotate.sensitivity;
     yoffset *= -rotate.sensitivity;
@@ -58,15 +58,15 @@ auto PanningCamera::update(Input &input) -> void {
   if(input.mouseButtonPressed[MouseButton::MouseButtonRight]) {
     mouseRightPressed = true;
     if(!panning.start) {
-      panning.lastX = input.mousePosX;
-      panning.lastY = input.mousePosY;
+      panning.lastX = float(input.mousePosX);
+      panning.lastY = float(input.mousePosY);
       panning.start = true;
     }
     auto p0 = xzIntersection(panning.lastX, panning.lastY);
-    auto p1 = xzIntersection(input.mousePosX, input.mousePosY);
+    auto p1 = xzIntersection(float(input.mousePosX), float(input.mousePosY));
 
-    panning.lastX = input.mousePosX;
-    panning.lastY = input.mousePosY;
+    panning.lastX = float(input.mousePosX);
+    panning.lastY = float(input.mousePosY);
 
     auto translation = p0 - p1;
     camera.setDirection(camera.direction() + translation);

@@ -1,9 +1,7 @@
 #include "atmosphere_pass.hpp"
 namespace vkg {
 
-auto AtmospherePass::setup(PassBuilder &builder, const AtmospherePassIn &inputs)
-  -> AtmospherePassOut {
-  passIn = inputs;
+void AtmospherePass::setup(PassBuilder &builder) {
   builder.read(passIn.atmosphere);
   passOut = {
     .version = builder.create<uint64_t>("atmosphereVersion"),
@@ -13,7 +11,6 @@ auto AtmospherePass::setup(PassBuilder &builder, const AtmospherePassIn &inputs)
     .scattering = builder.create<Texture *>("scattering"),
     .irradiance = builder.create<Texture *>("irradiance"),
   };
-  return passOut;
 }
 void AtmospherePass::compile(RenderContext &ctx, Resources &resources) {
   auto atmosSetting = resources.get(passIn.atmosphere);

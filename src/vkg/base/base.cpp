@@ -80,7 +80,7 @@ auto Base::createSyncObjects() -> void {
   }
 
   tSemaphores.resize(numFrames);
-  for(int i = 0; i < numFrames; ++i) {
+  for(auto i = 0u; i < numFrames; ++i) {
     vk::SemaphoreTypeCreateInfo timelineCreateInfo{vk::SemaphoreType::eTimeline, 0};
     vk::SemaphoreCreateInfo createInfo{};
     createInfo.pNext = &timelineCreateInfo;
@@ -96,7 +96,7 @@ auto Base::createCommandBuffers() -> void {
   graphicsCmdBuffers = _device.allocateCommandBuffers(info);
   info.commandPool = device_->computeCmdPool();
   computeCmdBuffers = _device.allocateCommandBuffers(info);
-  for(int i = 0; i < uint32_t(swapchain_->imageCount()); ++i) {
+  for(auto i = 0u; i < uint32_t(swapchain_->imageCount()); ++i) {
     graphicsCmdBuffers[i].begin({vk::CommandBufferUsageFlagBits::eSimultaneousUse});
     graphicsCmdBuffers[i].end();
     computeCmdBuffers[i].begin({vk::CommandBufferUsageFlagBits::eSimultaneousUse});
@@ -108,7 +108,7 @@ auto Base::resize() -> void {
   device_->vkDevice().waitIdle();
   swapchain_->resize(window_->width(), window_->height(), window_->isVsync());
   //empty cb for syncReverse
-  for(int i = 0; i < uint32_t(swapchain_->imageCount()); ++i) {
+  for(auto i = 0u; i < uint32_t(swapchain_->imageCount()); ++i) {
     graphicsCmdBuffers[i].begin({vk::CommandBufferUsageFlagBits::eSimultaneousUse});
     graphicsCmdBuffers[i].end();
     computeCmdBuffers[i].begin({vk::CommandBufferUsageFlagBits::eSimultaneousUse});

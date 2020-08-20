@@ -1,7 +1,5 @@
 #include "deferred.hpp"
 
-#include "vkg/math/frustum.hpp"
-
 namespace vkg {
 
 struct CamFrustumPassIn {
@@ -14,9 +12,7 @@ struct CamFrustumPassOut {
 
 class CamFrustumPass: public Pass<CamFrustumPassIn, CamFrustumPassOut> {
 public:
-  auto setup(PassBuilder &builder, const CamFrustumPassIn &inputs)
-    -> CamFrustumPassOut override {
-    passIn = inputs;
+  void setup(PassBuilder &builder) override {
     builder.read(passIn.camera);
     passOut = {
       .camFrustum = builder.create<std::span<Frustum>>("camFrustum"),
@@ -24,7 +20,6 @@ public:
     };
 
     frustums.resize(1);
-    return passOut;
   }
   void compile(RenderContext &ctx, Resources &resources) override {
     if(!init) {
@@ -65,10 +60,7 @@ private:
   bool init{false};
 };
 
-auto DeferredPass::setup(PassBuilder &builder, const DeferredPassIn &inputs)
-  -> DeferredPassOut {
-  passIn = inputs;
-
+void DeferredPass::setup(PassBuilder &builder) {
   auto &cam = builder.newPass<CamFrustumPass>("CamFrustum", {passIn.camera});
   camBuffer = cam.out().camBuffer;
 
@@ -94,11 +86,9 @@ auto DeferredPass::setup(PassBuilder &builder, const DeferredPassIn &inputs)
   builder.read(passIn.shadowMapSetting);
   builder.read(passIn.shadowmap);
   passOut.backImg = builder.write(passIn.backImg);
-
-  return passOut;
 }
 void DeferredPass::compile(RenderContext &ctx, Resources &resources) {
-  auto backImg = resources.get(passIn.backImg);
+  auto *backImg = resources.get(passIn.backImg);
   auto samplers = resources.get(passIn.samplers);
   auto numValidSampler = resources.get(passIn.numValidSampler);
 

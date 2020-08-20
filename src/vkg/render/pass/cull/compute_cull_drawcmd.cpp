@@ -3,16 +3,11 @@
 
 namespace vkg {
 
-auto ComputeCullDrawCMD::setup(
-  PassBuilder &builder, const ComputeCullDrawCMDPassIn &inputs)
-  -> ComputeCullDrawCMDPassOut {
-  passIn = inputs;
-
+void ComputeCullDrawCMD::setup(PassBuilder &builder) {
   builder.read(passIn);
   passOut = {
     .drawInfos = builder.create<DrawInfos>("drawInfos"),
   };
-  return passOut;
 }
 void ComputeCullDrawCMD::compile(RenderContext &ctx, Resources &resources) {
   auto frustums = resources.get(passIn.frustums);

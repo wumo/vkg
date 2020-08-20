@@ -15,13 +15,11 @@ struct AtmospherePassOut {
   FrameGraphResource<Texture *> transmittance;
   FrameGraphResource<Texture *> scattering;
   FrameGraphResource<Texture *> irradiance;
-  
 };
 
 class AtmospherePass: public Pass<AtmospherePassIn, AtmospherePassOut> {
 public:
-  auto setup(PassBuilder &builder, const AtmospherePassIn &inputs)
-    -> AtmospherePassOut override;
+  void setup(PassBuilder &builder) override;
   void compile(RenderContext &ctx, Resources &resources) override;
 
 private:

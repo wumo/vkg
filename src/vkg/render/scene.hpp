@@ -90,7 +90,7 @@ public:
   auto addToDrawGroup(uint32_t meshId, DrawGroup oldGroupID = DrawGroup::Unknown)
     -> DrawGroup;
 
-  auto setup(PassBuilder &builder, const ScenePassIn &inputs) -> ScenePassOut override;
+  void setup(PassBuilder &builder) override;
   void compile(RenderContext &ctx, Resources &resources) override;
 
 private:

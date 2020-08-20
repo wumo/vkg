@@ -36,7 +36,7 @@ struct RayTracingPassOut {
 };
 class RayTracingPass: public Pass<RayTracingPassIn, RayTracingPassOut> {
 public:
-  auto setup(PassBuilder &builder, const PassInType &inputs) -> PassOutType override;
+  void setup(PassBuilder &builder) override;
   void compile(RenderContext &ctx, Resources &resources) override;
   void execute(RenderContext &ctx, Resources &resources) override;
 

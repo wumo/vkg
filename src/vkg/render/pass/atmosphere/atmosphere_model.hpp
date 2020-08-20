@@ -161,8 +161,8 @@ private:
   bool do_white_balance_{true};
   double bottom_radius;
   float length_unit_in_meters;
-  float exposure_{10.0};
-  float exposure_scale{1e-5};
+  float exposure_{10.0f};
+  float exposure_scale{1e-5f};
 
   std::function<AtmosphereParameters(const glm::vec3 &)> calcAtmosphereParams;
 

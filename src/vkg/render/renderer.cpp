@@ -12,12 +12,12 @@ struct RendererSetupPassOut {
 class RendererSetupPass: public Pass<RendererSetupPassIn, RendererSetupPassOut> {
 public:
   explicit RendererSetupPass(Renderer &renderer): renderer(renderer) {}
-  auto setup(PassBuilder &builder, const RendererSetupPassIn &inputs)
-    -> RendererSetupPassOut override {
-    passOut.swapchainExtent = builder.create<vk::Extent2D>("swapchainExtent");
-    passOut.swapchainFormat = builder.create<vk::Format>("swapchainFormat");
-    passOut.swapchainVersion = builder.create<uint64_t>("swapchainVersion");
-    return passOut;
+  void setup(PassBuilder &builder) override {
+    passOut = {
+      .swapchainExtent = builder.create<vk::Extent2D>("swapchainExtent"),
+      .swapchainFormat = builder.create<vk::Format>("swapchainFormat"),
+      .swapchainVersion = builder.create<uint64_t>("swapchainVersion"),
+    };
   }
   void compile(RenderContext &ctx, Resources &resources) override {
     resources.set(passOut.swapchainExtent, renderer.swapchain().imageExtent());
@@ -38,15 +38,12 @@ struct RendererPresentPassOut {};
 class RendererPresentPass: public Pass<RendererPresentPassIn, RendererPresentPassOut> {
 public:
   explicit RendererPresentPass(Renderer &renderer): renderer(renderer) {}
-  auto setup(PassBuilder &builder, const RendererPresentPassIn &inputs)
-    -> RendererPresentPassOut override {
-    passIn = inputs;
+  void setup(PassBuilder &builder) override {
     auto n = passIn.backImgs.size();
     for(int i = 0; i < n; ++i) {
       builder.read(passIn.backImgs[i]);
       builder.read(passIn.renderAreas[i]);
     }
-    return {};
   }
   void execute(RenderContext &ctx, Resources &resources) override {
     auto cb = ctx.graphics;

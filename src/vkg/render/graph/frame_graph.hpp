@@ -17,9 +17,8 @@ struct RenderContext;
 class Resources;
 class PassBuilder;
 
-template<typename PassInType, typename PassOutType>
-using PassSetup =
-  std::function<PassOutType(PassBuilder &builder, const PassInType &inputs)>;
+template<typename PassInType>
+using PassSetup = std::function<void(PassBuilder &builder)>;
 using PassCompile = std::function<void(RenderContext &ctx, Resources &resources)>;
 using PassExec = std::function<void(RenderContext &ctx, Resources &resources)>;
 using PassCondition = std::function<bool()>;
@@ -77,12 +76,13 @@ private:
 
 template<typename PassInT, typename PassOutT>
 class Pass: public BasePass {
+  friend class PassBuilder;
 
 public:
   using PassInType = PassInT;
   using PassOutType = PassOutT;
 
-  virtual auto setup(PassBuilder &builder, const PassInType &inputs) -> PassOutType = 0;
+  virtual void setup(PassBuilder &builder) = 0;
 
   auto in() -> PassInType & { return passIn; }
   auto out() -> PassOutType & { return passOut; }
@@ -95,13 +95,10 @@ protected:
 template<typename PassInType, typename PassOutType>
 class LambdaPass: public Pass<PassInType, PassOutType> {
 public:
-  LambdaPass(
-    PassSetup<PassInType, PassOutType> &&setup, PassCompile &&compile, PassExec &&exec)
+  LambdaPass(PassSetup<PassInType> &&setup, PassCompile &&compile, PassExec &&exec)
     : setup_(std::move(setup)), compile_(std::move(compile)), exec_(std::move(exec)) {}
 
-  auto setup(PassBuilder &builder, const PassInType &inputs) -> PassOutType override {
-    return setup_(builder, inputs);
-  }
+  void setup(PassBuilder &builder) override { return setup_(builder); }
   void compile(RenderContext &ctx, Resources &resources) override {
     compile_(ctx, resources);
   }
@@ -110,7 +107,7 @@ public:
   }
 
 private:
-  PassSetup<PassInType, PassOutType> setup_;
+  PassSetup<PassInType> setup_;
   PassCompile compile_;
   PassExec exec_;
 };
@@ -168,18 +165,16 @@ public:
 
   template<typename PassInType, typename PassOutType>
   auto newLambdaPass(
-    const std::string &name, const PassInType &inputs,
-    PassSetup<PassInType, PassOutType> &&setup, PassCompile &&compile, PassExec &&exec)
-    -> LambdaPass<PassInType, PassOutType> &;
+    const std::string &name, const PassInType &inputs, PassSetup<PassInType> &&setup,
+    PassCompile &&compile, PassExec &&exec) -> LambdaPass<PassInType, PassOutType> &;
 
 private:
   template<typename PassInType, typename PassOutType>
-  auto build(Pass<PassInType, PassOutType> &pass, const PassInType &inputs)
-    -> PassOutType {
-    auto outputs = pass.setup(*this, inputs);
+  void build(Pass<PassInType, PassOutType> &pass, const PassInType &inputs) {
+    pass.passIn = inputs;
+    pass.setup(*this);
     pass.inputs_ = std::move(inputs_);
     pass.outputs_ = std::move(outputs_);
-    return outputs;
   }
 
   auto scopedName(std::string name) -> std::string;
@@ -253,9 +248,8 @@ public:
 
   template<typename PassInType, typename PassOutType>
   auto newLambdaPass(
-    const std::string &name, const PassInType &inputs,
-    PassSetup<PassInType, PassOutType> &&setup, PassCompile &&compile, PassExec &&exec)
-    -> LambdaPass<PassInType, PassOutType> & {
+    const std::string &name, const PassInType &inputs, PassSetup<PassInType> &&setup,
+    PassCompile &&compile, PassExec &&exec) -> LambdaPass<PassInType, PassOutType> & {
     allocated.push_back(std::make_unique<LambdaPass<PassInType, PassOutType>>(
       std::move(setup), std::move(compile), std::move(exec)));
     auto idx = allocated.size() - 1;
@@ -297,7 +291,7 @@ private:
   std::vector<uint32_t> sortedPassIds;
   std::vector<std::unique_ptr<BasePass>> allocated;
   std::vector<bool> enabled;
-  
+
   std::vector<FrameGraphResources> resRevisions;
 
   std::unique_ptr<Resources> resources;
@@ -362,9 +356,8 @@ auto PassBuilder::newPass(
 }
 template<typename PassInType, typename PassOutType>
 auto PassBuilder::newLambdaPass(
-  const std::string &name, const PassInType &inputs,
-  PassSetup<PassInType, PassOutType> &&setup, PassCompile &&compile, PassExec &&exec)
-  -> LambdaPass<PassInType, PassOutType> & {
+  const std::string &name, const PassInType &inputs, PassSetup<PassInType> &&setup,
+  PassCompile &&compile, PassExec &&exec) -> LambdaPass<PassInType, PassOutType> & {
   auto &p = frameGraph.newLambdaPass<PassInType, PassOutType>(
     scopedName(name), inputs, std::move(setup), std::move(compile), std::move(exec));
   p.parent = pass_.id;
