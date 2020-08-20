@@ -177,11 +177,11 @@ auto DeferredPass::createAttachments(Device &device, uint32_t frameIdx) -> void 
   frame.positionAtt = image::make2DTex(
     toString("positionAtt_", frameIdx), device, w, h,
     vkUsage::eColorAttachment | vkUsage::eInputAttachment,
-    vk::Format::eR32G32B32A32Sfloat);
+    vk::Format::eR16G16B16A16Sfloat);
   frame.normalAtt = image::make2DTex(
     toString("normalAtt", frameIdx), device, w, h,
     vkUsage::eColorAttachment | vkUsage::eInputAttachment,
-    vk::Format::eR32G32B32A32Sfloat);
+    vk::Format::eR16G16B16A16Sfloat);
   frame.diffuseAtt = image::make2DTex(
     toString("diffuseAtt", frameIdx), device, w, h,
     vkUsage::eColorAttachment | vkUsage::eInputAttachment, vk::Format::eR8G8B8A8Unorm);
@@ -227,14 +227,14 @@ auto DeferredPass::createRenderPass(Device &device, vk::Format format) -> void {
                    .finalLayout(vk::ImageLayout::eColorAttachmentOptimal)
                    .index();
   auto position = maker.attachmentCopy(backImg)
-                    .format(vk::Format::eR32G32B32A32Sfloat)
+                    .format(vk::Format::eR16G16B16A16Sfloat)
                     .loadOp(vk::AttachmentLoadOp::eClear)
                     .storeOp(vk::AttachmentStoreOp::eDontCare)
                     .initialLayout(vk::ImageLayout::eUndefined)
                     .finalLayout(vk::ImageLayout::eColorAttachmentOptimal)
                     .index();
   auto normal =
-    maker.attachmentCopy(position).format(vk::Format::eR32G32B32A32Sfloat).index();
+    maker.attachmentCopy(position).format(vk::Format::eR16G16B16A16Sfloat).index();
   auto diffuse =
     maker.attachmentCopy(position).format(vk::Format::eR8G8B8A8Unorm).index();
   auto specular =
