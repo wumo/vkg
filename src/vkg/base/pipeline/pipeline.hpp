@@ -9,6 +9,7 @@ public:
 
   template<typename T>
   auto pushConstantAuto(const vk::ShaderStageFlags &stageFlags) -> uint32_t {
+    if(std::is_empty_v<T>) return pushConstantOffset_;
     auto offset = pushConstantOffset_;
     pushConstantRanges.emplace_back(stageFlags, pushConstantOffset_, sizeof(T));
     pushConstantOffset_ += sizeof(T);
