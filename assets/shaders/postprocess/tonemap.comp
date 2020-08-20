@@ -1,0 +1,21 @@
+#version 450
+#extension GL_GOOGLE_include_directive : require
+#extension GL_EXT_scalar_block_layout : enable
+// #extension GL_EXT_debug_printf : enable
+
+#include "../tonemap.h"
+layout(constant_id = 0) const uint lx = 1;
+layout(constant_id = 1) const uint ly = 1;
+layout(constant_id = 2) const uint lz = 1;
+layout(local_size_x_id = 0, local_size_y_id = 1, local_size_z_id = 2) in;
+
+layout(push_constant) uniform PushConstant { float exposure; };
+layout(set = 0, binding = 0, rgba8) uniform image2D colorImg;
+
+void main() {
+  ivec2 size = imageSize(colorImg);
+  if(gl_GlobalInvocationID.x >= size.x || gl_GlobalInvocationID.y >= size.y) return;
+  vec4 color = imageLoad(colorImg, ivec2(gl_GlobalInvocationID.xy));
+  color = toneMap(color, exposure);
+  imageStore(colorImg, ivec2(gl_GlobalInvocationID.xy), color);
+}

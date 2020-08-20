@@ -15,7 +15,7 @@ class vkgConan(ConanFile):
         "par_lib/master@wumo/stable",
         "magic_get/1.0.1@wumo/stable"
     )
-    build_requires = ("glslvk/0.0.1@wumo/stable")
+    build_requires = ("glslvk/0.0.2@wumo/stable")
     generators = "cmake"
     scm = {
         "type": "git",

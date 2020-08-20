@@ -4,6 +4,7 @@
 #include "vkg/render/pass/atmosphere/atmosphere_pass.hpp"
 #include "vkg/render/pass/shadowmap/shadow_map_pass.hpp"
 #include "vkg/render/pass/raytracing/raytracing_pass.hpp"
+#include "vkg/render/pass/postprocess/tonemap_pass.hpp"
 
 namespace vkg {
 
@@ -129,6 +130,7 @@ void Scene::setup(PassBuilder &builder) {
   auto &atmosphere =
     builder.newPass<AtmospherePass>("Atmosphere", {sceneSetup.out().atmosphereSetting});
 
+  FrameGraphResource<Texture *> backImg;
   if(sceneConfig.rayTrace) {
     auto &rayTracing = builder.newPass<RayTracingPass>(
       "RayTracing", {
@@ -152,7 +154,7 @@ void Scene::setup(PassBuilder &builder) {
                       sceneSetup.out().atmosphereSetting,
                       atmosphere.out(),
                     });
-    passOut.backImg = rayTracing.out().backImg;
+    backImg = rayTracing.out().backImg;
   } else {
     auto &shadowMap = builder.newPass<ShadowMapPass>(
       "ShadowMap", {
@@ -195,10 +197,15 @@ void Scene::setup(PassBuilder &builder) {
                    sceneSetup.out().shadowMapSetting,
                    shadowMap.out()});
 
-    passOut.backImg = deferred.out().backImg;
+    backImg = deferred.out().backImg;
   }
+  auto &tonemap = builder.newPass<ToneMapPass>("ToneMap", {backImg});
+
   builder.read(passIn.swapchainExtent);
-  passOut.renderArea = builder.create<vk::Rect2D>("renderArea");
+  passOut = {
+    .backImg = tonemap.out().backImg,
+    .renderArea = builder.create<vk::Rect2D>("renderArea"),
+  };
 }
 
 void Scene::compile(RenderContext &ctx, Resources &resources) {

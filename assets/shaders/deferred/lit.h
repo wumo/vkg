@@ -120,7 +120,8 @@ void main() {
     color = color * p.ao;
     color += p.emissive;
 
-    outColor.rgb = LINEARtoSRGB(color);
+    outColor.rgb = color;
+    //    outColor.rgb = LINEARtoSRGB(color);
 
     //#ifdef USE_SHADOW_MAP
     //    uint cIdx = cascadeIndex(camera, p.position);

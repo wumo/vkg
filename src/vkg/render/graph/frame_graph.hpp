@@ -280,6 +280,7 @@ private:
       input.revision != revisions.size() - 1,
       "write to resource should be the latest, latest revision:", revisions.size() - 1,
       ", this revision:", input.revision);
+    revisions[input.revision].readerPasses.push_back(passId);
     revisions.push_back({passId});
     return {input.id, uint32_t(revisions.size() - 1)};
   }
