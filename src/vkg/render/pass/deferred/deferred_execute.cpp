@@ -65,8 +65,6 @@ void DeferredPass::execute(RenderContext &ctx, Resources &resources) {
   bufInfo = resources.get(passIn.indices);
   cb.bindIndexBuffer(bufInfo.buffer, bufInfo.offset, vk::IndexType::eUint32);
 
-  cb.setLineWidth(lineWidth_);
-
   auto draw = [&](DrawGroup drawGroup) {
     auto drawGroupIdx = value(drawGroup);
     auto drawInfo = drawInfos.drawInfo[0][drawGroupIdx];
@@ -75,7 +73,8 @@ void DeferredPass::execute(RenderContext &ctx, Resources &resources) {
       drawInfo.drawCMD.buffer, drawInfo.drawCMD.offset, drawInfo.drawCMDCount.buffer,
       drawInfo.drawCMDCount.offset, drawInfo.maxCount, drawInfo.stride);
   };
-
+  
+  cb.setLineWidth(lineWidth_);
   dev.begin(cb, "Subpass gbuffer brdf triangles");
   if(wireframe_) cb.bindPipeline(vk::PipelineBindPoint::eGraphics, *gbWireFramePipe);
   else
@@ -108,6 +107,7 @@ void DeferredPass::execute(RenderContext &ctx, Resources &resources) {
   dev.end(cb);
 
   dev.begin(cb, "Subpass opaque lines");
+  cb.setLineWidth(lineWidth_);
   cb.bindPipeline(vk::PipelineBindPoint::eGraphics, *unlitLinePipe);
   draw(DrawGroup::OpaqueLines);
   dev.end(cb);
@@ -120,6 +120,7 @@ void DeferredPass::execute(RenderContext &ctx, Resources &resources) {
   dev.end(cb);
 
   dev.begin(cb, "Subpass transparent lines");
+  cb.setLineWidth(lineWidth_);
   cb.bindPipeline(vk::PipelineBindPoint::eGraphics, *transLinePipe);
   draw(DrawGroup::TransparentLines);
   dev.end(cb);
