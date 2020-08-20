@@ -3,10 +3,10 @@
 
 #include "../resources.h"
 
-uint cascadeIndex(CameraUBO cam, vec3 pos) {
+int cascadeIndex(CameraUBO cam, vec3 pos) {
   float z = dot(pos - cam.eye.xyz, cam.v.xyz);
 
-  uint cascadeIdx = 0;
+  int cascadeIdx = -1;
   for(int i = 0; i < shadowMapSeting.numCascades; ++i)
     if(z < cascades[i].z) {
       cascadeIdx = i;
@@ -17,8 +17,9 @@ uint cascadeIndex(CameraUBO cam, vec3 pos) {
 }
 
 float shadowCoordDepth(CameraUBO cam, vec3 pos) {
-  uint cascadeIdx = cascadeIndex(cam, pos);
+  int cascadeIdx = cascadeIndex(cam, pos);
 
+  if(cascadeIdx == -1) return 1e9;
   CascadeDesc cascade = cascades[cascadeIdx];
 
   vec4 shadowCoord = cascade.lightViewProj * vec4(pos, 1);
@@ -30,8 +31,9 @@ float shadowCoordDepth(CameraUBO cam, vec3 pos) {
 }
 
 float shadowMapDepth(CameraUBO cam, vec3 pos) {
-  uint cascadeIdx = cascadeIndex(cam, pos);
+  int cascadeIdx = cascadeIndex(cam, pos);
 
+  if(cascadeIdx == -1) return 1e9;
   CascadeDesc cascade = cascades[cascadeIdx];
 
   vec4 shadowCoord = cascade.lightViewProj * vec4(pos, 1);
@@ -44,8 +46,9 @@ float shadowMapDepth(CameraUBO cam, vec3 pos) {
 }
 
 bool shadowTrace(CameraUBO cam, vec3 pos) {
-  uint cascadeIdx = cascadeIndex(cam, pos);
+  int cascadeIdx = cascadeIndex(cam, pos);
 
+  if(cascadeIdx == -1) return false;
   CascadeDesc cascade = cascades[cascadeIdx];
 
   vec4 shadowCoord = cascade.lightViewProj * vec4(pos, 1);
