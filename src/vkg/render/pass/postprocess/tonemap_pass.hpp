@@ -1,5 +1,6 @@
 #pragma once
 #include "screen_pass.hpp"
+#include "postprocess/tonemap_comp.hpp"
 
 namespace vkg {
 struct ToneMapPushConstant {
@@ -7,9 +8,9 @@ struct ToneMapPushConstant {
 };
 class ToneMapPass: public ScreenPass<ToneMapPushConstant> {
 public:
-  ToneMapPass();
+  ToneMapPass(): ScreenPass(shader::postprocess::tonemap_comp_span) {}
 
 private:
-  void updatePushConstant() override;
+  void updatePushConstant() override { pushConstant.exposure = 1.0; }
 };
 }
