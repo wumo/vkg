@@ -63,11 +63,12 @@ public:
     cb.bindDescriptorSets(
       vk::PipelineBindPoint::eCompute, pipeDef.layout(), pipeDef.set.set(), frame.set,
       nullptr);
-    if(!std::is_empty_v<PushConstant>)
+    if(!std::is_empty_v<PushConstant>) {
+      updatePushConstant();
       cb.pushConstants<PushConstant>(
         pipeDef.layout(), vk::ShaderStageFlagBits::eCompute, 0, pushConstant);
+    }
     auto extent = backImg->extent();
-    auto maxCG = ctx.device.limits().maxComputeWorkGroupCount;
     auto dx = uint32_t(std::ceil(extent.width / double(local_size_x)));
     auto dy = uint32_t(std::ceil(extent.width / double(local_size_y)));
     cb.dispatch(dx, dy, 1);
