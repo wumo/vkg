@@ -14,6 +14,7 @@
 #include "../punctual_light.h"
 #include "../tonemap.h"
 
+layout(location = 0) in vec2 inUV;
 layout(location = 0) out vec4 outColor;
 
 struct PointInfo {
@@ -63,8 +64,8 @@ PointInfo unpack() {
   p.emissive = SUBPASS_LOAD(samplerEmissive).rgb;
   p.depth = SUBPASS_LOAD(samplerDepth).r;
   float z_ = p.depth;
-  float x_ = (gl_FragCoord.x / camera.w * 2 - 1);
-  float y_ = (gl_FragCoord.y / camera.h * 2 - 1);
+  float x_ = (inUV.x * 2 - 1);
+  float y_ = (inUV.y * 2 - 1);
   vec4 coord = camera.invProjView * vec4(x_, y_, z_, 1);
   p.position = vec3(coord.x / coord.w, coord.y / coord.w, coord.z / coord.w);
   return p;

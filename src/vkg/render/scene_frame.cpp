@@ -5,6 +5,7 @@
 #include "vkg/render/pass/shadowmap/shadow_map_pass.hpp"
 #include "vkg/render/pass/raytracing/raytracing_pass.hpp"
 #include "vkg/render/pass/postprocess/tonemap_pass.hpp"
+#include "vkg/render/pass/postprocess/fxaa_pass.hpp"
 
 namespace vkg {
 
@@ -40,9 +41,7 @@ public:
   explicit SceneSetupPass(Scene &scene): scene(scene) {}
 
   void setup(PassBuilder &builder) override {
-    builder.read(passIn.swapchainExtent);
-    builder.read(passIn.swapchainFormat);
-    builder.read(passIn.swapchainVersion);
+    builder.read(passIn);
     passOut = {
       .backImg = builder.create<Texture *>("backImg"),
       .sceneConfig = builder.create<SceneConfig>("sceneConfig"),
@@ -87,7 +86,6 @@ public:
     resources.set(passOut.shadowMapSetting, scene.shadowmap());
 
     auto extent = resources.get<vk::Extent2D>(passIn.swapchainExtent);
-    auto format = resources.get<vk::Format>(passIn.swapchainFormat);
     auto version = resources.get<uint64_t>(passIn.swapchainVersion);
 
     if(version > scene.swapchainVersion) {
@@ -102,6 +100,8 @@ public:
             vkUsage ::eTransferDst | vkUsage ::eColorAttachment,
           vk::Format::eR16G16B16A16Sfloat);
         backImgs[i] = scene.Dev.backImgs[i].get();
+        backImgs[i]->setSampler(
+          {{}, vk::Filter::eLinear, vk::Filter::eLinear, vk::SamplerMipmapMode::eLinear});
       }
     }
 
@@ -200,10 +200,12 @@ void Scene::setup(PassBuilder &builder) {
     backImg = deferred.out().backImg;
   }
   auto &tonemap = builder.newPass<ToneMapPass>("ToneMap", {backImg});
+  auto &fxaa = builder.newPass<FxaaPass>("FXAA", {tonemap.out().img});
+  auto &last = fxaa;
 
   builder.read(passIn.swapchainExtent);
   passOut = {
-    .backImg = tonemap.out().backImg,
+    .backImg = last.out().img,
     .renderArea = builder.create<vk::Rect2D>("renderArea"),
   };
 }
