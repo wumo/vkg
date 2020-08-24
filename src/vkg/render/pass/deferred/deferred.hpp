@@ -70,7 +70,6 @@ private:
   } sceneSetDef;
 
   struct GBufferSetDef: DescriptorSetDef {
-    __input__(position, vkStage::eFragment);
     __input__(normal, vkStage::eFragment);
     __input__(diffuse, vkStage::eFragment);
     __input__(specular, vkStage::eFragment);
@@ -115,8 +114,7 @@ private:
 
   struct FrameResource {
     Texture *backImg;
-    std::unique_ptr<Texture> depthAtt, positionAtt, normalAtt, diffuseAtt, specularAtt,
-      emissiveAtt;
+    std::unique_ptr<Texture> depthAtt, normalAtt, diffuseAtt, specularAtt, emissiveAtt;
     uint64_t lastNumValidSampler{0};
     vk::DescriptorSet sceneSet, gbSet, shadowMapSet, atmosphereSet;
     vk::UniqueFramebuffer framebuffer;

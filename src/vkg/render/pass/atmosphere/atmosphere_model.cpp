@@ -152,7 +152,7 @@ auto makeTex(
       sharingMode,
       queueFamilyIndexCount,
       queueFamilyIndices},
-    VmaAllocationCreateInfo{{}, VMA_MEMORY_USAGE_GPU_ONLY});
+    VmaAllocationCreateInfo{{}, VMA_MEMORY_USAGE_GPU_ONLY}, name);
   texture->setImageView(
     type == vk::ImageType::e2D ? vk::ImageViewType::e2D : vk::ImageViewType::e3D,
     vk::ImageAspectFlagBits::eColor);

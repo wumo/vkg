@@ -14,8 +14,7 @@ void DeferredPass::execute(RenderContext &ctx, Resources &resources) {
     vk::AccessFlagBits::eColorAttachmentWrite,
     vk::PipelineStageFlagBits::eColorAttachmentOutput);
 
-  std::array<vk::ClearValue, 7> clearValues{
-    vk::ClearColorValue{std::array{0.0f, 0.0f, 0.0f, 0.0f}},
+  std::array<vk::ClearValue, 6> clearValues{
     vk::ClearColorValue{std::array{0.0f, 0.0f, 0.0f, 0.0f}},
     vk::ClearColorValue{std::array{0.0f, 0.0f, 0.0f, 0.0f}},
     vk::ClearColorValue{std::array{0.0f, 0.0f, 0.0f, 0.0f}},
@@ -73,7 +72,7 @@ void DeferredPass::execute(RenderContext &ctx, Resources &resources) {
       drawInfo.drawCMD.buffer, drawInfo.drawCMD.offset, drawInfo.drawCMDCount.buffer,
       drawInfo.drawCMDCount.offset, drawInfo.maxCount, drawInfo.stride);
   };
-  
+
   cb.setLineWidth(lineWidth_);
   dev.begin(cb, "Subpass gbuffer brdf triangles");
   if(wireframe_) cb.bindPipeline(vk::PipelineBindPoint::eGraphics, *gbWireFramePipe);

@@ -7,11 +7,10 @@ layout(location = 1) in vec3 inNormal;
 layout(location = 2) in vec2 inUV0;
 layout(location = 3) in flat uint inMaterialID;
 
-layout(location = 0) out vec4 outPosition;
-layout(location = 1) out vec4 outNormal;
-layout(location = 2) out vec4 outDiffuse;
-layout(location = 3) out vec4 outSpecular;
-layout(location = 4) out vec4 outEmissive;
+layout(location = 0) out vec4 outNormal;
+layout(location = 1) out vec4 outDiffuse;
+layout(location = 2) out vec4 outSpecular;
+layout(location = 3) out vec4 outEmissive;
 
 vec3 computeNormal(vec3 sampledNormal) {
   vec3 pos_dx = dFdx(inWorldPos);
@@ -77,7 +76,6 @@ void main() {
 
   int applySky = 1;
   if(material.type == MaterialType_None) applySky = 0;
-  outPosition.rgb = inWorldPos;
   outNormal = vec4(normal, applySky);
   outDiffuse = vec4(diffuseColor, ao);
   outSpecular = vec4(specularColor, perceptualRoughness);

@@ -27,7 +27,6 @@ auto DeferredPass::createGbufferPass(Device &device, SceneConfig sceneConfig) ->
     .dynamicState(vk::DynamicState::eScissor)
     .dynamicState(vk::DynamicState::eLineWidth);
 
-  maker.blendColorAttachment(false); //positionAtt
   maker.blendColorAttachment(false); //normalAtt
   maker.blendColorAttachment(false); //albedoAtt
   maker.blendColorAttachment(false); //pbrAtt

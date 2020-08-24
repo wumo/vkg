@@ -34,12 +34,11 @@ layout(set = 0, binding = 7, std430) readonly buffer LightsBuffer {
   #endif
 
 // clang-format off
-layout(set = 1, binding = 0,input_attachment_index = 0) uniform SUBPASS_INPUT samplerPosition;
-layout(set = 1, binding = 1,input_attachment_index = 1) uniform SUBPASS_INPUT samplerNormal;
-layout(set = 1, binding = 2,input_attachment_index = 2) uniform SUBPASS_INPUT samplerDiffuse;
-layout(set = 1, binding = 3,input_attachment_index = 3) uniform SUBPASS_INPUT samplerSpecular;
-layout(set = 1, binding = 4,input_attachment_index = 4) uniform SUBPASS_INPUT samplerEmissive;
-layout(set = 1, binding = 5,input_attachment_index = 5) uniform SUBPASS_INPUT samplerDepth;
+layout(set = 1, binding = 0,input_attachment_index = 0) uniform SUBPASS_INPUT samplerNormal;
+layout(set = 1, binding = 1,input_attachment_index = 1) uniform SUBPASS_INPUT samplerDiffuse;
+layout(set = 1, binding = 2,input_attachment_index = 2) uniform SUBPASS_INPUT samplerSpecular;
+layout(set = 1, binding = 3,input_attachment_index = 3) uniform SUBPASS_INPUT samplerEmissive;
+layout(set = 1, binding = 4,input_attachment_index = 4) uniform SUBPASS_INPUT samplerDepth;
   // clang-format on
 #endif
 

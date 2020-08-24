@@ -39,11 +39,12 @@ auto Camera::desc() -> Desc {
   auto proj_ = proj();
   auto view_ = view();
   auto projView = proj_ * view_;
+  auto invProjView = glm::inverse(projView);
   auto v = glm::vec4(normalize(focus_ - location_), 1);
   auto r = glm::vec4(normalize(cross(glm::vec3(v), worldUp_)), 1);
-  return {view_, proj_,  projView,      glm::vec4(location_, 1.0),
-          r,     v,      float(width_), float(height_),
-          fov_,  zNear_, zFar_};
+  return {view_,  proj_, projView,      invProjView,    glm::vec4(location_, 1.0),
+          r,      v,     float(width_), float(height_), fov_,
+          zNear_, zFar_};
 }
 auto Camera::fov() -> float { return fov_; }
 

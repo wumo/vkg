@@ -65,6 +65,7 @@ struct CameraUBO {
   mat4 view;
   mat4 proj;
   mat4 projView;
+  mat4 invProjView;
   vec4 eye;
   vec4 r, v;
   float w, h, fov;

@@ -24,9 +24,9 @@ auto viewMatrix(glm::vec3 eye, glm::vec3 center, glm::vec3 up) -> glm::mat4 {
 }
 
 auto perspectiveMatrix(float fovy, float aspect, float zNear, float zFar) -> glm::mat4 {
-  assert(abs(aspect - std::numeric_limits<float>::epsilon()) > 0);
+  assert(glm::abs(aspect - std::numeric_limits<float>::epsilon()) > 0);
 
-  float const tanHalfFovy = tan(fovy / 2.f);
+  float const tanHalfFovy = glm::tan(fovy / 2.f);
 
   glm::mat4 result(0);
   result[0][0] = 1.f / (aspect * tanHalfFovy);

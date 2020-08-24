@@ -51,7 +51,6 @@ vec3 shadeBackground(CameraUBO cam) {
 
 PointInfo unpack() {
   PointInfo p;
-  p.position = SUBPASS_LOAD(samplerPosition).rgb;
   vec4 normalA = SUBPASS_LOAD(samplerNormal).rgba;
   p.normal = normalA.xyz;
   p.useSky = normalA.a > 0.5;
@@ -63,6 +62,11 @@ PointInfo unpack() {
   p.perceptualRoughness = specularRoughness.w;
   p.emissive = SUBPASS_LOAD(samplerEmissive).rgb;
   p.depth = SUBPASS_LOAD(samplerDepth).r;
+  float z_ = p.depth;
+  float x_ = (gl_FragCoord.x / camera.w * 2 - 1);
+  float y_ = (gl_FragCoord.y / camera.h * 2 - 1);
+  vec4 coord = camera.invProjView * vec4(x_, y_, z_, 1);
+  p.position = vec3(coord.x / coord.w, coord.y / coord.w, coord.z / coord.w);
   return p;
 }
 

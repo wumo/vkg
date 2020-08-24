@@ -10,6 +10,7 @@ public:
     glm::mat4 view;
     glm::mat4 proj;
     glm::mat4 projView;
+    glm::mat4 invProjView;
     glm::vec4 eye;
     glm::vec4 r, v;
     float w, h, fov;

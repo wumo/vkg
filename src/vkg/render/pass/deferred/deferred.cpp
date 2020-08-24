@@ -174,10 +174,6 @@ auto DeferredPass::createAttachments(Device &device, uint32_t frameIdx) -> void 
   auto w = frame.backImg->extent().width;
   auto h = frame.backImg->extent().height;
   using vkUsage = vk::ImageUsageFlagBits;
-  frame.positionAtt = image::make2DTex(
-    toString("positionAtt_", frameIdx), device, w, h,
-    vkUsage::eColorAttachment | vkUsage::eInputAttachment,
-    vk::Format::eR16G16B16A16Sfloat);
   frame.normalAtt = image::make2DTex(
     toString("normalAtt", frameIdx), device, w, h,
     vkUsage::eColorAttachment | vkUsage::eInputAttachment,
@@ -196,7 +192,6 @@ auto DeferredPass::createAttachments(Device &device, uint32_t frameIdx) -> void 
     vkUsage::eDepthStencilAttachment | vkUsage::eInputAttachment, vk::Format::eD32Sfloat,
     vk::SampleCountFlagBits::e1, vk::ImageAspectFlagBits::eDepth);
 
-  gbufferSetDef.position(frame.positionAtt->imageView());
   gbufferSetDef.normal(frame.normalAtt->imageView());
   gbufferSetDef.diffuse(frame.diffuseAtt->imageView());
   gbufferSetDef.specular(frame.specularAtt->imageView());
@@ -205,10 +200,9 @@ auto DeferredPass::createAttachments(Device &device, uint32_t frameIdx) -> void 
   gbufferSetDef.update(frame.gbSet);
 
   std::vector<vk::ImageView> attachments = {
-    frame.backImg->imageView(),     frame.positionAtt->imageView(),
-    frame.normalAtt->imageView(),   frame.diffuseAtt->imageView(),
-    frame.specularAtt->imageView(), frame.emissiveAtt->imageView(),
-    frame.depthAtt->imageView()};
+    frame.backImg->imageView(),     frame.normalAtt->imageView(),
+    frame.diffuseAtt->imageView(),  frame.specularAtt->imageView(),
+    frame.emissiveAtt->imageView(), frame.depthAtt->imageView()};
 
   vk::FramebufferCreateInfo info{
     {}, *renderPass, uint32_t(attachments.size()), attachments.data(), w, h, 1};
@@ -226,27 +220,21 @@ auto DeferredPass::createRenderPass(Device &device, vk::Format format) -> void {
                    .initialLayout(vk::ImageLayout::eColorAttachmentOptimal)
                    .finalLayout(vk::ImageLayout::eColorAttachmentOptimal)
                    .index();
-  auto position = maker.attachmentCopy(backImg)
-                    .format(vk::Format::eR16G16B16A16Sfloat)
-                    .loadOp(vk::AttachmentLoadOp::eClear)
-                    .storeOp(vk::AttachmentStoreOp::eDontCare)
-                    .initialLayout(vk::ImageLayout::eUndefined)
-                    .finalLayout(vk::ImageLayout::eColorAttachmentOptimal)
-                    .index();
-  auto normal =
-    maker.attachmentCopy(position).format(vk::Format::eR16G16B16A16Sfloat).index();
-  auto diffuse =
-    maker.attachmentCopy(position).format(vk::Format::eR8G8B8A8Unorm).index();
-  auto specular =
-    maker.attachmentCopy(position).format(vk::Format::eR8G8B8A8Unorm).index();
-  auto emissive =
-    maker.attachmentCopy(position).format(vk::Format::eR8G8B8A8Unorm).index();
-  auto depth = maker.attachmentCopy(position)
+  auto normal = maker.attachmentCopy(backImg)
+                  .format(vk::Format::eR16G16B16A16Sfloat)
+                  .loadOp(vk::AttachmentLoadOp::eClear)
+                  .storeOp(vk::AttachmentStoreOp::eDontCare)
+                  .initialLayout(vk::ImageLayout::eUndefined)
+                  .finalLayout(vk::ImageLayout::eColorAttachmentOptimal)
+                  .index();
+  auto diffuse = maker.attachmentCopy(normal).format(vk::Format::eR8G8B8A8Unorm).index();
+  auto specular = maker.attachmentCopy(normal).format(vk::Format::eR8G8B8A8Unorm).index();
+  auto emissive = maker.attachmentCopy(normal).format(vk::Format::eR8G8B8A8Unorm).index();
+  auto depth = maker.attachmentCopy(normal)
                  .format(vk::Format::eD32Sfloat)
                  .finalLayout(vk::ImageLayout::eDepthStencilAttachmentOptimal)
                  .index();
   gbPass = maker.subpass(vk::PipelineBindPoint::eGraphics)
-             .color(position)
              .color(normal)
              .color(diffuse)
              .color(specular)
@@ -255,7 +243,6 @@ auto DeferredPass::createRenderPass(Device &device, vk::Format format) -> void {
              .index();
   litPass = maker.subpass(vk::PipelineBindPoint::eGraphics)
               .color(backImg)
-              .input(position)
               .input(normal)
               .input(diffuse)
               .input(specular)
