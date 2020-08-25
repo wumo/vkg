@@ -108,20 +108,21 @@ auto hostOnlyRayTracingBuffer(
   -> std::unique_ptr<Buffer>;
 
 void upload(
-  Buffer &buffer, const void *value, vk::DeviceSize sizeInBytes,
+  uint32_t queueIdx, Buffer &buffer, const void *value, vk::DeviceSize sizeInBytes,
   vk::DeviceSize dstOffsetInBytes = 0);
 
 template<class Type>
-auto uploadSingle(Buffer &buffer, Type &value, vk::DeviceSize dstOffsetInBytes = 0)
+auto uploadSingle(
+  uint32_t queueIdx, Buffer &buffer, Type &value, vk::DeviceSize dstOffsetInBytes = 0)
   -> void {
-  upload(buffer, &value, sizeof(value), dstOffsetInBytes);
+  upload(queueIdx, buffer, &value, sizeof(value), dstOffsetInBytes);
 }
 
 template<class Type, class Allocator>
 auto uploadVec(
-  Buffer &buffer, const std::vector<Type, Allocator> &value,
+  uint32_t queueIdx, Buffer &buffer, const std::vector<Type, Allocator> &value,
   vk::DeviceSize dstOffsetInBytes = 0) -> void {
-  upload(buffer, value.data(), value.size() * sizeof(Type), dstOffsetInBytes);
+  upload(queueIdx, buffer, value.data(), value.size() * sizeof(Type), dstOffsetInBytes);
 }
 
 void updateBytes(

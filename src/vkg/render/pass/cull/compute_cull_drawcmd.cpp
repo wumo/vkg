@@ -105,7 +105,7 @@ void ComputeCullDrawCMD::execute(RenderContext &ctx, Resources &resources) {
 
   auto &frame = frames[ctx.frameIndex];
 
-  auto cb = ctx.compute;
+  auto cb = ctx.cb;
 
   ctx.device.begin(cb, "update frustums");
 

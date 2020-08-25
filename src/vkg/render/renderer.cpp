@@ -46,7 +46,7 @@ public:
     }
   }
   void execute(RenderContext &ctx, Resources &resources) override {
-    auto cb = ctx.graphics;
+    auto cb = ctx.cb;
     auto present = renderer.swapchain().image(ctx.swapchainIndex);
     image::setLayout(
       cb, present, vk::ImageLayout::eUndefined, vk::ImageLayout::eTransferDstOptimal, {},
@@ -110,10 +110,8 @@ void Renderer::onInit() {
 }
 
 void Renderer::onFrame(uint32_t imageIndex, float elapsed) {
-  auto &graphicsCB = graphicsCmdBuffers[frameIndex];
-  auto &computeCB = computeCmdBuffers[frameIndex];
-  RenderContext ctx{*device_,   imageIndex, frameIndex, swapchain_->imageCount(),
-                    graphicsCB, computeCB};
+  RenderContext ctx{
+    *device_, imageIndex, frameIndex, swapchain_->imageCount(), cmdBuffers[frameIndex]};
   frameGraph->onFrame(ctx);
 }
 }

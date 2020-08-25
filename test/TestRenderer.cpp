@@ -25,7 +25,7 @@ auto main() -> int {
   auto sunDir = sunDirection(1);
   auto &sky = scene.atmosphere();
   sky.enable(true);
-  sky.setSunIntensity(1);
+  sky.setSunIntensity(10);
   sky.setSunDirection(sunDir);
 
   scene.shadowmap().enable(true);
@@ -290,7 +290,7 @@ auto main() -> int {
   camera.setZFar(1e9);
   PanningCamera panningCamera{camera};
   bool pressed{false};
-  app.loop([&](double elapsed) {
+  app.loop([&](uint32_t frameIdx, double elapsed) {
     static auto lastChange = std::chrono::high_resolution_clock::now();
 
     panningCamera.update(input);
@@ -343,7 +343,7 @@ auto main() -> int {
       positions[i] = rot * positions[i];
       normals[i] = rot * normals[i];
     }
-    scene.primitive(dynamicPrim).update(positions, normals);
+    scene.primitive(dynamicPrim).update(frameIdx, positions, normals);
 
     {
       static float totalElapsed = 0;
@@ -352,7 +352,7 @@ auto main() -> int {
       auto s = glm::abs(10 * glm::sin(totalElapsed));
       p.box({}, glm::vec3{0, 0, s}, glm::vec3{s, 0, 0}, s)
         .newPrimitive(PrimitiveTopology::Triangles, vkg::DynamicType::Dynamic);
-      scene.primitive(dynamicPrim2).update(p);
+      scene.primitive(dynamicPrim2).update(frameIdx, p);
     }
   });
   return 0;

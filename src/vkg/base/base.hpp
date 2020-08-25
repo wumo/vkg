@@ -24,13 +24,15 @@
 #include "pipeline/pipeline_query.hpp"
 
 namespace vkg {
-typedef void (*Updater)(double, void *);
+typedef void (*Updater)(uint32_t frameIdx, double elapsedMs, void *data);
 
 class Base {
 public:
   explicit Base(WindowConfig windowConfig = {}, FeatureConfig featureConfig = {});
 
-  void loop(const std::function<void(double elapsedMs)> &updater = [](float) {});
+  void loop(
+    const std::function<void(uint32_t frameIdx, double elapsedMs)> &updater =
+      [](uint32_t, float) {});
   void loop(Updater updater, void *data);
   void loop(CallFrameUpdater &updater);
 
@@ -41,8 +43,10 @@ public:
   auto swapchain() -> Swapchain &;
 
 protected:
-  auto syncReverse(double elapsed, const std::function<void(double)> &updater) -> void;
-  auto syncTimeline(double elapsed, const std::function<void(double)> &updater) -> void;
+  auto syncSemaphore(double elapsed, const std::function<void(uint32_t, double)> &updater)
+    -> void;
+  auto syncTimeline(double elapsed, const std::function<void(uint32_t, double)> &updater)
+    -> void;
   virtual auto resize() -> void;
   virtual auto onInit() -> void{};
   virtual void onFrame(uint32_t imageIndex, float elapsed);
@@ -60,12 +64,10 @@ protected:
   std::unique_ptr<Device> device_;
   std::unique_ptr<Swapchain> swapchain_;
 
-  std::vector<vk::CommandBuffer> graphicsCmdBuffers, computeCmdBuffers;
+  std::vector<vk::CommandBuffer> cmdBuffers;
 
   struct SemaphoreSync {
     vk::UniqueSemaphore imageAvailable;
-    vk::UniqueSemaphore computeFinished;
-    vk::UniqueSemaphore readyToCompute;
     vk::UniqueSemaphore renderFinished;
 
     vk::UniqueFence resourcesFence;
@@ -73,6 +75,9 @@ protected:
   std::vector<SemaphoreSync> semaphoreSyncs;
 
   struct TimelineSync {
+    vk::UniqueSemaphore wsiImageAvailable;
+    vk::UniqueSemaphore wsiReadyToPresent;
+
     vk::UniqueSemaphore semaphore;
     uint64_t waitValue{0};
   };

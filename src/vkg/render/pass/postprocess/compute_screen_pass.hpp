@@ -53,7 +53,7 @@ public:
     auto &frame = frames[ctx.frameIndex];
     auto *img = resources.get(passIn.img);
 
-    auto cb = ctx.graphics;
+    auto cb = ctx.cb;
     ctx.device.begin(cb, name);
 
     image::transitTo(

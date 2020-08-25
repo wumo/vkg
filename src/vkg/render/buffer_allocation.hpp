@@ -24,10 +24,11 @@ public:
     device.name(buffer_->bufferInfo().buffer, this->name);
   }
 
-  auto add(std::span<T> data) -> UIntRange {
+  auto add(uint32_t queueIdx, std::span<T> data) -> UIntRange {
     errorIf(count_ + data.size() >= maxNum_, "buffer ", name, " is full, max: ", maxNum_);
     auto offset = count_;
-    buffer::upload(*buffer_, data.data(), data.size_bytes(), count_ * sizeof(T));
+    buffer::upload(
+      queueIdx, *buffer_, data.data(), data.size_bytes(), count_ * sizeof(T));
     count_ += uint32_t(data.size());
     return {offset, uint32_t(data.size())};
   }
@@ -39,12 +40,13 @@ public:
     return {offset, num};
   }
 
-  auto update(UIntRange alloc, std::span<T> data) -> void {
+  auto update(uint32_t queueIdx, UIntRange alloc, std::span<T> data) -> void {
     errorIf(
       data.size() > alloc.size && alloc.endExclusive() > count_, "update buffer ", name,
       " overflow: count=", count_, " alloc[start=", alloc.start, ", size=", alloc.size,
       "],data.size=", data.size());
-    buffer::upload(*buffer_, data.data(), data.size_bytes(), alloc.start * sizeof(T));
+    buffer::upload(
+      queueIdx, *buffer_, data.data(), data.size_bytes(), alloc.start * sizeof(T));
   }
 
   auto count() const -> uint32_t { return count_; }

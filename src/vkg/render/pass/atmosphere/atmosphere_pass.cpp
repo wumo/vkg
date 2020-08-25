@@ -25,7 +25,7 @@ void AtmospherePass::compile(RenderContext &ctx, Resources &resources) {
 
     auto tStart = std::chrono::high_resolution_clock::now();
 
-    model_->init();
+    model_->init(ctx.frameIndex);
 
     auto tEnd = std::chrono::high_resolution_clock::now();
     auto tDiff = std::chrono::duration<double, std::milli>(tEnd - tStart).count();

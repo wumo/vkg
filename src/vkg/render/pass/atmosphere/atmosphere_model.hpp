@@ -91,7 +91,7 @@ public:
     Device &device, double sun_angular_radius, double bottom_radius, double top_radius,
     float length_unit_in_meters, glm::vec3 sunDirection, glm::vec3 earthCenter);
 
-  auto init(uint32_t num_scattering_orders = 4) -> void;
+  auto init(uint32_t queueIdx, uint32_t num_scattering_orders = 4) -> void;
 
   auto atmosphereUBO() const -> BufferInfo;
   auto sunUBO() const -> BufferInfo;
@@ -142,10 +142,10 @@ private:
   auto createMultipleScatteringSets() -> void;
   auto recordMultipleScatteringCMD(
     vk::CommandBuffer cb, const glm::mat4 &luminance_from_radiance) -> void;
-  auto compute(uint32_t num_scattering_orders) -> void;
+  auto compute(uint32_t queueIdx, uint32_t num_scattering_orders) -> void;
   auto precompute(
-    const glm::vec3 &lambdas, const glm::mat4 &luminance_from_radiance, bool cumulate,
-    uint32_t num_scattering_orders) -> void;
+    uint32_t queueIdx, const glm::vec3 &lambdas, const glm::mat4 &luminance_from_radiance,
+    bool cumulate, uint32_t num_scattering_orders) -> void;
 
 private:
   Device &device;

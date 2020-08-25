@@ -128,14 +128,6 @@ auto luminanceFromRadiance(double dlambda, const glm::vec3 &lambdas) -> glm::mat
 auto makeTex(
   Device &device, vk::ImageType type, uint32_t width, uint32_t height, uint32_t depth,
   vk::Format format, const std::string &name) -> std::unique_ptr<Texture> {
-  vk::SharingMode sharingMode = vk::SharingMode::eExclusive;
-  uint32_t queueFamilyIndexCount = 0;
-  uint32_t queueFamilyIndices[]{device.graphicsIndex(), device.computeIndex()};
-  if(device.graphicsIndex() != device.computeIndex()) {
-    sharingMode = vk::SharingMode::eConcurrent;
-    queueFamilyIndexCount = 2;
-  }
-
   auto texture = std::make_unique<Texture>(
     device,
     vk::ImageCreateInfo{
@@ -149,9 +141,7 @@ auto makeTex(
       vk::ImageTiling::eOptimal,
       vk::ImageUsageFlagBits::eSampled | vk::ImageUsageFlagBits::eTransferSrc |
         vk::ImageUsageFlagBits::eStorage,
-      sharingMode,
-      queueFamilyIndexCount,
-      queueFamilyIndices},
+      vk::SharingMode::eExclusive},
     VmaAllocationCreateInfo{{}, VMA_MEMORY_USAGE_GPU_ONLY}, name);
   texture->setImageView(
     type == vk::ImageType::e2D ? vk::ImageViewType::e2D : vk::ImageViewType::e3D,
@@ -342,7 +332,7 @@ auto AtmosphereModel::createDescriptors() -> void {
   createMultipleScatteringSets();
 }
 
-auto AtmosphereModel::init(uint32_t num_scattering_orders) -> void {
+auto AtmosphereModel::init(uint32_t queueIdx, uint32_t num_scattering_orders) -> void {
   deltaIrradianceTex = makeTex(
     device, vk::ImageType::e2D, IRRADIANCE_TEXTURE_WIDTH, IRRADIANCE_TEXTURE_HEIGHT, 1,
     vk::Format::eR32G32B32A32Sfloat, "deltaIrradianceTex");
@@ -360,7 +350,7 @@ auto AtmosphereModel::init(uint32_t num_scattering_orders) -> void {
 
   createDescriptors();
 
-  compute(num_scattering_orders);
+  compute(queueIdx, num_scattering_orders);
 
   deltaIrradianceTex.reset();
   deltaRayleighScatteringTex.reset();
@@ -368,7 +358,7 @@ auto AtmosphereModel::init(uint32_t num_scattering_orders) -> void {
   deltaScatteringDensityTex.reset();
 }
 
-auto AtmosphereModel::compute(uint32_t num_scattering_orders) -> void {
+auto AtmosphereModel::compute(uint32_t queueIdx, uint32_t num_scattering_orders) -> void {
   constexpr double _kLambdaMin = 360.0;
   constexpr double _kLambdaMax = 830.0;
   int num_iterations = (int(num_precomputed_wavelengths_) + 2) / 3;
@@ -380,39 +370,44 @@ auto AtmosphereModel::compute(uint32_t num_scattering_orders) -> void {
       _kLambdaMin + (3 * i + 2.5) * dlambda};
 
     glm::mat4 luminance_from_radiance = luminanceFromRadiance(dlambda, lambdas);
-    precompute(lambdas, luminance_from_radiance, i > 0, num_scattering_orders);
+    precompute(queueIdx, lambdas, luminance_from_radiance, i > 0, num_scattering_orders);
   }
 
   atmosphereUBO_->ptr<AtmosphereUniform>()->atmosphere =
     calcAtmosphereParams({kLambdaR, kLambdaG, kLambdaB});
 
-  device.execSyncInComputeQueue(
-    [&](vk::CommandBuffer cb) { recordTransmittanceCMD(cb); });
+  device.execSync([&](vk::CommandBuffer cb) { recordTransmittanceCMD(cb); }, queueIdx);
 }
 
 auto AtmosphereModel::precompute(
-  const glm::vec3 &lambdas, const glm::mat4 &luminance_from_radiance, bool cumulate,
-  uint32_t num_scattering_orders) -> void {
+  uint32_t queueIdx, const glm::vec3 &lambdas, const glm::mat4 &luminance_from_radiance,
+  bool cumulate, uint32_t num_scattering_orders) -> void {
   auto _cumulate = vk::Bool32(cumulate);
   atmosphereUBO_->ptr<AtmosphereUniform>()->atmosphere = calcAtmosphereParams(lambdas);
-  device.execSyncInComputeQueue(
-    [&](vk::CommandBuffer cb) { recordTransmittanceCMD(cb); });
-  device.execSyncInComputeQueue(
-    [&](vk::CommandBuffer cb) { recordDirectIrradianceCMD(cb, _cumulate); });
-  device.execSyncInComputeQueue([&](vk::CommandBuffer cb) {
-    recordSingleScatteringCMD(cb, luminance_from_radiance, _cumulate);
-  });
+  device.execSync([&](vk::CommandBuffer cb) { recordTransmittanceCMD(cb); }, queueIdx);
+  device.execSync(
+    [&](vk::CommandBuffer cb) { recordDirectIrradianceCMD(cb, _cumulate); }, queueIdx);
+  device.execSync(
+    [&](vk::CommandBuffer cb) {
+      recordSingleScatteringCMD(cb, luminance_from_radiance, _cumulate);
+    },
+    queueIdx);
 
   for(auto scatteringOrder = 2u; scatteringOrder <= num_scattering_orders;
       ++scatteringOrder) {
-    device.execSyncInComputeQueue(
-      [&](vk::CommandBuffer cb) { recordScatteringDensityCMD(cb, scatteringOrder); });
-    device.execSyncInComputeQueue([&](vk::CommandBuffer cb) {
-      recordIndirectIrradianceCMD(cb, luminance_from_radiance, scatteringOrder - 1);
-    });
-    device.execSyncInComputeQueue([&](vk::CommandBuffer cb) {
-      recordMultipleScatteringCMD(cb, luminance_from_radiance);
-    });
+    device.execSync(
+      [&](vk::CommandBuffer cb) { recordScatteringDensityCMD(cb, scatteringOrder); },
+      queueIdx);
+    device.execSync(
+      [&](vk::CommandBuffer cb) {
+        recordIndirectIrradianceCMD(cb, luminance_from_radiance, scatteringOrder - 1);
+      },
+      queueIdx);
+    device.execSync(
+      [&](vk::CommandBuffer cb) {
+        recordMultipleScatteringCMD(cb, luminance_from_radiance);
+      },
+      queueIdx);
   }
 }
 auto AtmosphereModel::initParameter(

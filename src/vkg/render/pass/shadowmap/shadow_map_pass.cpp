@@ -130,7 +130,7 @@ public:
     resources.set(passOut.cascades, cascadesBuffers[ctx.frameIndex]->bufferInfo());
   }
   void execute(RenderContext &ctx, Resources &resources) override {
-    auto cb = ctx.graphics;
+    auto cb = ctx.cb;
 
     ctx.device.begin(cb, "update light frustums");
     auto bufInfo = cascadesBuffers[ctx.frameIndex]->bufferInfo();
@@ -320,7 +320,7 @@ auto ShadowMapPass::createPipeline(Device &device, ShadowMapSetting &setting) ->
 }
 
 void ShadowMapPass::execute(RenderContext &ctx, Resources &resources) {
-  auto cb = ctx.graphics;
+  auto cb = ctx.cb;
 
   auto drawInfos = resources.get(cullPassOut.drawInfos);
   auto setting = resources.get(passIn.shadowMapSetting);

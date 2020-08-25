@@ -8,7 +8,7 @@ void DeferredPass::execute(RenderContext &ctx, Resources &resources) {
 
   auto &frame = frames[ctx.frameIndex];
 
-  auto cb = ctx.graphics;
+  auto cb = ctx.cb;
   image::transitTo(
     cb, *frame.backImg, vk::ImageLayout::eColorAttachmentOptimal,
     vk::AccessFlagBits::eColorAttachmentWrite,

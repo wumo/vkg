@@ -79,7 +79,8 @@ vec3 atmosphereLight(vec3 pos, vec3 normal, vec3 eye) {
   //    eye - earth_center.xyz, pos - earth_center.xyz, 0, sun_direction.xyz, transmittance);
   //  radiance = radiance * transmittance + in_scatter;
   //TODO verify this conversion is needed
-  return SRGBtoLINEAR(vec3(1.0) - exp(-radiance / white_point.rgb * exposure));
+  return sun_intensity *
+         (SRGBtoLINEAR(vec3(1.0) - exp(-radiance / white_point.rgb * exposure)));
 }
 
 vec3 skyBackground(vec3 eye, vec3 viewDir) {
@@ -119,7 +120,8 @@ vec3 skyBackground(vec3 eye, vec3 viewDir) {
   if(dot(viewDir, sun_direction.xyz) > sun_size.y) {
     radiance = radiance + transmittance * GetSolarLuminance();
   }
-  return SRGBtoLINEAR(vec3(1.0) - exp(-radiance / white_point.rgb * exposure));
+  return sun_intensity *
+         (SRGBtoLINEAR(vec3(1.0) - exp(-radiance / white_point.rgb * exposure)));
 }
 
 #endif //VKG_ATMOSPHERE_LIGHTING_H

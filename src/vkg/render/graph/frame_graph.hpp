@@ -213,8 +213,7 @@ struct RenderContext {
   uint32_t swapchainIndex{};
   uint32_t frameIndex{};
   uint32_t numFrames{};
-  vk::CommandBuffer graphics;
-  vk::CommandBuffer compute;
+  vk::CommandBuffer cb;
 };
 
 class FrameGraph {

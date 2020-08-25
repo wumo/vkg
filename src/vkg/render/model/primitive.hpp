@@ -38,9 +38,10 @@ public:
   virtual auto type() const -> DynamicType;
   virtual auto descOffset() const -> uint32_t;
 
-  auto update(std::span<Vertex::Position> positions, std::span<Vertex::Normal> normals)
-    -> void;
-  auto update(PrimitiveBuilder &builder) -> void;
+  auto update(
+    uint32_t queueIdx, std::span<Vertex::Position> positions,
+    std::span<Vertex::Normal> normals) -> void;
+  auto update(uint32_t queueIdx, PrimitiveBuilder &builder) -> void;
 
 protected:
   Scene &scene;

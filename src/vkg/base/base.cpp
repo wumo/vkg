@@ -52,24 +52,9 @@ auto Base::createSyncObjects() -> void {
   vk::FenceCreateInfo fenceInfo{vk::FenceCreateFlagBits::eSignaled};
   for(uint32_t i = 0; i < numFrames; i++) {
     semaphoreSyncs[i].imageAvailable = _device.createSemaphoreUnique({});
-    semaphoreSyncs[i].computeFinished = _device.createSemaphoreUnique({});
-    semaphoreSyncs[i].readyToCompute = _device.createSemaphoreUnique({});
     semaphoreSyncs[i].renderFinished = _device.createSemaphoreUnique({});
 
-    if(i == 0) { // first frame requires computeFinished
-      vk::SubmitInfo submit;
-      submit.signalSemaphoreCount = 1;
-      submit.pSignalSemaphores = semaphoreSyncs[i].computeFinished.operator->();
-      device_->computeQueue().submit(submit, {});
-    } else { // following frames require readyToCompute
-      vk::SubmitInfo submit;
-      submit.signalSemaphoreCount = 1;
-      submit.pSignalSemaphores = semaphoreSyncs[i].readyToCompute.operator->();
-      device_->computeQueue().submit(submit, {});
-    }
-
     semaphoreSyncs[i].resourcesFence = _device.createFenceUnique(fenceInfo);
-    if(i != 0) _device.resetFences(semaphoreSyncs[i].resourcesFence.get());
   }
 
   timelineSyncs.resize(numFrames);
@@ -78,22 +63,20 @@ auto Base::createSyncObjects() -> void {
     vk::SemaphoreCreateInfo createInfo{};
     createInfo.pNext = &timelineCreateInfo;
     timelineSyncs[i].semaphore = _device.createSemaphoreUnique(createInfo);
+    timelineSyncs[i].wsiImageAvailable = _device.createSemaphoreUnique({});
+    timelineSyncs[i].wsiReadyToPresent = _device.createSemaphoreUnique({});
   }
 }
 
 auto Base::createCommandBuffers() -> void {
   auto _device = device_->vkDevice();
   vk::CommandBufferAllocateInfo info{
-    device_->graphicsCmdPool(), vk::CommandBufferLevel::ePrimary,
+    device_->cmdPool(), vk::CommandBufferLevel::ePrimary,
     uint32_t(swapchain_->imageCount())};
-  graphicsCmdBuffers = _device.allocateCommandBuffers(info);
-  info.commandPool = device_->computeCmdPool();
-  computeCmdBuffers = _device.allocateCommandBuffers(info);
+  cmdBuffers = _device.allocateCommandBuffers(info);
   for(auto i = 0u; i < uint32_t(swapchain_->imageCount()); ++i) {
-    graphicsCmdBuffers[i].begin({vk::CommandBufferUsageFlagBits::eSimultaneousUse});
-    graphicsCmdBuffers[i].end();
-    computeCmdBuffers[i].begin({vk::CommandBufferUsageFlagBits::eSimultaneousUse});
-    computeCmdBuffers[i].end();
+    cmdBuffers[i].begin({vk::CommandBufferUsageFlagBits::eSimultaneousUse});
+    cmdBuffers[i].end();
   }
 }
 
@@ -102,16 +85,13 @@ auto Base::resize() -> void {
   swapchain_->resize(window_->width(), window_->height(), window_->isVsync());
   //empty cb for syncReverse
   for(auto i = 0u; i < uint32_t(swapchain_->imageCount()); ++i) {
-    graphicsCmdBuffers[i].begin({vk::CommandBufferUsageFlagBits::eSimultaneousUse});
-    graphicsCmdBuffers[i].end();
-    computeCmdBuffers[i].begin({vk::CommandBufferUsageFlagBits::eSimultaneousUse});
-    computeCmdBuffers[i].end();
+    cmdBuffers[i].begin({vk::CommandBufferUsageFlagBits::eSimultaneousUse});
+    cmdBuffers[i].end();
   }
 }
 
 void Base::onFrame(uint32_t imageIndex, float elapsed) {
-  auto &graphicsCB = graphicsCmdBuffers[frameIndex];
-  auto &computeCB = computeCmdBuffers[frameIndex];
+  auto &graphicsCB = cmdBuffers[frameIndex];
 
   auto image = swapchain_->image(imageIndex);
   image::setLayout(
@@ -119,7 +99,7 @@ void Base::onFrame(uint32_t imageIndex, float elapsed) {
     vk::AccessFlagBits::eTransferWrite, vk::AccessFlagBits::eMemoryRead);
 }
 
-void Base::loop(const std::function<void(double)> &updater) {
+void Base::loop(const std::function<void(uint32_t, double)> &updater) {
   onInit();
   auto start = std::chrono::high_resolution_clock::now();
   while(!window_->windowShouldClose()) {
@@ -137,8 +117,8 @@ void Base::loop(const std::function<void(double)> &updater) {
     start = end;
 
     fpsMeter.update(elapsed);
-    syncReverse(elapsed, updater);
-    //        syncTimeline(elapsed, updater);
+    //    syncSemaphore(elapsed, updater);
+    syncTimeline(elapsed, updater);
   }
 
   device_->vkDevice().waitIdle();
@@ -147,16 +127,16 @@ void Base::loop(const std::function<void(double)> &updater) {
 
 auto Base::window() -> Window & { return *window_; }
 void Base::loop(Updater updater, void *data) {
-  loop([&](double elapsed) { updater(elapsed, data); });
+  loop([&](uint32_t frameIdx, double elapsed) { updater(frameIdx, elapsed, data); });
 }
 void Base::loop(CallFrameUpdater &updater) {
-  loop([&](double elapsed) { updater.update(elapsed); });
+  loop([&](uint32_t frameIdx, double elapsed) { updater.update(frameIdx, elapsed); });
 }
 auto Base::device() -> Device & { return *device_; }
 auto Base::swapchain() -> Swapchain & { return *swapchain_; }
 
-auto Base::syncReverse(double elapsed, const std::function<void(double)> &updater)
-  -> void {
+auto Base::syncSemaphore(
+  double elapsed, const std::function<void(uint32_t, double)> &updater) -> void {
   vk::SubmitInfo submit;
   std::vector<vk::PipelineStageFlags> waitStages;
   std::vector<vk::Semaphore> waitSemaphores;
@@ -181,139 +161,84 @@ auto Base::syncReverse(double elapsed, const std::function<void(double)> &update
     if(result == vk::Result::eSuboptimalKHR) resize();
   } catch(const vk::OutOfDateKHRError &) { resize(); }
 
-  auto graphicsCB = graphicsCmdBuffers[frameIndex];
+  auto cb = cmdBuffers[frameIndex];
 
-  waitStages.insert(
-    waitStages.end(), {vkStage::eColorAttachmentOutput, vkStage::eComputeShader});
-  waitSemaphores.insert(
-    waitSemaphores.end(), {*semaphore.imageAvailable, *semaphore.computeFinished});
-  signalSemaphores.insert(
-    signalSemaphores.end(), {*semaphore.readyToCompute, *semaphore.renderFinished});
+  cb.begin({vk::CommandBufferUsageFlagBits::eSimultaneousUse});
+
+  updater(frameIndex, elapsed);
+  onFrame(imageIndex, float(elapsed));
+
+  cb.end();
+
+  waitStages.insert(waitStages.end(), {vkStage::eAllCommands});
+  waitSemaphores.insert(waitSemaphores.end(), {*semaphore.imageAvailable});
+  signalSemaphores.insert(signalSemaphores.end(), {*semaphore.renderFinished});
 
   submit.commandBufferCount = 1;
-  submit.pCommandBuffers = &graphicsCB;
+  submit.pCommandBuffers = &cb;
   submit.waitSemaphoreCount = uint32_t(waitSemaphores.size());
   submit.pWaitSemaphores = waitSemaphores.data();
   submit.pWaitDstStageMask = waitStages.data();
   submit.signalSemaphoreCount = uint32_t(signalSemaphores.size());
   submit.pSignalSemaphores = signalSemaphores.data();
-  device_->graphicsQueue().submit(submit, {});
+  device_->queues()[frameIndex].submit(submit, resourcesFence);
 
   try {
-    auto result = swapchain_->present(imageIndex, *semaphore.renderFinished);
+    auto result = swapchain_->present(frameIndex, imageIndex, *semaphore.renderFinished);
     if(result == vk::Result::eSuboptimalKHR) resize();
   } catch(const vk::OutOfDateKHRError &) { resize(); }
 
   frameIndex = (frameIndex + 1) % swapchain_->imageCount();
-
-  graphicsCB = graphicsCmdBuffers[frameIndex];
-  auto computeCB = computeCmdBuffers[frameIndex];
-
-  computeCB.begin({vk::CommandBufferUsageFlagBits::eSimultaneousUse});
-  graphicsCB.begin({vk::CommandBufferUsageFlagBits::eSimultaneousUse});
-
-  updater(elapsed);
-  onFrame(imageIndex, float(elapsed));
-
-  computeCB.end();
-  graphicsCB.end();
-
-  // Wait for rendering finished. TODO have to submit compute cmd after graphics cmd to resolve buffer sync problem. duno why.
-  waitStages.clear();
-  waitSemaphores.clear();
-  signalSemaphores.clear();
-  waitStages.emplace_back(vkStage::eComputeShader);
-  waitSemaphores.emplace_back(*semaphoreSyncs[frameIndex].readyToCompute);
-  signalSemaphores.emplace_back(*semaphoreSyncs[frameIndex].computeFinished);
-
-  submit.commandBufferCount = 1;
-  submit.pCommandBuffers = &computeCB;
-  submit.waitSemaphoreCount = uint32_t(waitSemaphores.size());
-  submit.pWaitSemaphores = waitSemaphores.data();
-  submit.pWaitDstStageMask = waitStages.data();
-  submit.signalSemaphoreCount = uint32_t(signalSemaphores.size());
-  submit.pSignalSemaphores = signalSemaphores.data();
-  device_->computeQueue().submit(submit, {*semaphoreSyncs[frameIndex].resourcesFence});
 }
 
-/**
- * TODO this method cannot ensure the memory sync between async compute queue and graphics queue
- */
-auto Base::syncTimeline(double elapsed, const std::function<void(double)> &updater)
-  -> void {
+auto Base::syncTimeline(
+  double elapsed, const std::function<void(uint32_t, double)> &updater) -> void {
   auto dev = device_->vkDevice();
-  auto &tSemaphore = timelineSyncs[frameIndex];
-  auto &semaphore = semaphoreSyncs[frameIndex];
+  auto &timelineSync = timelineSyncs[frameIndex];
 
   vk::SemaphoreWaitInfo waitInfo{
-    {}, 1, tSemaphore.semaphore.operator->(), &tSemaphore.waitValue};
+    {}, 1, timelineSync.semaphore.operator->(), &timelineSync.waitValue};
 
   dev.waitSemaphores(waitInfo, UINT64_MAX);
 
   /**
-   * imageIndex is the index of available swapchain image. frameIndex is the ring index of frame.
-   * we should depend on frameIndex to ring index our buffers and render into imageIndex swapchain image.
-   */
+     * imageIndex is the index of available swapchain image. frameIndex is the ring index of frame.
+     * we should depend on frameIndex to ring index our buffers and render into imageIndex swapchain image.
+     */
   uint32_t imageIndex = 0;
   try {
-    auto result = swapchain_->acquireNextImage(*semaphore.imageAvailable, imageIndex);
+    auto result =
+      swapchain_->acquireNextImage(*timelineSync.wsiImageAvailable, imageIndex);
     if(result == vk::Result::eSuboptimalKHR) resize();
   } catch(const vk::OutOfDateKHRError &) { resize(); }
 
-  auto graphicsCB = graphicsCmdBuffers[frameIndex];
-  auto computeCB = computeCmdBuffers[frameIndex];
+  auto cb = cmdBuffers[frameIndex];
 
-  computeCB.begin({vk::CommandBufferUsageFlagBits::eSimultaneousUse});
-  graphicsCB.begin({vk::CommandBufferUsageFlagBits::eSimultaneousUse});
+  cb.begin({vk::CommandBufferUsageFlagBits::eSimultaneousUse});
 
-  updater(elapsed);
+  updater(frameIndex, elapsed);
   onFrame(imageIndex, float(elapsed));
 
-  computeCB.end();
-  graphicsCB.end();
+  cb.end();
 
-  const auto lastRenderFinishedValue = tSemaphore.waitValue;
-  const auto computeFinishedValue = lastRenderFinishedValue + 1;
-  const auto renderFinishedValue = computeFinishedValue + 1;
+  const auto lastRenderFinishedValue = timelineSync.waitValue;
+  const auto renderFinishedValue = lastRenderFinishedValue + 1;
 
-  tSemaphore.waitValue = renderFinishedValue;
+  timelineSync.waitValue = renderFinishedValue;
 
   vk::SubmitInfo submit;
-  vk::TimelineSemaphoreSubmitInfo timelineInfo;
-  std::vector<vk::PipelineStageFlags> waitStages;
-  std::vector<vk::Semaphore> waitSemaphores;
-  std::vector<vk::Semaphore> signalSemaphores;
-
-  //compute
-
-  timelineInfo.waitSemaphoreValueCount = 1;
-  timelineInfo.pWaitSemaphoreValues = &lastRenderFinishedValue;
-  timelineInfo.signalSemaphoreValueCount = 1;
-  timelineInfo.pSignalSemaphoreValues = &computeFinishedValue;
-
-  waitSemaphores = {tSemaphore.semaphore.get()};
-  waitStages = {vk::PipelineStageFlagBits::eComputeShader};
-  signalSemaphores = {tSemaphore.semaphore.get()};
-  submit.pNext = &timelineInfo;
-  submit.waitSemaphoreCount = uint32_t(waitSemaphores.size());
-  submit.pWaitSemaphores = waitSemaphores.data();
-  submit.pWaitDstStageMask = waitStages.data();
-  submit.signalSemaphoreCount = uint32_t(signalSemaphores.size());
-  submit.pSignalSemaphores = signalSemaphores.data();
-  submit.commandBufferCount = 1;
-  submit.pCommandBuffers = &computeCB;
-  device_->computeQueue().submit(submit, nullptr);
-
-  // graphics
-
-  waitSemaphores = {tSemaphore.semaphore.get(), semaphore.imageAvailable.get()};
-  waitStages = {
-    vk::PipelineStageFlagBits::eAllGraphics,
+  std::vector<vk::PipelineStageFlags> waitStages{
+    vk::PipelineStageFlagBits::eAllCommands,
     vk::PipelineStageFlagBits::eColorAttachmentOutput};
-  std::array<uint64_t, 2> waitValues{computeFinishedValue, 0};
-  signalSemaphores = {tSemaphore.semaphore.get(), semaphore.renderFinished.get()};
+  std::vector<vk::Semaphore> waitSemaphores{
+    timelineSync.semaphore.get(), timelineSync.wsiImageAvailable.get()};
+  std::array<uint64_t, 2> waitValues{lastRenderFinishedValue, 0};
+
+  std::vector<vk::Semaphore> signalSemaphores{
+    timelineSync.semaphore.get(), timelineSync.wsiReadyToPresent.get()};
   std::array<uint64_t, 2> signalValues{renderFinishedValue, 0};
 
+  vk::TimelineSemaphoreSubmitInfo timelineInfo;
   timelineInfo.waitSemaphoreValueCount = uint32_t(waitValues.size());
   timelineInfo.pWaitSemaphoreValues = waitValues.data();
   timelineInfo.signalSemaphoreValueCount = uint32_t(signalValues.size());
@@ -326,15 +251,15 @@ auto Base::syncTimeline(double elapsed, const std::function<void(double)> &updat
   submit.signalSemaphoreCount = uint32_t(signalSemaphores.size());
   submit.pSignalSemaphores = signalSemaphores.data();
   submit.commandBufferCount = 1;
-  submit.pCommandBuffers = &graphicsCB;
-  device_->graphicsQueue().submit(submit, nullptr);
+  submit.pCommandBuffers = &cb;
+  device_->queues()[frameIndex].submit(submit, nullptr);
 
   try {
-    auto result = swapchain_->present(imageIndex, *semaphore.renderFinished);
+    auto result =
+      swapchain_->present(frameIndex, imageIndex, *timelineSync.wsiReadyToPresent);
     if(result == vk::Result::eSuboptimalKHR) resize();
   } catch(const vk::OutOfDateKHRError &) { resize(); }
 
   frameIndex = (frameIndex + 1) % swapchain_->imageCount();
-  //  dev.waitIdle();
 }
 }

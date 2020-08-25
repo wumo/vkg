@@ -56,15 +56,17 @@ auto makeDepthStencilInputAtt(
   -> std::unique_ptr<Texture>;
 
 auto load2DFromFile(
-  const std::string &name, Device &device, const std::string &file, bool mipmap = false,
-  vk::Format format = vk::Format::eR8G8B8A8Unorm) -> std::unique_ptr<Texture>;
+  uint32_t queueIdx, const std::string &name, Device &device, const std::string &file,
+  bool mipmap = false, vk::Format format = vk::Format::eR8G8B8A8Unorm)
+  -> std::unique_ptr<Texture>;
 
 auto load2DFromGrayScaleFile(
-  const std::string &name, Device &device, const std::string &file, bool mipmap = false,
-  vk::Format format = vk::Format::eR16Sfloat) -> std::unique_ptr<Texture>;
+  uint32_t queueIdx, const std::string &name, Device &device, const std::string &file,
+  bool mipmap = false, vk::Format format = vk::Format::eR16Sfloat)
+  -> std::unique_ptr<Texture>;
 
 auto load2DFromBytes(
-  const std::string &name, Device &device, std::span<std::byte> bytes, uint32_t texWidth,
-  uint32_t texHeight, bool mipmap = false, vk::Format format = vk::Format::eR8G8B8A8Unorm)
-  -> std::unique_ptr<Texture>;
+  uint32_t queueIdx, const std::string &name, Device &device, std::span<std::byte> bytes,
+  uint32_t texWidth, uint32_t texHeight, bool mipmap = false,
+  vk::Format format = vk::Format::eR8G8B8A8Unorm) -> std::unique_ptr<Texture>;
 }

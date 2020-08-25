@@ -64,7 +64,7 @@ void ComputeTransf::execute(RenderContext &ctx, Resources &resources) {
   totalGroup = uint32_t(totalGroup / double(dy));
   auto dz = std::min(std::max(totalGroup, 1u), maxCG[1]);
 
-  auto cb = ctx.compute;
+  auto cb = ctx.cb;
   ctx.device.begin(cb, "compute transform");
   cb.bindPipeline(vk::PipelineBindPoint::eCompute, *pipe);
   cb.bindDescriptorSets(

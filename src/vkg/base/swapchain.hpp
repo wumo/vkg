@@ -11,7 +11,8 @@ public:
   auto resize(uint32_t width, uint32_t height, bool vsync) -> void;
 
   auto acquireNextImage(vk::Semaphore imageAvailable, uint32_t &imageIndex) -> vk::Result;
-  auto present(uint32_t imageIndex, vk::Semaphore renderFinished) -> vk::Result;
+  auto present(uint32_t frameIdx, uint32_t imageIdx, vk::Semaphore renderFinished)
+    -> vk::Result;
 
   auto imageCount() const -> uint32_t;
   auto image(uint32_t index) const -> vk::Image;
@@ -28,15 +29,13 @@ private:
   vk::Device vkDevice;
   vk::SurfaceKHR surface;
 
-  uint32_t graphicsIndex, presentIndex;
+  std::span<vk::Queue> queues;
 
   vk::PresentModeKHR presentMode;
-  vk::Queue presentQueue;
   vk::SurfaceFormatKHR surfaceFormat;
 
   vk::UniqueSwapchainKHR swapchain;
 
-  uint32_t imageCount_{};
   vk::Extent2D extent_;
   std::vector<vk::Image> images;
   std::vector<vk::UniqueImageView> imageViews;

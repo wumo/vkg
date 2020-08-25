@@ -4,16 +4,11 @@ namespace vkg::buffer {
 auto devBuffer(
   Device &device, const vk::BufferUsageFlags &usage, vk::DeviceSize sizeInBytes,
   const std::string &name) -> std::unique_ptr<Buffer> {
-  vk::SharingMode sharingMode = vk::SharingMode::eExclusive;
-  uint32_t queueFamilyIndexCount = 0;
-  uint32_t queueFamilyIndices[]{device.graphicsIndex(), device.computeIndex()};
-  if(device.graphicsIndex() != device.computeIndex()) {
-    sharingMode = vk::SharingMode::eConcurrent;
-    queueFamilyIndexCount = 2;
-  }
   vk::BufferCreateInfo info{
-    {},          sizeInBytes,           usage | vk::BufferUsageFlagBits::eTransferDst,
-    sharingMode, queueFamilyIndexCount, queueFamilyIndices};
+    {},
+    sizeInBytes,
+    usage | vk::BufferUsageFlagBits::eTransferDst,
+    vk::SharingMode::eExclusive};
   VmaAllocationCreateInfo allocInfo{{}, VMA_MEMORY_USAGE_GPU_ONLY};
   auto buffer = std::make_unique<Buffer>(device, info, allocInfo, name);
   return buffer;
@@ -22,16 +17,11 @@ auto devBuffer(
 auto hostCoherentBuffer(
   Device &device, const vk::BufferUsageFlags &usage, vk::DeviceSize sizeInBytes,
   VmaMemoryUsage memoryUsage, const std::string &name) -> std::unique_ptr<Buffer> {
-  vk::SharingMode sharingMode = vk::SharingMode::eExclusive;
-  uint32_t queueFamilyIndexCount = 0;
-  uint32_t queueFamilyIndices[]{device.graphicsIndex(), device.computeIndex()};
-  if(device.graphicsIndex() != device.computeIndex()) {
-    sharingMode = vk::SharingMode::eConcurrent;
-    queueFamilyIndexCount = 2;
-  }
   vk::BufferCreateInfo info{
-    {},          sizeInBytes,           usage | vk::BufferUsageFlagBits::eTransferSrc,
-    sharingMode, queueFamilyIndexCount, queueFamilyIndices};
+    {},
+    sizeInBytes,
+    usage | vk::BufferUsageFlagBits::eTransferSrc,
+    vk::SharingMode::eExclusive};
   VmaAllocationCreateInfo allocInfo{
     VMA_ALLOCATION_CREATE_MAPPED_BIT, memoryUsage, VK_MEMORY_PROPERTY_HOST_COHERENT_BIT};
   auto buffer = std::make_unique<Buffer>(device, info, allocInfo, name);
@@ -236,17 +226,19 @@ void updateBytes(
 }
 
 void upload(
-  Buffer &buffer, const void *value, vk::DeviceSize sizeInBytes,
+  uint32_t queueIdx, Buffer &buffer, const void *value, vk::DeviceSize sizeInBytes,
   vk::DeviceSize dstOffsetInBytes) {
   if(sizeInBytes == 0) return;
   auto &device = buffer.device();
   auto tmp =
     hostBuffer(buffer.device(), vk::BufferUsageFlagBits::eTransferSrc, sizeInBytes);
   updateBytes(*tmp, value, sizeInBytes);
-  device.execSyncInGraphicsQueue([&](vk::CommandBuffer cb) {
-    vk::BufferCopy copy{0, dstOffsetInBytes, sizeInBytes};
-    cb.copyBuffer(tmp->bufferInfo().buffer, buffer.bufferInfo().buffer, copy);
-  });
+  device.execSync(
+    [&](vk::CommandBuffer cb) {
+      vk::BufferCopy copy{0, dstOffsetInBytes, sizeInBytes};
+      cb.copyBuffer(tmp->bufferInfo().buffer, buffer.bufferInfo().buffer, copy);
+    },
+    queueIdx);
 }
 
 }

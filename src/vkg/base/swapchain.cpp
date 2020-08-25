@@ -44,17 +44,12 @@ Swapchain::Swapchain(
     physicalDevice{device.physicalDevice()},
     vkDevice{device.vkDevice()},
     surface{surface},
-    graphicsIndex{device.graphicsIndex()},
-    presentIndex{device.presentIndex()} {
+    queues{device.queues()} {
 
   auto presentModes = physicalDevice.getSurfacePresentModesKHR(surface);
   presentMode = choosePresentMode(presentModes, windowConfig.vsync);
   auto formats = physicalDevice.getSurfaceFormatsKHR(surface);
   surfaceFormat = chooseSurfaceFormat(formats);
-  presentQueue = device.presentQueue();
-
-  auto cap = physicalDevice.getSurfaceCapabilitiesKHR(surface);
-  imageCount_ = std::clamp(2u, cap.minImageCount, cap.maxImageCount);
 }
 auto Swapchain::resize(uint32_t width, uint32_t height, bool vsync) -> void {
   auto cap = physicalDevice.getSurfaceCapabilitiesKHR(surface);
@@ -62,7 +57,7 @@ auto Swapchain::resize(uint32_t width, uint32_t height, bool vsync) -> void {
 
   vk::SwapchainCreateInfoKHR info;
   info.surface = surface;
-  info.minImageCount = imageCount_;
+  info.minImageCount = uint32_t(queues.size()); //align with device queue
   info.imageFormat = surfaceFormat.format;
   info.imageColorSpace = surfaceFormat.colorSpace;
   info.imageExtent = extent_;
@@ -71,13 +66,7 @@ auto Swapchain::resize(uint32_t width, uint32_t height, bool vsync) -> void {
                     vk::ImageUsageFlagBits::eStorage |
                     vk::ImageUsageFlagBits::eTransferDst;
 
-  uint32_t queueFamilyIndices[]{graphicsIndex, presentIndex};
-  if(graphicsIndex != presentIndex) {
-    info.imageSharingMode = vk::SharingMode::eConcurrent;
-    info.queueFamilyIndexCount = 2;
-    info.pQueueFamilyIndices = queueFamilyIndices;
-  } else
-    info.imageSharingMode = vk::SharingMode::eExclusive;
+  info.imageSharingMode = vk::SharingMode::eExclusive;
 
   info.preTransform = cap.currentTransform;
   info.compositeAlpha = vk::CompositeAlphaFlagBitsKHR::eOpaque;
@@ -90,20 +79,22 @@ auto Swapchain::resize(uint32_t width, uint32_t height, bool vsync) -> void {
   images = vkDevice.getSwapchainImagesKHR(*swapchain);
   imageViews.resize(images.size());
   errorIf(
-    images.size() != imageCount_,
+    images.size() != queues.size(),
     "newly created swapchain's imageCount != old imageCount!");
-  for(auto i = 0u; i < imageCount_; i++) {
+  for(auto i = 0u; i < uint32_t(queues.size()); i++) {
     vk::ImageViewCreateInfo imageViewInfo;
     imageViewInfo.image = images[i];
     imageViewInfo.viewType = vk::ImageViewType::e2D;
     imageViewInfo.format = surfaceFormat.format;
     imageViewInfo.subresourceRange = {vk::ImageAspectFlagBits::eColor, 0, 1, 0, 1};
     imageViews[i] = vkDevice.createImageViewUnique(imageViewInfo);
-    device.execSyncInGraphicsQueue([&](vk::CommandBuffer cb) {
-      image::setLayout(
-        cb, images[i], vk::ImageLayout::eUndefined, vk::ImageLayout::ePresentSrcKHR,
-        vk::AccessFlagBits::eTransferWrite, vk::AccessFlagBits::eMemoryRead);
-    });
+    device.execSync(
+      [&](vk::CommandBuffer cb) {
+        image::setLayout(
+          cb, images[i], vk::ImageLayout::eUndefined, vk::ImageLayout::ePresentSrcKHR,
+          vk::AccessFlagBits::eTransferWrite, vk::AccessFlagBits::eMemoryRead);
+      },
+      i);
   }
   version_++;
 }
@@ -115,17 +106,18 @@ auto Swapchain::acquireNextImage(vk::Semaphore imageAvailable, uint32_t &imageIn
     &imageIndex);
 }
 
-auto Swapchain::present(uint32_t imageIndex, vk::Semaphore renderFinished) -> vk::Result {
+auto Swapchain::present(
+  uint32_t frameIdx, uint32_t imageIdx, vk::Semaphore renderFinished) -> vk::Result {
   vk::PresentInfoKHR presentInfo;
   presentInfo.waitSemaphoreCount = 1;
   presentInfo.pWaitSemaphores = &renderFinished;
   presentInfo.swapchainCount = 1;
   presentInfo.pSwapchains = &(*swapchain);
-  presentInfo.pImageIndices = &imageIndex;
+  presentInfo.pImageIndices = &imageIdx;
 
-  return presentQueue.presentKHR(presentInfo);
+  return queues[frameIdx].presentKHR(presentInfo);
 }
-auto Swapchain::imageCount() const -> uint32_t { return imageCount_; }
+auto Swapchain::imageCount() const -> uint32_t { return uint32_t(queues.size()); }
 auto Swapchain::image(uint32_t index) const -> vk::Image { return images[index]; }
 auto Swapchain::imageView(uint32_t index) const -> vk::ImageView {
   return *imageViews[index];

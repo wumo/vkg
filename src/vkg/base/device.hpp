@@ -4,13 +4,9 @@
 #include <tuple>
 #include <functional>
 #include "instance.hpp"
+#include <span>
 
 namespace vkg {
-struct QueueInfo {
-  /**queue family index*/
-  uint32_t index{VK_QUEUE_FAMILY_IGNORED};
-  vk::Queue queue;
-};
 
 class Device {
 public:
@@ -23,11 +19,8 @@ public:
 
   Device(Instance &instance, vk::SurfaceKHR surface, FeatureConfig featureConfig = {});
 
-  void execSyncInGraphicsQueue(
-    const std::function<void(vk::CommandBuffer cb)> &func,
-    uint64_t timeout = std::numeric_limits<uint64_t>::max());
-  void execSyncInComputeQueue(
-    const std::function<void(vk::CommandBuffer cb)> &func,
+  void execSync(
+    const std::function<void(vk::CommandBuffer cb)> &func, uint32_t queueIdx,
     uint64_t timeout = std::numeric_limits<uint64_t>::max());
 
   auto physicalDevice() -> vk::PhysicalDevice;
@@ -36,20 +29,11 @@ public:
   operator vk::Device();
   auto vkDevice() -> vk::Device;
   auto allocator() -> VmaAllocator;
-  auto graphicsCmdPool() -> vk::CommandPool;
-  auto graphicsIndex() const -> uint32_t;
-  auto graphicsQueue() const -> vk::Queue;
-  auto presentCmdPool() -> vk::CommandPool;
-  auto presentIndex() const -> uint32_t;
-  auto presentQueue() const -> vk::Queue;
-  auto computeCmdPool() -> vk::CommandPool;
-  auto computeIndex() const -> uint32_t;
-  auto computeQueue() const -> vk::Queue;
-  auto transferCmdPool() -> vk::CommandPool;
-  auto transferIndex() const -> uint32_t;
-  auto transferQueue() const -> vk::Queue;
   auto rayTracingProperties() -> const vk::PhysicalDeviceRayTracingPropertiesNV &;
   auto multiviewProperties() -> const vk::PhysicalDeviceMultiviewProperties &;
+
+  auto queues() -> std::span<vk::Queue>;
+  auto cmdPool() -> vk::CommandPool;
 
   void name(vk::Buffer object, const std::string &markerName);
   void name(vk::Image object, const std::string &markerName);
@@ -89,17 +73,13 @@ private:
   vk::PhysicalDeviceRayTracingPropertiesNV rayTracingProperties_;
   vk::PhysicalDeviceMultiviewProperties multiviewProperties_;
 
-  vk::UniqueCommandPool graphicsCmdPool_;
-  QueueInfo graphics_;
-  vk::UniqueCommandPool presentCmdPool_;
-  QueueInfo present_;
-  vk::UniqueCommandPool computeCmdPool_;
-  QueueInfo compute_;
-  vk::UniqueCommandPool transferCmdPool_;
-  QueueInfo transfer_;
+  uint32_t queueFamily{VK_QUEUE_FAMILY_IGNORED};
+  uint32_t queueCount{0};
+  std::vector<vk::Queue> queues_;
+  vk::UniqueCommandPool cmdPool_;
 
 private:
-  void findQueueFamily(FeatureConfig featureConfig);
+  auto findQueueFamily() -> uint32_t;
   void createAllocator();
 };
 }

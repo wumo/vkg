@@ -43,7 +43,7 @@ public:
     auto desc = camera->desc();
     auto bufInfo = camBuffers[ctx.frameIndex]->bufferInfo();
     desc.frame = ctx.frameIndex;
-    auto cb = ctx.graphics;
+    auto cb = ctx.cb;
     ctx.device.begin(cb, "update camera");
     cb.updateBuffer(bufInfo.buffer, bufInfo.offset, sizeof(desc), &desc);
     cb.pipelineBarrier(

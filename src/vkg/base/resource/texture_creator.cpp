@@ -178,8 +178,8 @@ auto makeDepthStencilInputAtt(
 }
 
 auto load2DFromFile(
-  const std::string &name, Device &device, const std::string &file, bool mipmap,
-  vk::Format format) -> std::unique_ptr<Texture> {
+  uint32_t queueIdx, const std::string &name, Device &device, const std::string &file,
+  bool mipmap, vk::Format format) -> std::unique_ptr<Texture> {
   uint32_t texWidth, texHeight, texChannels;
   auto pixels = UniqueBytes(
     stbi_load(
@@ -191,24 +191,25 @@ auto load2DFromFile(
   errorIf(pixels == nullptr, "failed to load texture ", file);
   auto texture = makeSampler2DTex(name, device, texWidth, texHeight, format, mipmap);
   auto imageSize = texWidth * texHeight * STBI_rgb_alpha * sizeof(stbi_uc);
-  upload(*texture, {(std::byte *)(pixels.get()), imageSize}, !mipmap);
-  if(mipmap) generateMipmap(*texture);
+  upload(queueIdx, *texture, {(std::byte *)(pixels.get()), imageSize}, !mipmap);
+  if(mipmap) generateMipmap(queueIdx, *texture);
   return texture;
 }
 
 auto load2DFromGrayScaleFile(
-  const std::string &name, Device &device, const std::string &file, bool mipmap,
-  vk::Format format) -> std::unique_ptr<Texture> {
+  uint32_t queueIdx, const std::string &name, Device &device, const std::string &file,
+  bool mipmap, vk::Format format) -> std::unique_ptr<Texture> {
   return std::unique_ptr<Texture>();
 }
 
 auto load2DFromBytes(
-  const std::string &name, Device &device, std::span<std::byte> bytes, uint32_t texWidth,
-  uint32_t texHeight, bool mipmap, vk::Format format) -> std::unique_ptr<Texture> {
+  uint32_t queueIdx, const std::string &name, Device &device, std::span<std::byte> bytes,
+  uint32_t texWidth, uint32_t texHeight, bool mipmap, vk::Format format)
+  -> std::unique_ptr<Texture> {
   auto texture = makeSampler2DTex(name, device, texWidth, texHeight, format, mipmap);
-  upload(*texture, bytes, !mipmap);
+  upload(queueIdx, *texture, bytes, !mipmap);
   //  upload(*texture, pixels.get(), imageSize, !mipmap);
-  if(mipmap) generateMipmap(*texture);
+  if(mipmap) generateMipmap(queueIdx, *texture);
   return texture;
 }
 }

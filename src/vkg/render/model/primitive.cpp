@@ -31,14 +31,15 @@ auto Primitive::setAABB(const AABB &aabb) -> void {
   desc.ptr->aabb = aabb;
 }
 auto Primitive::update(
-  std::span<Vertex::Position> positions, std::span<Vertex::Normal> normals) -> void {
+  uint32_t queueIdx, std::span<Vertex::Position> positions,
+  std::span<Vertex::Normal> normals) -> void {
   errorIf(
     type_ != DynamicType::Dynamic,
     "only Dynamic type primitive can be updated using this function");
-  scene.Dev.positions->update(position_, positions);
-  scene.Dev.normals->update(normal_, normals);
+  scene.Dev.positions->update(queueIdx, position_, positions);
+  scene.Dev.normals->update(queueIdx, normal_, normals);
 }
-auto Primitive::update(PrimitiveBuilder &builder) -> void {
+auto Primitive::update(uint32_t queueIdx, PrimitiveBuilder &builder) -> void {
   errorIf(
     builder.primitives().size() != 1, "need only 1 primitive, but got ",
     builder.primitives().size());
@@ -51,7 +52,7 @@ auto Primitive::update(PrimitiveBuilder &builder) -> void {
     "updated positions.size != original.positions.size");
   errorIf(p.normal.size != normal_.size, "updated normals.size != original.normals.size");
   update(
-    builder.positions().subspan(p.position.start, p.position.size),
+    queueIdx, builder.positions().subspan(p.position.start, p.position.size),
     builder.normals().subspan(p.normal.start, p.normal.size));
   setAABB(p.aabb);
 }

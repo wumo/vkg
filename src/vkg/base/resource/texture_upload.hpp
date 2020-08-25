@@ -4,6 +4,7 @@
 #include <span>
 
 namespace vkg::image {
-auto upload(Texture &texture, std::span<std::byte> bytes, bool transitToShaderRead = true)
-  -> void;
+void upload(
+  uint32_t queueIdx, Texture &texture, std::span<std::byte> bytes,
+  bool transitToShaderRead = true);
 }

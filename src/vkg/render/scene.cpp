@@ -44,7 +44,7 @@ Scene::Scene(Renderer &renderer, SceneConfig sceneConfig, std::string name)
   Dev.textures.push_back(image::makeSampler2DTex("empty tex", device, 1, 1));
   glm::vec4 color{1.f, 1.f, 1.f, 1.f};
   image::upload(
-    *Dev.textures.back(), {reinterpret_cast<std::byte *>(&color), sizeof(color)});
+    0, *Dev.textures.back(), {reinterpret_cast<std::byte *>(&color), sizeof(color)});
   Dev.textures.back()->setSampler({});
 
   Dev.sampler2Ds.reserve(sceneConfig.maxNumTextures);
@@ -70,18 +70,17 @@ auto Scene::newPrimitive(
   std::span<Vertex::Position> positions, std::span<Vertex::Normal> normals,
   std::span<Vertex::UV> uvs, std::span<uint32_t> indices, AABB aabb,
   PrimitiveTopology topology, DynamicType type) -> uint32_t {
-  auto pos = Dev.positions->add(positions);
-  auto normal = Dev.normals->add(normals);
-  auto uv = Dev.uvs->add(uvs);
-  auto index = Dev.indices->add(indices);
+  //TODO choose queueIdx
+  auto pos = Dev.positions->add(0, positions);
+  auto normal = Dev.normals->add(0, normals);
+  auto uv = Dev.uvs->add(0, uvs);
+  auto index = Dev.indices->add(0, indices);
   auto id = uint32_t(Host.primitives.size());
   Host.primitives.emplace_back(*this, id, index, pos, normal, uv, topology, type);
   auto &primitive = Host.primitives.back();
   primitive.setAABB(aabb);
 
-  if(sceneConfig.rayTrace) {
-  
-  }
+  if(sceneConfig.rayTrace) {}
   return id;
 }
 
@@ -111,7 +110,8 @@ auto Scene::newTexture(
   const std::string &imagePath, bool mipmap, vk::SamplerCreateInfo sampler,
   const std::string &name) -> uint32_t {
   ensureTextures(1);
-  Dev.textures.push_back(image::load2DFromFile(name, device, imagePath, mipmap));
+  //TODO choose queueIdx
+  Dev.textures.push_back(image::load2DFromFile(0, name, device, imagePath, mipmap));
   Dev.textures.back()->setSampler(sampler);
   Dev.sampler2Ds[Dev.textures.size() - 1] = {
     Dev.textures.back()->sampler(), Dev.textures.back()->imageView(),
@@ -122,8 +122,9 @@ auto Scene::newTexture(
   std::span<std::byte> bytes, uint32_t width, uint32_t height, bool mipmap,
   vk::SamplerCreateInfo sampler, const std::string &name) -> uint32_t {
   ensureTextures(1);
+  //TODO choose queueIdx
   Dev.textures.push_back(
-    image::load2DFromBytes(name, device, bytes, width, height, mipmap));
+    image::load2DFromBytes(0, name, device, bytes, width, height, mipmap));
   Dev.textures.back()->setSampler(sampler);
   Dev.sampler2Ds[Dev.textures.size() - 1] = {
     Dev.textures.back()->sampler(), Dev.textures.back()->imageView(),

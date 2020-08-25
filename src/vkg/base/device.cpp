@@ -71,52 +71,28 @@ auto chooseBestPerformantGPU(std::vector<vk::PhysicalDevice> &physicalDevices)
   return chosen;
 }
 
-void Device::findQueueFamily(FeatureConfig featureConfig) {
+/**
+ * https://www.imgtec.com/blog/vulkan-synchronisation-and-graphics-compute-graphics-hazards-part-2/
+ */
+auto Device::findQueueFamily() -> uint32_t {
   auto queueFamilies = physicalDevice_.getQueueFamilyProperties();
   using Flag = vk::QueueFlagBits;
 
-  auto search = [&](vk::QueueFlagBits queueFlag, bool required) {
-    auto best = VK_QUEUE_FAMILY_IGNORED;
-    for(uint32_t i = 0; i < queueFamilies.size(); i++) {
-      auto flag = queueFamilies[i].queueFlags;
-      if(!(flag & queueFlag)) continue;
-      if(best == VK_QUEUE_FAMILY_IGNORED) best = i;
-      switch(queueFlag) {
-        case vk::QueueFlagBits::eGraphics: return i;
-        case vk::QueueFlagBits::eCompute:
-          // Dedicated queue for compute
-          // Try to find a queue family index that supports compute but not graphics_
-          if(!(flag & Flag::eGraphics)) return i;
-          break;
-        case vk::QueueFlagBits::eTransfer:
-          // Dedicated queue for transfer
-          // Try to find a queue family index that supports transfer but not graphics_ and compute
-          if(!(flag & Flag::eGraphics) && !(flag & Flag::eCompute)) return i;
-          break;
-        case vk::QueueFlagBits::eSparseBinding:
-        case vk::QueueFlagBits::eProtected: return i;
-      }
-    }
-    errorIf(
-      required && best == VK_QUEUE_FAMILY_IGNORED,
-      "failed to find required queue family");
-    return best;
-  };
-  graphics_ = {search(Flag::eGraphics, true)};
-  compute_ = {search(Flag::eCompute, true)};
-  transfer_ = {search(Flag::eTransfer, true)};
-  {
-    for(uint32_t i = 0; i < queueFamilies.size(); i++)
-      if(physicalDevice_.getSurfaceSupportKHR(i, surface)) {
-        present_.index = i;
-        break;
-      }
-    errorIf(present_.index == VK_QUEUE_FAMILY_IGNORED, "failed to find present family!");
-  }
+  auto desiredFlag = Flag::eGraphics | Flag::eCompute | Flag::eTransfer;
 
-  debugLog(
-    "Queue Family: ", "graphics[", graphics_.index, "] ", "compute[", compute_.index,
-    "] ", "transfer[", transfer_.index, "] ", "present[", present_.index, "]");
+  uint32_t i = 0;
+  for(; i < queueFamilies.size(); i++)
+    if(auto &family = queueFamilies[i];
+       physicalDevice_.getSurfaceSupportKHR(i, surface) &&
+       (family.queueFlags & desiredFlag) && family.queueCount >= queueCount) {
+      break;
+    }
+
+  errorIf(
+    i >= queueFamilies.size(),
+    "can't find a queue family that supports graphics/compute/transfer at the same time");
+  debugLog("Queue Family: ", i);
+  return i;
 }
 
 void checkDeviceExtensionSupport(
@@ -136,8 +112,6 @@ Device::Device(Instance &instance, vk::SurfaceKHR surface, FeatureConfig feature
   : instance{instance}, surface{surface}, featureConfig_{featureConfig} {
   auto physicalDevices = instance.vkInstance().enumeratePhysicalDevices();
   physicalDevice_ = chooseBestPerformantGPU(physicalDevices);
-
-  findQueueFamily(featureConfig);
 
   limits_ = physicalDevice_.getProperties().limits;
   memProps_ = physicalDevice_.getMemoryProperties();
@@ -202,49 +176,32 @@ Device::Device(Instance &instance, vk::SurfaceKHR surface, FeatureConfig feature
 
   checkDeviceExtensionSupport(physicalDevice_, deviceExtensions);
 
-  std::set<uint32_t> indices{};
+  auto cap = physicalDevice_.getSurfaceCapabilitiesKHR(surface);
+  queueCount = std::clamp(2u, cap.minImageCount, cap.maxImageCount);
 
-  indices.insert(graphics_.index);
-  indices.insert(present_.index);
-  indices.insert(compute_.index);
-  indices.insert(transfer_.index);
+  queueFamily = findQueueFamily();
 
-  float priorities[] = {0.0f};
-  std::vector<vk::DeviceQueueCreateInfo> queueInfos;
-  queueInfos.reserve(indices.size());
-  for(auto index: indices)
-    queueInfos.emplace_back(vk::DeviceQueueCreateFlags{}, index, 1, priorities);
+  std::vector<float> priorities(queueCount);
+
+  vk::DeviceQueueCreateInfo queueCreateInfo{
+    {}, queueFamily, queueCount, priorities.data()};
 
   vk::DeviceCreateInfo deviceInfo;
   deviceInfo.pNext = &features2;
-  deviceInfo.queueCreateInfoCount = uint32_t(queueInfos.size());
-  deviceInfo.pQueueCreateInfos = queueInfos.data();
+  deviceInfo.queueCreateInfoCount = 1;
+  deviceInfo.pQueueCreateInfos = &queueCreateInfo;
   deviceInfo.enabledExtensionCount = uint32_t(deviceExtensions.size());
   deviceInfo.ppEnabledExtensionNames = deviceExtensions.data();
   deviceInfo.pEnabledFeatures = nullptr;
 
   device_ = physicalDevice_.createDeviceUnique(deviceInfo);
 
-  {
-    graphics_.queue = device_->getQueue(graphics_.index, 0);
-    graphicsCmdPool_ = device_->createCommandPoolUnique(vk::CommandPoolCreateInfo{
-      {vk::CommandPoolCreateFlagBits::eResetCommandBuffer}, graphics_.index});
+  queues_.resize(queueCount);
+  for(uint32_t idx = 0u; idx < queueCount; ++idx) {
+    queues_[idx] = device_->getQueue(queueFamily, idx);
   }
-  {
-    present_.queue = device_->getQueue(present_.index, 0);
-    presentCmdPool_ = device_->createCommandPoolUnique(vk::CommandPoolCreateInfo{
-      {vk::CommandPoolCreateFlagBits::eResetCommandBuffer}, present_.index});
-  }
-  {
-    compute_.queue = device_->getQueue(compute_.index, 0);
-    computeCmdPool_ = device_->createCommandPoolUnique(vk::CommandPoolCreateInfo{
-      {vk::CommandPoolCreateFlagBits::eResetCommandBuffer}, compute_.index});
-  }
-  {
-    transfer_.queue = device_->getQueue(transfer_.index, 0);
-    transferCmdPool_ = device_->createCommandPoolUnique(vk::CommandPoolCreateInfo{
-      {vk::CommandPoolCreateFlagBits::eResetCommandBuffer}, transfer_.index});
-  }
+  cmdPool_ = device_->createCommandPoolUnique(vk::CommandPoolCreateInfo{
+    {vk::CommandPoolCreateFlagBits::eResetCommandBuffer}, queueFamily});
 
   VULKAN_HPP_DEFAULT_DISPATCHER.init(*device_);
 
@@ -289,13 +246,10 @@ void Device::createAllocator() {
   errorIf(result != VK_SUCCESS, "failed to create Allocator");
 }
 
-void Device::execSyncInGraphicsQueue(
-  const std::function<void(vk::CommandBuffer cb)> &func, uint64_t timeout) {
-  executeImmediately(*device_, *graphicsCmdPool_, graphics_.queue, func, timeout);
-}
-void Device::execSyncInComputeQueue(
-  const std::function<void(vk::CommandBuffer)> &func, uint64_t timeout) {
-  executeImmediately(*device_, *computeCmdPool_, compute_.queue, func, timeout);
+void Device::execSync(
+  const std::function<void(vk::CommandBuffer)> &func, uint32_t queueIdx,
+  uint64_t timeout) {
+  executeImmediately(*device_, *cmdPool_, queues_[queueIdx], func, timeout);
 }
 
 auto Device::physicalDevice() -> vk::PhysicalDevice { return physicalDevice_; }
@@ -309,21 +263,10 @@ auto Device::allocator() -> VmaAllocator { return *allocator_; }
 auto Device::rayTracingProperties() -> const vk::PhysicalDeviceRayTracingPropertiesNV & {
   return rayTracingProperties_;
 }
-auto Device::graphicsCmdPool() -> vk::CommandPool { return *graphicsCmdPool_; }
-auto Device::graphicsQueue() const -> vk::Queue { return graphics_.queue; }
-auto Device::graphicsIndex() const -> uint32_t { return graphics_.index; }
-auto Device::presentCmdPool() -> vk::CommandPool { return *presentCmdPool_; }
-auto Device::presentIndex() const -> uint32_t { return present_.index; }
-auto Device::presentQueue() const -> vk::Queue { return present_.queue; }
-auto Device::computeCmdPool() -> vk::CommandPool { return *computeCmdPool_; }
-auto Device::computeIndex() const -> uint32_t { return compute_.index; }
-auto Device::computeQueue() const -> vk::Queue { return compute_.queue; }
-auto Device::transferCmdPool() -> vk::CommandPool { return *transferCmdPool_; }
-auto Device::transferIndex() const -> uint32_t { return transfer_.index; }
-auto Device::transferQueue() const -> vk::Queue { return transfer_.queue; }
-
 auto Device::multiviewProperties() -> const vk::PhysicalDeviceMultiviewProperties & {
   return multiviewProperties_;
 }
+auto Device::queues() -> std::span<vk::Queue> { return queues_; }
+auto Device::cmdPool() -> vk::CommandPool { return *cmdPool_; }
 
 }
