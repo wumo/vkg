@@ -111,7 +111,8 @@ void Renderer::onInit() {
 
 void Renderer::onFrame(uint32_t imageIndex, float elapsed) {
   RenderContext ctx{
-    *device_, imageIndex, frameIndex, swapchain_->imageCount(), cmdBuffers[frameIndex]};
+    *device_, imageIndex, frameIndex, uint32_t(device_->queues().size()),
+    cmdBuffers[frameIndex]};
   frameGraph->onFrame(ctx);
 }
 }

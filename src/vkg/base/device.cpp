@@ -176,8 +176,7 @@ Device::Device(Instance &instance, vk::SurfaceKHR surface, FeatureConfig feature
 
   checkDeviceExtensionSupport(physicalDevice_, deviceExtensions);
 
-  auto cap = physicalDevice_.getSurfaceCapabilitiesKHR(surface);
-  queueCount = std::clamp(2u, cap.minImageCount, cap.maxImageCount);
+  queueCount = 2u; //TODO make this configurable
 
   queueFamily = findQueueFamily();
 

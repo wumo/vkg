@@ -7,7 +7,10 @@ auto main() -> int {
   WindowConfig windowConfig{};
   FeatureConfig featureConfig{};
   Renderer app{windowConfig, featureConfig};
-
+  SceneConfig sceneConfig{
+    .maxNumTransforms = 1000'0000,
+    .maxNumPrimitives = 1000'0000,
+    .maxNumMeshInstances = 1000'0000};
   auto &scene = app.addScene();
 
   auto kPi = glm::pi<float>();
@@ -29,7 +32,7 @@ auto main() -> int {
   sky.setSunDirection(sunDir);
 
   scene.shadowmap().enable(true);
-  scene.shadowmap().setNumCascades(8);
+  scene.shadowmap().setNumCascades(4);
   scene.shadowmap().setZFar(1e3);
   //  auto lightId = scene.newLight();
   //  auto &light = scene.light(lightId);

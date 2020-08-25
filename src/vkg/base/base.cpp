@@ -46,7 +46,7 @@ auto Base::createDebugUtils() -> void {
 
 auto Base::createSyncObjects() -> void {
   auto _device = device_->vkDevice();
-  auto numFrames = swapchain_->imageCount();
+  auto numFrames = uint32_t(device_->queues().size());
 
   semaphoreSyncs.resize(numFrames);
   vk::FenceCreateInfo fenceInfo{vk::FenceCreateFlagBits::eSignaled};
@@ -70,11 +70,11 @@ auto Base::createSyncObjects() -> void {
 
 auto Base::createCommandBuffers() -> void {
   auto _device = device_->vkDevice();
+  auto numFrames = uint32_t(device_->queues().size());
   vk::CommandBufferAllocateInfo info{
-    device_->cmdPool(), vk::CommandBufferLevel::ePrimary,
-    uint32_t(swapchain_->imageCount())};
+    device_->cmdPool(), vk::CommandBufferLevel::ePrimary, numFrames};
   cmdBuffers = _device.allocateCommandBuffers(info);
-  for(auto i = 0u; i < uint32_t(swapchain_->imageCount()); ++i) {
+  for(auto i = 0u; i < numFrames; ++i) {
     cmdBuffers[i].begin({vk::CommandBufferUsageFlagBits::eSimultaneousUse});
     cmdBuffers[i].end();
   }
@@ -84,18 +84,18 @@ auto Base::resize() -> void {
   device_->vkDevice().waitIdle();
   swapchain_->resize(window_->width(), window_->height(), window_->isVsync());
   //empty cb for syncReverse
-  for(auto i = 0u; i < uint32_t(swapchain_->imageCount()); ++i) {
+  for(auto i = 0u, numFrames = uint32_t(device_->queues().size()); i < numFrames; ++i) {
     cmdBuffers[i].begin({vk::CommandBufferUsageFlagBits::eSimultaneousUse});
     cmdBuffers[i].end();
   }
 }
 
 void Base::onFrame(uint32_t imageIndex, float elapsed) {
-  auto &graphicsCB = cmdBuffers[frameIndex];
+  auto &cb = cmdBuffers[frameIndex];
 
   auto image = swapchain_->image(imageIndex);
   image::setLayout(
-    graphicsCB, image, vk::ImageLayout::eUndefined, vk::ImageLayout::ePresentSrcKHR,
+    cb, image, vk::ImageLayout::eUndefined, vk::ImageLayout::ePresentSrcKHR,
     vk::AccessFlagBits::eTransferWrite, vk::AccessFlagBits::eMemoryRead);
 }
 
@@ -117,7 +117,7 @@ void Base::loop(const std::function<void(uint32_t, double)> &updater) {
     start = end;
 
     fpsMeter.update(elapsed);
-    //    syncSemaphore(elapsed, updater);
+    //syncSemaphore(elapsed, updater);
     syncTimeline(elapsed, updater);
   }
 
@@ -188,7 +188,7 @@ auto Base::syncSemaphore(
     if(result == vk::Result::eSuboptimalKHR) resize();
   } catch(const vk::OutOfDateKHRError &) { resize(); }
 
-  frameIndex = (frameIndex + 1) % swapchain_->imageCount();
+  frameIndex = (frameIndex + 1) % uint32_t(device_->queues().size());
 }
 
 auto Base::syncTimeline(
@@ -260,6 +260,6 @@ auto Base::syncTimeline(
     if(result == vk::Result::eSuboptimalKHR) resize();
   } catch(const vk::OutOfDateKHRError &) { resize(); }
 
-  frameIndex = (frameIndex + 1) % swapchain_->imageCount();
+  frameIndex = (frameIndex + 1) % uint32_t(device_->queues().size());
 }
 }

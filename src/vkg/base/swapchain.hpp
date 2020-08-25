@@ -35,8 +35,9 @@ private:
   vk::SurfaceFormatKHR surfaceFormat;
 
   vk::UniqueSwapchainKHR swapchain;
-
+  
   vk::Extent2D extent_;
+  uint32_t imageCount_;
   std::vector<vk::Image> images;
   std::vector<vk::UniqueImageView> imageViews;
 

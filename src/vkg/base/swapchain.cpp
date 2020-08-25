@@ -50,14 +50,19 @@ Swapchain::Swapchain(
   presentMode = choosePresentMode(presentModes, windowConfig.vsync);
   auto formats = physicalDevice.getSurfaceFormatsKHR(surface);
   surfaceFormat = chooseSurfaceFormat(formats);
+
+  auto cap = physicalDevice.getSurfaceCapabilitiesKHR(surface);
+  imageCount_ = std::clamp(2u, cap.minImageCount, cap.maxImageCount);
 }
 auto Swapchain::resize(uint32_t width, uint32_t height, bool vsync) -> void {
   auto cap = physicalDevice.getSurfaceCapabilitiesKHR(surface);
   extent_ = chooseExtent(width, height, cap);
+  auto presentModes = physicalDevice.getSurfacePresentModesKHR(surface);
+  presentMode = choosePresentMode(presentModes, vsync);
 
   vk::SwapchainCreateInfoKHR info;
   info.surface = surface;
-  info.minImageCount = uint32_t(queues.size()); //align with device queue
+  info.minImageCount = imageCount_;
   info.imageFormat = surfaceFormat.format;
   info.imageColorSpace = surfaceFormat.colorSpace;
   info.imageExtent = extent_;
@@ -79,9 +84,9 @@ auto Swapchain::resize(uint32_t width, uint32_t height, bool vsync) -> void {
   images = vkDevice.getSwapchainImagesKHR(*swapchain);
   imageViews.resize(images.size());
   errorIf(
-    images.size() != queues.size(),
+    images.size() != imageCount_,
     "newly created swapchain's imageCount != old imageCount!");
-  for(auto i = 0u; i < uint32_t(queues.size()); i++) {
+  for(auto i = 0u; i < imageCount_; i++) {
     vk::ImageViewCreateInfo imageViewInfo;
     imageViewInfo.image = images[i];
     imageViewInfo.viewType = vk::ImageViewType::e2D;
@@ -94,7 +99,7 @@ auto Swapchain::resize(uint32_t width, uint32_t height, bool vsync) -> void {
           cb, images[i], vk::ImageLayout::eUndefined, vk::ImageLayout::ePresentSrcKHR,
           vk::AccessFlagBits::eTransferWrite, vk::AccessFlagBits::eMemoryRead);
       },
-      i);
+      0);
   }
   version_++;
 }
@@ -117,7 +122,7 @@ auto Swapchain::present(
 
   return queues[frameIdx].presentKHR(presentInfo);
 }
-auto Swapchain::imageCount() const -> uint32_t { return uint32_t(queues.size()); }
+auto Swapchain::imageCount() const -> uint32_t { return imageCount_; }
 auto Swapchain::image(uint32_t index) const -> vk::Image { return images[index]; }
 auto Swapchain::imageView(uint32_t index) const -> vk::ImageView {
   return *imageViews[index];
