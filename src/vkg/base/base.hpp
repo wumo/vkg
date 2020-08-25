@@ -62,29 +62,23 @@ protected:
 
   std::vector<vk::CommandBuffer> graphicsCmdBuffers, computeCmdBuffers;
 
-  struct Semaphores {
+  struct SemaphoreSync {
     vk::UniqueSemaphore imageAvailable;
     vk::UniqueSemaphore computeFinished;
     vk::UniqueSemaphore readyToCompute;
     vk::UniqueSemaphore renderFinished;
 
-    std::vector<vk::PipelineStageFlags> renderWaitStages;
-    std::vector<vk::Semaphore> renderWaits;
-    std::vector<vk::Semaphore> renderSignals;
-    std::vector<vk::Semaphore> computeWaits;
-    std::vector<vk::PipelineStageFlags> computeWaitStages;
+    vk::UniqueFence resourcesFence;
   };
+  std::vector<SemaphoreSync> semaphoreSyncs;
 
-  std::vector<Semaphores> semaphores;
-
-  struct TimelineSemaphore {
+  struct TimelineSync {
     vk::UniqueSemaphore semaphore;
     uint64_t waitValue{0};
   };
 
-  std::vector<TimelineSemaphore> tSemaphores;
+  std::vector<TimelineSync> timelineSyncs;
 
-  std::vector<vk::UniqueFence> renderFences;
   uint32_t frameIndex{0};
 
   FPSMeter fpsMeter;
