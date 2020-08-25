@@ -10,6 +10,9 @@
 #include "vkg/render/pass/atmosphere/atmosphere_pass.hpp"
 
 namespace vkg {
+/**
+ * TODO shouldn't cull the shadow caster out of the view frustum.
+ */
 struct ShadowMapPassIn {
   FrameGraphResource<AtmosphereSetting> atmosSetting;
   FrameGraphResource<ShadowMapSetting> shadowMapSetting;
