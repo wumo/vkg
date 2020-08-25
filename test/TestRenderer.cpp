@@ -4,7 +4,7 @@
 using namespace vkg;
 
 auto main() -> int {
-  WindowConfig windowConfig{};
+  WindowConfig windowConfig{.numFrames = 1};
   FeatureConfig featureConfig{};
   Renderer app{windowConfig, featureConfig};
   SceneConfig sceneConfig{

@@ -6,14 +6,15 @@ VULKAN_HPP_DEFAULT_DISPATCH_LOADER_DYNAMIC_STORAGE
 
 namespace vkg {
 
-Base::Base(WindowConfig windowConfig, FeatureConfig featureConfig)
+Base::Base(const WindowConfig &windowConfig, const FeatureConfig &featureConfig)
   : windowConfig_{windowConfig}, featureConfig_{featureConfig} {
-  window_ = std::make_unique<Window>(windowConfig);
-  instance = std::make_unique<Instance>(featureConfig);
+  window_ = std::make_unique<Window>(windowConfig_);
+  instance = std::make_unique<Instance>(featureConfig_);
   window_->createSurface(instance->vkInstance());
   createDebugUtils();
-  device_ = std::make_unique<Device>(*instance, window_->vkSurface(), featureConfig);
-  swapchain_ = std::make_unique<Swapchain>(*device_, window_->vkSurface(), windowConfig);
+  device_ = std::make_unique<Device>(
+    *instance, window_->vkSurface(), windowConfig_, featureConfig_);
+  swapchain_ = std::make_unique<Swapchain>(*device_, window_->vkSurface(), windowConfig_);
   createSyncObjects();
   createCommandBuffers();
   Base::resize();

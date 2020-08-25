@@ -28,7 +28,8 @@ typedef void (*Updater)(uint32_t frameIdx, double elapsedMs, void *data);
 
 class Base {
 public:
-  explicit Base(WindowConfig windowConfig = {}, FeatureConfig featureConfig = {});
+  explicit Base(
+    const WindowConfig &windowConfig = {}, const FeatureConfig &featureConfig = {});
 
   void loop(
     const std::function<void(uint32_t frameIdx, double elapsedMs)> &updater =

@@ -17,7 +17,9 @@ public:
     bool timelineSemaphore{false};
   };
 
-  Device(Instance &instance, vk::SurfaceKHR surface, FeatureConfig featureConfig = {});
+  Device(
+    Instance &instance, vk::SurfaceKHR surface, const WindowConfig &windowConfig,
+    const FeatureConfig &featureConfig);
 
   void execSync(
     const std::function<void(vk::CommandBuffer cb)> &func, uint32_t queueIdx,
@@ -55,7 +57,6 @@ public:
   void end(vk::CommandBuffer commandBuffer);
 
 private:
-  FeatureConfig featureConfig_;
   Instance &instance;
   vk::SurfaceKHR surface;
   vk::PhysicalDevice physicalDevice_;
