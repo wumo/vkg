@@ -44,7 +44,7 @@ Swapchain::Swapchain(
     physicalDevice{device.physicalDevice()},
     vkDevice{device.vkDevice()},
     surface{surface},
-    queues{device.queues()} {
+    presentQueues{device.queues()} {
 
   auto presentModes = physicalDevice.getSurfacePresentModesKHR(surface);
   presentMode = choosePresentMode(presentModes, windowConfig.vsync);
@@ -70,7 +70,6 @@ auto Swapchain::resize(uint32_t width, uint32_t height, bool vsync) -> void {
   info.imageUsage = vk::ImageUsageFlagBits::eColorAttachment |
                     vk::ImageUsageFlagBits::eStorage |
                     vk::ImageUsageFlagBits::eTransferDst;
-
   info.imageSharingMode = vk::SharingMode::eExclusive;
 
   info.preTransform = cap.currentTransform;
@@ -120,7 +119,7 @@ auto Swapchain::present(
   presentInfo.pSwapchains = &(*swapchain);
   presentInfo.pImageIndices = &imageIdx;
 
-  return queues[frameIdx].presentKHR(presentInfo);
+  return presentQueues[frameIdx].presentKHR(presentInfo);
 }
 auto Swapchain::imageCount() const -> uint32_t { return imageCount_; }
 auto Swapchain::image(uint32_t index) const -> vk::Image { return images[index]; }

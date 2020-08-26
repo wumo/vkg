@@ -4,7 +4,7 @@
 using namespace vkg;
 
 auto main() -> int {
-  WindowConfig windowConfig{.numFrames = 1};
+  WindowConfig windowConfig{.numFrames = 2};
   FeatureConfig featureConfig{};
   Renderer app{windowConfig, featureConfig};
   SceneConfig sceneConfig{
@@ -341,22 +341,22 @@ auto main() -> int {
     }
 
     // update vertices
-    auto rot = glm::angleAxis(glm::radians(float(elapsed) * 0.1f), glm::vec3(-1, 0, 1));
-    for(int i = 0; i < positions.size(); ++i) {
-      positions[i] = rot * positions[i];
-      normals[i] = rot * normals[i];
-    }
-    scene.primitive(dynamicPrim).update(frameIdx, positions, normals);
-
-    {
-      static float totalElapsed = 0;
-      totalElapsed += elapsed / 1000;
-      auto p = PrimitiveBuilder();
-      auto s = glm::abs(10 * glm::sin(totalElapsed));
-      p.box({}, glm::vec3{0, 0, s}, glm::vec3{s, 0, 0}, s)
-        .newPrimitive(PrimitiveTopology::Triangles, vkg::DynamicType::Dynamic);
-      scene.primitive(dynamicPrim2).update(frameIdx, p);
-    }
+    //    auto rot = glm::angleAxis(glm::radians(float(elapsed) * 0.1f), glm::vec3(-1, 0, 1));
+    //    for(int i = 0; i < positions.size(); ++i) {
+    //      positions[i] = rot * positions[i];
+    //      normals[i] = rot * normals[i];
+    //    }
+    //    scene.primitive(dynamicPrim).update(frameIdx, positions, normals);
+    //
+    //    {
+    //      static float totalElapsed = 0;
+    //      totalElapsed += elapsed / 1000;
+    //      auto p = PrimitiveBuilder();
+    //      auto s = glm::abs(10 * glm::sin(totalElapsed));
+    //      p.box({}, glm::vec3{0, 0, s}, glm::vec3{s, 0, 0}, s)
+    //        .newPrimitive(PrimitiveTopology::Triangles, vkg::DynamicType::Dynamic);
+    //      scene.primitive(dynamicPrim2).update(frameIdx, p);
+    //    }
   });
   return 0;
 }

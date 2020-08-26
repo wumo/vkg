@@ -47,6 +47,7 @@ public:
   }
   void execute(RenderContext &ctx, Resources &resources) override {
     auto cb = ctx.cb;
+
     auto present = renderer.swapchain().image(ctx.swapchainIndex);
     image::setLayout(
       cb, present, vk::ImageLayout::eUndefined, vk::ImageLayout::eTransferDstOptimal, {},
@@ -56,10 +57,12 @@ public:
     for(int i = 0; i < n; ++i) {
       auto backImg = resources.get(passIn.backImgs[i]);
       auto renderArea = resources.get(passIn.renderAreas[i]);
+      ctx.device.begin(cb, toString("barrier backImg frame ", ctx.frameIndex));
       image::transitTo(
         cb, *backImg, vk::ImageLayout::eTransferSrcOptimal,
         vk::AccessFlagBits::eTransferRead, vk::PipelineStageFlagBits::eTransfer);
-
+      ctx.device.end(cb);
+      ctx.device.begin(cb, toString("copy backImg frame ", ctx.frameIndex));
       image::blit(
         cb, present,
         {vk::Offset3D{renderArea.offset, 0},
@@ -69,10 +72,13 @@ public:
         {vk::Offset3D{},
          vk::Offset3D{
            int32_t(renderArea.extent.width), int32_t(renderArea.extent.height), 1}});
+      ctx.device.end(cb);
     }
+    ctx.device.begin(cb, toString("barrier present frame ", ctx.frameIndex));
     image::setLayout(
       cb, present, vk::ImageLayout::eTransferDstOptimal, vk::ImageLayout::ePresentSrcKHR,
       vk::AccessFlagBits::eTransferWrite, vk::AccessFlagBits::eMemoryRead);
+    ctx.device.end(cb);
   }
 
 private:

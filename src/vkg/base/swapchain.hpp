@@ -29,7 +29,7 @@ private:
   vk::Device vkDevice;
   vk::SurfaceKHR surface;
 
-  std::span<vk::Queue> queues;
+  std::span<vk::Queue> presentQueues;
 
   vk::PresentModeKHR presentMode;
   vk::SurfaceFormatKHR surfaceFormat;

@@ -74,25 +74,25 @@ auto chooseBestPerformantGPU(std::vector<vk::PhysicalDevice> &physicalDevices)
 /**
  * https://www.imgtec.com/blog/vulkan-synchronisation-and-graphics-compute-graphics-hazards-part-2/
  */
-auto Device::findQueueFamily() -> uint32_t {
+void Device::findQueueFamily() {
   auto queueFamilies = physicalDevice_.getQueueFamilyProperties();
   using Flag = vk::QueueFlagBits;
 
   auto desiredFlag = Flag::eGraphics | Flag::eCompute | Flag::eTransfer;
 
-  uint32_t i = 0;
-  for(; i < queueFamilies.size(); i++)
-    if(auto &family = queueFamilies[i];
-       physicalDevice_.getSurfaceSupportKHR(i, surface) &&
+  uint32_t gfxIdx = 0;
+  for(; gfxIdx < queueFamilies.size(); gfxIdx++)
+    if(auto &family = queueFamilies[gfxIdx];
+       physicalDevice_.getSurfaceSupportKHR(gfxIdx, surface) &&
        (family.queueFlags & desiredFlag) && family.queueCount >= queueCount) {
       break;
     }
 
   errorIf(
-    i >= queueFamilies.size(),
+    gfxIdx >= queueFamilies.size(),
     "can't find a queue family that supports graphics/compute/transfer at the same time");
-  debugLog("Queue Family: ", i);
-  return i;
+  debugLog("Queue Family: ", gfxIdx);
+  queueFamily_ = gfxIdx;
 }
 
 void checkDeviceExtensionSupport(
@@ -180,17 +180,17 @@ Device::Device(
 
   queueCount = windowConfig.numFrames;
 
-  queueFamily = findQueueFamily();
+  findQueueFamily();
 
   std::vector<float> priorities(queueCount);
 
-  vk::DeviceQueueCreateInfo queueCreateInfo{
-    {}, queueFamily, queueCount, priorities.data()};
+  std::vector<vk::DeviceQueueCreateInfo> queueCreateInfos{
+    {{}, queueFamily_, queueCount, priorities.data()}};
 
   vk::DeviceCreateInfo deviceInfo;
   deviceInfo.pNext = &features2;
-  deviceInfo.queueCreateInfoCount = 1;
-  deviceInfo.pQueueCreateInfos = &queueCreateInfo;
+  deviceInfo.queueCreateInfoCount = uint32_t(queueCreateInfos.size());
+  deviceInfo.pQueueCreateInfos = queueCreateInfos.data();
   deviceInfo.enabledExtensionCount = uint32_t(deviceExtensions.size());
   deviceInfo.ppEnabledExtensionNames = deviceExtensions.data();
   deviceInfo.pEnabledFeatures = nullptr;
@@ -198,11 +198,11 @@ Device::Device(
   device_ = physicalDevice_.createDeviceUnique(deviceInfo);
 
   queues_.resize(queueCount);
-  for(uint32_t idx = 0u; idx < queueCount; ++idx) {
-    queues_[idx] = device_->getQueue(queueFamily, idx);
-  }
+  for(uint32_t idx = 0u; idx < queueCount; ++idx)
+    queues_[idx] = device_->getQueue(queueFamily_, idx);
+
   cmdPool_ = device_->createCommandPoolUnique(vk::CommandPoolCreateInfo{
-    {vk::CommandPoolCreateFlagBits::eResetCommandBuffer}, queueFamily});
+    {vk::CommandPoolCreateFlagBits::eResetCommandBuffer}, queueFamily_});
 
   VULKAN_HPP_DEFAULT_DISPATCHER.init(*device_);
 
@@ -269,5 +269,6 @@ auto Device::multiviewProperties() -> const vk::PhysicalDeviceMultiviewPropertie
 }
 auto Device::queues() -> std::span<vk::Queue> { return queues_; }
 auto Device::cmdPool() -> vk::CommandPool { return *cmdPool_; }
+auto Device::queueFamiliy() const -> uint32_t { return queueFamily_; }
 
 }

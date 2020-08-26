@@ -339,7 +339,7 @@ void ShadowMapPass::execute(RenderContext &ctx, Resources &resources) {
     0, 0, float(setting.textureSize()), float(setting.textureSize()), 0.0f, 1.0f};
   vk::Rect2D scissor{{0, 0}, {setting.textureSize(), setting.textureSize()}};
 
-  ctx.device.begin(cb, "shadow map");
+  ctx.device.begin(cb, toString("shadow map frame ", ctx.frameIndex));
 
   cb.beginRenderPass(renderPassBeginInfo, vk::SubpassContents::eInline);
   cb.setViewport(0, viewport);

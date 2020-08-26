@@ -34,6 +34,7 @@ public:
   auto rayTracingProperties() -> const vk::PhysicalDeviceRayTracingPropertiesNV &;
   auto multiviewProperties() -> const vk::PhysicalDeviceMultiviewProperties &;
 
+  auto queueFamiliy() const -> uint32_t;
   auto queues() -> std::span<vk::Queue>;
   auto cmdPool() -> vk::CommandPool;
 
@@ -74,13 +75,13 @@ private:
   vk::PhysicalDeviceRayTracingPropertiesNV rayTracingProperties_;
   vk::PhysicalDeviceMultiviewProperties multiviewProperties_;
 
-  uint32_t queueFamily{VK_QUEUE_FAMILY_IGNORED};
+  uint32_t queueFamily_{VK_QUEUE_FAMILY_IGNORED};
   uint32_t queueCount{0};
   std::vector<vk::Queue> queues_;
   vk::UniqueCommandPool cmdPool_;
 
 private:
-  auto findQueueFamily() -> uint32_t;
+  void findQueueFamily();
   void createAllocator();
 };
 }
