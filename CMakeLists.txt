@@ -15,6 +15,7 @@ conan_cmake_run(BASIC_SETUP CONANFILE conanfile.py BUILD missing)
 
 option(BUILD_TEST "Build test" ON)
 option(BUILD_SHARED "Build shared lib" ON)
+option(ENABLE_VALIDATION_LAYER "enable validation layer" ON)
 
 set(sources
   src/vkg/base/impl/vma.cpp
@@ -112,8 +113,11 @@ if(UNIX)
   list(APPEND definitions "VK_USE_PLATFORM_XCB_KHR" "VK_USE_PLATFORM_XLIB_KHR")
 endif(UNIX)
 list(APPEND definitions "USE_GLFW_WINDOW" "GLFW_INCLUDE_NONE")
-list(APPEND definitions "USE_VALIDATION_LAYER")
 list(APPEND sources src/vkg/base/window/platform/glfw_window.cpp)
+
+if(ENABLE_VALIDATION_LAYER)
+  list(APPEND definitions "USE_VALIDATION_LAYER")
+endif()
 
 if(BUILD_SHARED)
   add_library(vkg SHARED ${sources})

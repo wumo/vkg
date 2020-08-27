@@ -70,7 +70,7 @@ void ComputeTransf::execute(RenderContext &ctx, Resources &resources) {
   cb.bindDescriptorSets(
     vk::PipelineBindPoint::eCompute, pipeDef.layout(), pipeDef.transf.set(), frame.set,
     nullptr);
-  pushConstant = {total};
+  pushConstant = {total, ctx.frameIndex};
   cb.pushConstants<PushConstant>(
     pipeDef.layout(), vk::ShaderStageFlagBits::eCompute, 0, pushConstant);
   cb.dispatch(dx, dy, dz);

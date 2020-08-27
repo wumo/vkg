@@ -107,6 +107,48 @@ public:
 
     scene.Host.camera_->resize(extent.width, extent.height);
 
+    if(!scene.Host.updates.empty()) {
+      /**
+       * we have to flush the same update to all frames to make them consistent. Each
+       * frameUpdatable's ticket tracks its update history. `frames` is the
+       * total number of inconsistent frames that needs to be updated. Reset `frames`
+       * when user just updates it.
+       */
+      auto fetchUpdable = [](Scene &scene_, Update &update) {
+        FrameUpdatable *updatable;
+        switch(update.type) {
+          case Update::Type::Material: updatable = &scene_.material(update.id); break;
+          case Update::Type::Light: updatable = &scene_.light(update.id); break;
+          case Update::Type::InstanceTransf:
+            updatable = &scene_.modelInstance(update.id);
+            break;
+        }
+        return updatable;
+      };
+
+      auto &updates = scene.Host.updates;
+      uint32_t i = 0;
+      while(i < updates.size()) {
+        auto update = updates[i];
+        auto updatable = fetchUpdable(scene, update);
+        if(update.frames == 0) {       //remove
+          updatable->ticket = nullIdx; //clear ticket
+          if(i == updates.size() - 1)  //already the last one, just pop back
+            updates.pop_back();
+          else { //otherwise remove by swap with the last one, modify last one's ticket
+            updates[i] = updates.back();
+            updates.pop_back();
+            fetchUpdable(scene, updates[i])->ticket = i;
+          }
+          continue; //(because of swap, we have to revisit this, or the last one removed,
+                    // loop will still terminate because of size decrement.)
+        }
+        update.frames--;
+        updatable->updateDesc(ctx.frameIndex);
+        i++;
+      }
+    }
+
     resources.set(passOut.meshInstancesCount, scene.Dev.meshInstances->count());
     resources.set(passOut.maxPerGroup, {scene.Host.drawGroupInstCount});
     resources.set(passOut.backImg, backImgs[ctx.frameIndex]);

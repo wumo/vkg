@@ -11,13 +11,11 @@ public:
     UIntRange index, position, normal, uv;
     AABB aabb;
     PrimitiveTopology topology{PrimitiveTopology::Triangles};
-    DynamicType type{DynamicType::Static};
   };
 
 public:
   auto newPrimitive(
-    PrimitiveTopology topology = PrimitiveTopology::Triangles,
-    DynamicType type = DynamicType::Static) -> PrimitiveBuilder &;
+    PrimitiveTopology topology = PrimitiveTopology::Triangles) -> PrimitiveBuilder &;
 
   /**
    * construct the mesh from predefined vertices and indices

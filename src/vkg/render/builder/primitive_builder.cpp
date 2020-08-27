@@ -10,8 +10,7 @@ auto PrimitiveBuilder::uvs() -> std::span<Vertex::UV> { return _uvs; }
 auto PrimitiveBuilder::indices() -> std::span<uint32_t> { return _indices; }
 auto PrimitiveBuilder::primitives() -> std::span<PrimitiveUBO> { return _primitives; }
 
-auto PrimitiveBuilder::newPrimitive(PrimitiveTopology topology, DynamicType type)
-  -> PrimitiveBuilder & {
+auto PrimitiveBuilder::newPrimitive(PrimitiveTopology topology) -> PrimitiveBuilder & {
   UIntRange indexRange;
   UIntRange positionRange, normalRange, uvRange;
   if(_primitives.empty()) {
@@ -30,8 +29,7 @@ auto PrimitiveBuilder::newPrimitive(PrimitiveTopology topology, DynamicType type
       last.normal.endExclusive(), uint32_t(_normals.size()) - last.normal.endExclusive()};
     uvRange = {last.uv.endExclusive(), uint32_t(_uvs.size()) - last.uv.endExclusive()};
   }
-  PrimitiveUBO primitive{indexRange, positionRange, normalRange, uvRange,
-                         aabb,       topology,      type};
+  PrimitiveUBO primitive{indexRange, positionRange, normalRange, uvRange, aabb, topology};
   _primitives.push_back(primitive);
   aabb = {};
   return *this;

@@ -56,7 +56,6 @@ protected:
   auto createSyncObjects() -> void;
   auto createCommandBuffers() -> void;
 
-  WindowConfig windowConfig_;
   FeatureConfig featureConfig_;
 
   std::unique_ptr<Instance> instance;

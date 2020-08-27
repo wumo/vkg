@@ -14,7 +14,6 @@ auto Window::vkSurface() -> vk::SurfaceKHR { return *surface; }
 auto Window::width() const -> uint32_t { return width_; }
 auto Window::height() const -> uint32_t { return height_; }
 auto Window::windowTitle() -> std::string { return title_; }
-auto Window::isVsync() const -> bool { return windowConfig.vsync; }
 
 auto Window::input() -> Input & { return input_; }
 auto Window::onMouseMove(int32_t x, int32_t y) -> void {

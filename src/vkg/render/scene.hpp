@@ -32,6 +32,13 @@ struct ScenePassOut {
   FrameGraphResource<vk::Rect2D> renderArea;
 };
 
+struct Update {
+  enum class Type { Material, Light, InstanceTransf };
+  Type type;
+  uint32_t id;
+  uint32_t frames;
+};
+
 class Scene: public Pass<ScenePassIn, ScenePassOut> {
   friend class Primitive;
   friend class SceneSetupPass;
@@ -42,10 +49,12 @@ public:
   auto newPrimitive(
     std::span<Vertex::Position> positions, std::span<Vertex::Normal> normals,
     std::span<Vertex::UV> uvs, std::span<uint32_t> indices, AABB aabb,
-    PrimitiveTopology topology = PrimitiveTopology::Triangles,
-    DynamicType type = DynamicType::Static) -> uint32_t;
-  auto newPrimitives(PrimitiveBuilder &builder) -> std::vector<uint32_t>;
-  auto newMaterial(MaterialType type = MaterialType::eNone) -> uint32_t;
+    PrimitiveTopology topology = PrimitiveTopology::Triangles, bool perFrame = false)
+    -> uint32_t;
+  auto newPrimitives(PrimitiveBuilder &builder, bool perFrame = false)
+    -> std::vector<uint32_t>;
+  auto newMaterial(MaterialType type = MaterialType::eNone, bool perFrame = false)
+    -> uint32_t;
   auto newTexture(
     const std::string &imagePath, bool mipmap = true,
     vk::SamplerCreateInfo sampler =
@@ -63,9 +72,10 @@ public:
     -> uint32_t;
   auto loadModel(const std::string &file, MaterialType materialType = MaterialType::eBRDF)
     -> uint32_t;
-  auto newModelInstance(uint32_t model, const Transform &transform = Transform{})
+  auto newModelInstance(
+    uint32_t model, const Transform &transform = Transform{}, bool perFrame = false)
     -> uint32_t;
-  auto newLight() -> uint32_t;
+  auto newLight(bool perFrame = false) -> uint32_t;
 
   auto camera() -> Camera &;
   auto primitive(uint32_t index) -> Primitive &;
@@ -80,12 +90,14 @@ public:
   auto atmosphere() -> AtmosphereSetting &;
   auto shadowmap() -> ShadowMapSetting &;
 
-  auto allocateLightingDesc() -> Allocation<Lighting::Desc>;
-  auto allocateLightDesc() -> Allocation<Light::Desc>;
-  auto allocateMaterialDesc() -> Allocation<Material::Desc>;
-  auto allocateTransform() -> Allocation<Transform>;
-  auto allocatePrimitiveDesc() -> Allocation<Primitive::Desc>;
-  auto allocateMeshInstDesc() -> Allocation<ModelInstance::MeshInstanceDesc>;
+  auto allocateLightingDesc() const -> Allocation<Lighting::Desc>;
+  auto allocateLightDesc() const -> Allocation<Light::Desc>;
+  auto allocateMaterialDesc() const -> Allocation<Material::Desc>;
+  auto allocateTransform() const -> Allocation<Transform>;
+  auto allocatePrimitiveDesc() const -> Allocation<Primitive::Desc>;
+  auto allocateMeshInstDesc() const -> Allocation<ModelInstance::MeshInstanceDesc>;
+
+  void scheduleUpdate(Update::Type type, uint32_t id, uint32_t frames, uint32_t &ticket);
 
   auto addToDrawGroup(uint32_t meshId, DrawGroup oldGroupID = DrawGroup::Unknown)
     -> DrawGroup;
@@ -136,6 +148,8 @@ private:
     std::unique_ptr<Camera> camera_;
     AtmosphereSetting atmosphere;
     ShadowMapSetting shadowMap;
+
+    std::vector<Update> updates;
   } Host;
 
   vk::Rect2D renderArea;

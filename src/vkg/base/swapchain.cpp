@@ -39,7 +39,7 @@ auto chooseExtent(
 }
 
 Swapchain::Swapchain(
-  Device &device, vk::SurfaceKHR surface, const WindowConfig &windowConfig)
+  Device &device, vk::SurfaceKHR surface, const FeatureConfig &featureConfig)
   : device{device},
     physicalDevice{device.physicalDevice()},
     vkDevice{device.vkDevice()},
@@ -47,7 +47,7 @@ Swapchain::Swapchain(
     presentQueues{device.queues()} {
 
   auto presentModes = physicalDevice.getSurfacePresentModesKHR(surface);
-  presentMode = choosePresentMode(presentModes, windowConfig.vsync);
+  presentMode = choosePresentMode(presentModes, featureConfig.vsync);
   auto formats = physicalDevice.getSurfaceFormatsKHR(surface);
   surfaceFormat = chooseSurfaceFormat(formats);
 

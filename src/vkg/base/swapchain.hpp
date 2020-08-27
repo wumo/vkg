@@ -7,7 +7,7 @@
 namespace vkg {
 class Swapchain {
 public:
-  Swapchain(Device &device, vk::SurfaceKHR surface, const WindowConfig &windowConfig);
+  Swapchain(Device &device, vk::SurfaceKHR surface, const FeatureConfig &featureConfig);
   auto resize(uint32_t width, uint32_t height, bool vsync) -> void;
 
   auto acquireNextImage(vk::Semaphore imageAvailable, uint32_t &imageIndex) -> vk::Result;
@@ -35,7 +35,7 @@ private:
   vk::SurfaceFormatKHR surfaceFormat;
 
   vk::UniqueSwapchainKHR swapchain;
-  
+
   vk::Extent2D extent_;
   uint32_t imageCount_;
   std::vector<vk::Image> images;

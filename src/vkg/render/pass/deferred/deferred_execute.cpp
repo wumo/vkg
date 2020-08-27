@@ -64,6 +64,10 @@ void DeferredPass::execute(RenderContext &ctx, Resources &resources) {
   bufInfo = resources.get(passIn.indices);
   cb.bindIndexBuffer(bufInfo.buffer, bufInfo.offset, vk::IndexType::eUint32);
 
+  pushConstant.frame = ctx.frameIndex;
+  cb.pushConstants<PushConstant>(
+    pipeDef.layout(), vk::ShaderStageFlagBits::eVertex, 0, pushConstant);
+
   auto draw = [&](DrawGroup drawGroup) {
     auto drawGroupIdx = value(drawGroup);
     auto drawInfo = drawInfos.drawInfo[0][drawGroupIdx];

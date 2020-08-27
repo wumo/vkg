@@ -14,8 +14,6 @@ enum class PrimitiveTopology : uint32_t {
   Patches = 4u
 };
 
-enum class DynamicType : uint32_t { Static = 0u, Dynamic = 1u };
-
 class Scene;
 class PrimitiveBuilder;
 class Primitive {
@@ -23,37 +21,44 @@ public:
   struct Desc {
     UIntRange index, position, normal, uv;
     AABB aabb;
+    uint64_t handle{0};
   };
   Primitive(
-    Scene &scene, uint32_t id, UIntRange index, UIntRange position, UIntRange normal,
-    UIntRange uv, PrimitiveTopology topology, DynamicType type);
-  virtual auto id() const -> uint32_t;
-  virtual auto index() const -> UIntRange;
-  virtual auto position() const -> UIntRange;
-  virtual auto normal() const -> UIntRange;
-  virtual auto uv() const -> UIntRange;
-  virtual auto aabb() const -> AABB;
-  virtual auto setAABB(const AABB &aabb) -> void;
-  virtual auto topology() const -> PrimitiveTopology;
-  virtual auto type() const -> DynamicType;
-  virtual auto descOffset() const -> uint32_t;
+    Scene &scene, uint32_t id, std::vector<UIntRange> &&index,
+    std::vector<UIntRange> &&position, std::vector<UIntRange> &&normal,
+    std::vector<UIntRange> &&uv, const AABB &aabb, PrimitiveTopology topology,
+    uint32_t count = 1);
+  auto id() const -> uint32_t;
+  auto count() const -> uint32_t;
+  auto topology() const -> PrimitiveTopology;
+  auto index(uint32_t idx) const -> UIntRange;
+  auto position(uint32_t idx) const -> UIntRange;
+  auto normal(uint32_t idx) const -> UIntRange;
+  auto uv(uint32_t idx) const -> UIntRange;
+  auto aabb(uint32_t idx) const -> AABB;
+  void setAABB(uint32_t idx, const AABB &aabb);
+  auto descOffset() const -> uint32_t;
 
   auto update(
-    uint32_t queueIdx, std::span<Vertex::Position> positions,
-    std::span<Vertex::Normal> normals) -> void;
-  auto update(uint32_t queueIdx, PrimitiveBuilder &builder) -> void;
+    uint32_t idx, std::span<Vertex::Position> positions,
+    std::span<Vertex::Normal> normals, const AABB &aabb) -> void;
+  auto update(uint32_t idx, PrimitiveBuilder &builder) -> void;
 
 protected:
   Scene &scene;
   const uint32_t id_;
+  const uint32_t count_;
+
   const PrimitiveTopology topology_;
-  const DynamicType type_;
 
-  UIntRange index_, position_, normal_, uv_;
-  AABB aabb_;
+  struct Frame {
+    UIntRange index_, position_, normal_, uv_;
+    AABB aabb_;
+    uint64_t handle{0};
 
-  UIntRange aabbRange_;
+    Allocation<Desc> desc;
+  };
 
-  Allocation<Desc> desc;
+  std::vector<Frame> frames;
 };
 }

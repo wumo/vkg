@@ -63,7 +63,7 @@ auto Node::freeze() -> void {
     auto &mesh = scene.mesh(meshId);
     auto primitiveId = mesh.primitive();
     auto &primitive = scene.primitive(primitiveId);
-    aabb_.merge(primitive.aabb().transform(m));
+    aabb_.merge(primitive.aabb(0).transform(m)); //TODO check
   }
 
   for(auto &childId: children_) {

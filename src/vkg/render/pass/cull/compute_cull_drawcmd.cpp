@@ -154,6 +154,7 @@ void ComputeCullDrawCMD::execute(RenderContext &ctx, Resources &resources) {
     .totalMeshInstances = totalMeshInstances,
     .cmdFrustumStride = numDrawCMDsPerFrustum,
     .groupStride = numDrawGroups,
+    .frame = ctx.frameIndex,
   };
   cb.pushConstants<PushConstant>(
     pipeDef.layout(), vk::ShaderStageFlagBits::eCompute, 0, pushConstant);

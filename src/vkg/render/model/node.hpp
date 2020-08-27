@@ -12,19 +12,19 @@ class Scene;
 class Node {
 public:
   Node(Scene &scene, uint32_t id, const Transform &transform);
-  virtual auto id() const -> uint32_t;
-  virtual auto transform() const -> Transform;
-  virtual auto setTransform(const Transform &transform) -> void;
-  virtual auto name() const -> std::string;
-  virtual auto setName(const std::string &name) -> void;
-  virtual auto meshes() const -> std::span<const uint32_t>;
-  virtual auto addMeshes(std::vector<uint32_t> &&meshes) -> void;
-  virtual auto parent() const -> uint32_t;
-  virtual auto children() const -> std::span<const uint32_t>;
-  virtual auto addChildren(std::vector<uint32_t> &&children) -> void;
-  virtual auto aabb() -> AABB;
-  virtual auto freeze() -> void;
-  virtual auto transfOffset() const -> uint32_t;
+  auto id() const -> uint32_t;
+  auto transform() const -> Transform;
+  auto setTransform(const Transform &transform) -> void;
+  auto name() const -> std::string;
+  auto setName(const std::string &name) -> void;
+  auto meshes() const -> std::span<const uint32_t>;
+  auto addMeshes(std::vector<uint32_t> &&meshes) -> void;
+  auto parent() const -> uint32_t;
+  auto children() const -> std::span<const uint32_t>;
+  auto addChildren(std::vector<uint32_t> &&children) -> void;
+  auto aabb() -> AABB;
+  auto freeze() -> void;
+  auto transfOffset() const -> uint32_t;
 
 private:
   Scene &scene;

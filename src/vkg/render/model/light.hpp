@@ -1,6 +1,7 @@
 #pragma once
 #include "vkg/math/glm_common.hpp"
 #include "vkg/render/allocation.hpp"
+#include "frame_updatable.hpp"
 
 namespace vkg {
 class Scene;
@@ -12,12 +13,12 @@ public: // ref in shaders
   };
   explicit Lighting(Scene &scene);
 
-  virtual auto numLights() const -> uint32_t;
-  virtual auto setNumLights(uint32_t numLights) -> void;
-  virtual auto exposure() const -> float;
-  virtual auto setExposure(float exposure) -> void;
-  virtual auto gamma() const -> float;
-  virtual auto setGamma(float gamma) -> void;
+  auto numLights() const -> uint32_t;
+  auto setNumLights(uint32_t numLights) -> void;
+  auto exposure() const -> float;
+  auto setExposure(float exposure) -> void;
+  auto gamma() const -> float;
+  auto setGamma(float gamma) -> void;
 
 protected:
   uint32_t numLights_{0};
@@ -26,7 +27,7 @@ protected:
   Allocation<Desc> desc;
 };
 
-class Light {
+class Light: public FrameUpdatable {
 public:
   // ref in shaders
   struct alignas(sizeof(glm::vec4)) Desc {
@@ -35,25 +36,32 @@ public:
     glm::vec3 location;
     float range;
   };
-  Light(Scene &scene, uint32_t id);
-  virtual auto id() const -> uint32_t;
-  virtual auto color() const -> glm::vec3;
-  virtual auto setColor(glm::vec3 color) -> void;
-  virtual auto location() const -> glm::vec3;
-  virtual auto setLocation(glm::vec3 location) -> void;
-  virtual auto intensity() const -> float;
-  virtual auto setIntensity(float intensity) -> void;
-  virtual auto range() const -> float;
-  virtual auto setRange(float range) -> void;
+  Light(Scene &scene, uint32_t id, uint32_t count = 1);
+  auto id() const -> uint32_t;
+  auto count() const -> uint32_t;
+  auto color() const -> glm::vec3;
+  auto setColor(glm::vec3 color) -> void;
+  auto location() const -> glm::vec3;
+  auto setLocation(glm::vec3 location) -> void;
+  auto intensity() const -> float;
+  auto setIntensity(float intensity) -> void;
+  auto range() const -> float;
+  auto setRange(float range) -> void;
+
+protected:
+  void updateDesc(uint32_t frameIdx) override;
 
 private:
+  Scene &scene;
   const uint32_t id_;
+  const uint32_t count_;
+
   glm::vec3 color_{1.f};
-  glm::vec3 location_{0.f, 1.f, 0.f};
   float intensity_{1.f};
+  glm::vec3 location_{0.f, 1.f, 0.f};
   float range_{0};
 
-  Allocation<Desc> desc;
+  std::vector<Allocation<Desc>> descs;
 };
 
 }

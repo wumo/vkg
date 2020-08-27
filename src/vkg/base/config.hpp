@@ -4,12 +4,12 @@ namespace vkg {
 struct WindowConfig {
   std::string title{"Window"};
   uint32_t width{1960}, height{1080};
-  bool fullscreen{false};
-  bool vsync{false};
-  uint32_t numFrames{1};
 };
 
 struct FeatureConfig {
+  bool fullscreen{false};
+  bool vsync{false};
+  uint32_t numFrames{1};
   bool rayTracing{false};
 };
 }

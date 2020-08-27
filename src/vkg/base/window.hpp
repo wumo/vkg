@@ -45,7 +45,6 @@ public:
   auto height() const -> uint32_t;
   auto windowTitle() -> std::string;
   auto setWindowTitle(const std::string &title) -> void;
-  auto isVsync() const -> bool;
 
 private:
   WindowConfig windowConfig;

@@ -13,10 +13,10 @@ public:
   explicit Model(
     Scene &scene, uint32_t id, const std::vector<uint32_t> &nodes,
     std::vector<Animation> &&animations = {});
-  virtual auto id() const -> uint32_t;
-  virtual auto nodes() const -> std::span<const uint32_t>;
-  virtual auto aabb() -> AABB;
-  virtual auto animations() -> std::span<Animation>;
+  auto id() const -> uint32_t;
+  auto nodes() const -> std::span<const uint32_t>;
+  auto aabb() -> AABB;
+  auto animations() -> std::span<Animation>;
 
 protected:
   const uint32_t id_;

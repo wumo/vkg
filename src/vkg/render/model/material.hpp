@@ -2,6 +2,7 @@
 #include "vkg/math/glm_common.hpp"
 #include "vkg/render/ranges.hpp"
 #include "vkg/render/allocation.hpp"
+#include "frame_updatable.hpp"
 
 namespace vkg {
 enum class MaterialType : uint32_t {
@@ -21,7 +22,7 @@ enum class MaterialType : uint32_t {
 };
 
 class Scene;
-class Material {
+class Material: public FrameUpdatable {
 public:
   // ref in shaders
   struct Desc {
@@ -34,35 +35,43 @@ public:
     uint32_t type;
   };
 
-  Material(Scene &scene, uint32_t id, MaterialType type);
-  virtual auto id() const -> uint32_t;
-  virtual auto colorTex() const -> uint32_t;
-  virtual auto setColorTex(uint32_t colorTex) -> Material &;
-  virtual auto pbrTex() const -> uint32_t;
-  virtual auto setPbrTex(uint32_t pbrTex) -> Material &;
-  virtual auto normalTex() const -> uint32_t;
-  virtual auto setNormalTex(uint32_t normalTex) -> Material &;
-  virtual auto occlusionTex() const -> uint32_t;
-  virtual auto setOcclusionTex(uint32_t occlusionTex) -> Material &;
-  virtual auto emissiveTex() const -> uint32_t;
-  virtual auto setEmissiveTex(uint32_t emissiveTex) -> Material &;
-  virtual auto colorFactor() const -> glm::vec4;
-  virtual auto setColorFactor(glm::vec4 colorFactor) -> Material &;
-  virtual auto pbrFactor() const -> glm::vec4;
-  virtual auto setPbrFactor(glm::vec4 pbrFactor) -> Material &;
-  virtual auto occlusionStrength() const -> float;
-  virtual auto setOcclusionStrength(float occlusionStrength) -> Material &;
-  virtual auto alphaCutoff() const -> float;
-  virtual auto setAlphaCutoff(float alphaCutoff) -> Material &;
-  virtual auto emissiveFactor() const -> glm::vec4;
-  virtual auto setEmissiveFactor(glm::vec4 emissiveFactor) -> Material &;
-  virtual auto heightTex() const -> uint32_t;
-  virtual auto setHeightTex(uint32_t heightTex) -> Material &;
-  virtual auto type() const -> MaterialType;
-  virtual auto descOffset() const -> uint32_t;
+  Material(Scene &scene, uint32_t id, MaterialType type, uint32_t count = 1);
+  auto id() const -> uint32_t;
+  auto count() const -> uint32_t;
+  auto type() const -> MaterialType;
+  auto colorTex() const -> uint32_t;
+  auto setColorTex(uint32_t colorTex) -> Material &;
+  auto pbrTex() const -> uint32_t;
+  auto setPbrTex(uint32_t pbrTex) -> Material &;
+  auto normalTex() const -> uint32_t;
+  auto setNormalTex(uint32_t normalTex) -> Material &;
+  auto occlusionTex() const -> uint32_t;
+  auto setOcclusionTex(uint32_t occlusionTex) -> Material &;
+  auto emissiveTex() const -> uint32_t;
+  auto setEmissiveTex(uint32_t emissiveTex) -> Material &;
+  auto colorFactor() const -> glm::vec4;
+  auto setColorFactor(glm::vec4 colorFactor) -> Material &;
+  auto pbrFactor() const -> glm::vec4;
+  auto setPbrFactor(glm::vec4 pbrFactor) -> Material &;
+  auto occlusionStrength() const -> float;
+  auto setOcclusionStrength(float occlusionStrength) -> Material &;
+  auto alphaCutoff() const -> float;
+  auto setAlphaCutoff(float alphaCutoff) -> Material &;
+  auto emissiveFactor() const -> glm::vec4;
+  auto setEmissiveFactor(glm::vec4 emissiveFactor) -> Material &;
+  auto heightTex() const -> uint32_t;
+  auto setHeightTex(uint32_t heightTex) -> Material &;
+
+  auto descOffset() const -> uint32_t;
 
 protected:
+  void updateDesc(uint32_t frameIdx) override;
+
+protected:
+  Scene &scene;
   const uint32_t id_;
+  const uint32_t count_;
+  const MaterialType type_;
 
   glm::vec4 colorFactor_{1.f};
   glm::vec4 pbrFactor_{0.f, 1.f, 0.f, 0.f};
@@ -71,9 +80,8 @@ protected:
   float alphaCutoff_{0.f};
   uint32_t colorTex_{nullIdx}, pbrTex_{nullIdx}, normalTex_{nullIdx},
     occlusionTex_{nullIdx}, emissiveTex_{nullIdx}, heightTex_{nullIdx};
-  const MaterialType type_;
 
-  Allocation<Desc> desc;
+  std::vector<Allocation<Desc>> descs;
 };
 
 }

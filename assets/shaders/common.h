@@ -1,6 +1,8 @@
 #ifndef VKG_COMMON_H
 #define VKG_COMMON_H
 
+#extension GL_EXT_shader_explicit_arithmetic_types : enable
+
 const uint nullIdx = ~0u;
 
 const uint MaterialType_BRDF = 0x1u;
@@ -22,9 +24,12 @@ struct MaterialUBO {
 
 struct MeshInstanceUBO {
   uint material;
+  uint materialCount;
   uint primitive;
+  uint primitiveCount;
   uint node;
   uint instance;
+  uint instanceCount;
   bool visible;
   uint drawGroupID;
 };
@@ -41,6 +46,7 @@ struct UIntRange {
 struct PrimitiveUBO {
   UIntRange index, position, normal, uv;
   AABB aabb;
+  uint64_t handle;
 };
 
 struct Vertex {

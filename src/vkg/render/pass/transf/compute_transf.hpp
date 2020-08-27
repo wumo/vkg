@@ -24,6 +24,7 @@ public:
 private:
   struct PushConstant {
     uint32_t totalMeshInstances;
+    uint32_t frame;
   } pushConstant{};
   struct ComputeTransfSetDef: DescriptorSetDef {
     __buffer__(meshInstances, vkStage::eCompute);

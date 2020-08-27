@@ -7,14 +7,14 @@ VULKAN_HPP_DEFAULT_DISPATCH_LOADER_DYNAMIC_STORAGE
 namespace vkg {
 
 Base::Base(const WindowConfig &windowConfig, const FeatureConfig &featureConfig)
-  : windowConfig_{windowConfig}, featureConfig_{featureConfig} {
-  window_ = std::make_unique<Window>(windowConfig_);
+  : featureConfig_{featureConfig} {
+  window_ = std::make_unique<Window>(windowConfig);
   instance = std::make_unique<Instance>(featureConfig_);
   window_->createSurface(instance->vkInstance());
   createDebugUtils();
-  device_ = std::make_unique<Device>(
-    *instance, window_->vkSurface(), windowConfig_, featureConfig_);
-  swapchain_ = std::make_unique<Swapchain>(*device_, window_->vkSurface(), windowConfig_);
+  device_ = std::make_unique<Device>(*instance, window_->vkSurface(), featureConfig_);
+  swapchain_ =
+    std::make_unique<Swapchain>(*device_, window_->vkSurface(), featureConfig_);
   createSyncObjects();
   createCommandBuffers();
   Base::resize();
@@ -83,7 +83,7 @@ auto Base::createCommandBuffers() -> void {
 
 auto Base::resize() -> void {
   device_->vkDevice().waitIdle();
-  swapchain_->resize(window_->width(), window_->height(), window_->isVsync());
+  swapchain_->resize(window_->width(), window_->height(), featureConfig_.vsync);
   //empty cb for syncReverse
   for(auto i = 0u, numFrames = uint32_t(device_->queues().size()); i < numFrames; ++i) {
     cmdBuffers[i].begin({vk::CommandBufferUsageFlagBits::eSimultaneousUse});
@@ -185,7 +185,7 @@ auto Base::syncSemaphore(
     if(result == vk::Result::eSuboptimalKHR) resize();
   } catch(const vk::OutOfDateKHRError &) { resize(); }
 
-  frameIndex = (frameIndex + 1) % windowConfig_.numFrames;
+  frameIndex = (frameIndex + 1) % featureConfig_.numFrames;
 }
 
 auto Base::syncTimeline(
@@ -254,6 +254,6 @@ auto Base::syncTimeline(
     if(result == vk::Result::eSuboptimalKHR) resize();
   } catch(const vk::OutOfDateKHRError &) { resize(); }
 
-  frameIndex = (frameIndex + 1) % windowConfig_.numFrames;
+  frameIndex = (frameIndex + 1) % featureConfig_.numFrames;
 }
 }

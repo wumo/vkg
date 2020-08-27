@@ -109,8 +109,7 @@ void checkDeviceExtensionSupport(
 }
 
 Device::Device(
-  Instance &instance, vk::SurfaceKHR surface, const WindowConfig &windowConfig,
-  const FeatureConfig &featureConfig)
+  Instance &instance, vk::SurfaceKHR surface, const FeatureConfig &featureConfig)
   : instance{instance}, surface{surface} {
   auto physicalDevices = instance.vkInstance().enumeratePhysicalDevices();
   physicalDevice_ = chooseBestPerformantGPU(physicalDevices);
@@ -178,7 +177,7 @@ Device::Device(
 
   checkDeviceExtensionSupport(physicalDevice_, deviceExtensions);
 
-  queueCount = windowConfig.numFrames;
+  queueCount = featureConfig.numFrames;
 
   findQueueFamily();
 

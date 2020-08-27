@@ -91,7 +91,11 @@ private:
     __sampler2D__(irradiance, vkStage::eFragment);
   } atmosphereSetDef;
 
+  struct PushConstant {
+    uint32_t frame;
+  } pushConstant{};
   struct DeferredPipeDef: PipelineLayoutDef {
+    __push_constant__(constant, vkStage::eVertex, PushConstant);
     __set__(scene, SceneSetDef);
     __set__(gbuffer, GBufferSetDef);
     __set__(atmosphere, AtmosphereSetDef);
