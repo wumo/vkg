@@ -41,6 +41,7 @@ set(sources
   src/vkg/base/resource/texture_blit.cpp
   src/vkg/base/resource/texture_upload.cpp
   src/vkg/base/resource/texture_mipmap.cpp
+  src/vkg/base/resource/acceleration_structures.cpp
   
   src/vkg/base/pipeline/pipeline_query.cpp
   src/vkg/base/pipeline/render_pass.cpp

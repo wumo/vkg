@@ -1,0 +1,69 @@
+#version 450
+#extension GL_GOOGLE_include_directive : require
+#extension GL_EXT_scalar_block_layout : enable
+// #extension GL_EXT_debug_printf : enable
+
+#include "../rt_common.h"
+layout(constant_id = 0) const uint lx = 1;
+layout(constant_id = 1) const uint ly = 1;
+layout(constant_id = 2) const uint lz = 1;
+layout(local_size_x_id = 0, local_size_y_id = 1, local_size_z_id = 2) in;
+
+layout(push_constant) uniform PushConstant {
+  uint totalMeshInstances;
+  uint frame;
+};
+layout(set = 0, binding = 0, scalar) buffer MeshesBuffer {
+  MeshInstanceUBO meshInstances[];
+};
+layout(set = 0, binding = 1, scalar) readonly buffer PrimitiveBuffer {
+  PrimitiveUBO primitives[];
+};
+layout(set = 0, binding = 2, std430) readonly buffer TransformBuffer { mat4 matrices[]; };
+layout(set = 0, binding = 3, scalar) buffer CountBuffer { uint tlasInstanceCount; };
+layout(set = 0, binding = 4, scalar) buffer RTGeometryInstances {
+  RTGeometryInstance tlasInstances[];
+};
+
+void main() {
+  uint NX = gl_NumWorkGroups.x * gl_WorkGroupSize.x;
+  uint NY = gl_NumWorkGroups.y * gl_WorkGroupSize.y;
+  uint id = gl_GlobalInvocationID.z * (NX * NY) + gl_GlobalInvocationID.y * NX +
+            gl_GlobalInvocationID.x;
+
+  if(id >= totalMeshInstances) return;
+
+  MeshInstanceUBO mesh = meshInstances[id];
+
+  if(!mesh.visible) return;
+
+  uint shaderId = nullIdx;
+  switch(mesh.drawGroupID) {
+    case DrawGroupBRDF:
+    case DrawGroupReflective:
+    case DrawGroupRefractive: shaderId = 0; break;
+  }
+  if(shaderId == nullIdx) return;
+
+  RTGeometryInstance ins;
+
+  mat4 t = transpose(matrices[id]);
+  ins.transform = mat3x4(t);
+
+  uint id_mask = 0;
+  id_mask = bitfieldInsert(id_mask, id, 0, 24);
+  id_mask = bitfieldInsert(id_mask, 0xff, 24, 8);
+  ins.id_mask = id_mask;
+
+  uint shader_flag = 0;
+  shader_flag = bitfieldInsert(shader_flag, shaderId, 0, 24);
+  shader_flag = bitfieldInsert(shader_flag, RTTriangleFacingCullDisable, 24, 8);
+  ins.shader_flag = shader_flag;
+
+  uint primitiveOffset = clamp(frame, 0, mesh.primitiveCount - 1);
+  PrimitiveUBO prim = primitives[mesh.primitive + primitiveOffset];
+  ins.handle = prim.handle;
+
+  uint tlasIdx = atomicAdd(tlasInstanceCount, 1);
+  tlasInstances[tlasIdx] = ins;
+}

@@ -142,7 +142,7 @@ void DeferredPass::compile(RenderContext &ctx, Resources &resources) {
       samplers.data() + frame.lastNumValidSampler);
     frame.lastNumValidSampler = numValidSampler;
   }
-  sceneSetDef.cameras(resources.get(camBuffer));
+  sceneSetDef.camera(resources.get(camBuffer));
   sceneSetDef.meshInstances(resources.get(passIn.meshInstances));
   sceneSetDef.primitives(resources.get(passIn.primitives));
   sceneSetDef.matrices(resources.get(passIn.matrices));

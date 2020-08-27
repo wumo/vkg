@@ -62,7 +62,7 @@ void ComputeTransf::execute(RenderContext &ctx, Resources &resources) {
   totalGroup = uint32_t(totalGroup / double(dx));
   auto dy = std::min(std::max(totalGroup, 1u), maxCG[1]);
   totalGroup = uint32_t(totalGroup / double(dy));
-  auto dz = std::min(std::max(totalGroup, 1u), maxCG[1]);
+  auto dz = std::min(std::max(totalGroup, 1u), maxCG[2]);
 
   auto cb = ctx.cb;
   ctx.device.begin(cb, "compute transform");

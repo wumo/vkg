@@ -34,19 +34,19 @@ auto Light::location() const -> glm::vec3 { return location_; }
 auto Light::range() const -> float { return range_; }
 auto Light::setColor(glm::vec3 color) -> void {
   color_ = color;
-  scene.scheduleUpdate(Update::Type::Light, id_, count_, ticket);
+  scene.scheduleFrameUpdate(Update::Type::Light, id_, count_, ticket);
 }
 auto Light::setIntensity(float intensity) -> void {
   intensity_ = intensity;
-  scene.scheduleUpdate(Update::Type::Light, id_, count_, ticket);
+  scene.scheduleFrameUpdate(Update::Type::Light, id_, count_, ticket);
 }
 auto Light::setLocation(glm::vec3 location) -> void {
   location_ = location;
-  scene.scheduleUpdate(Update::Type::Light, id_, count_, ticket);
+  scene.scheduleFrameUpdate(Update::Type::Light, id_, count_, ticket);
 }
 auto Light::setRange(float range) -> void {
   range_ = range;
-  scene.scheduleUpdate(Update::Type::Light, id_, count_, ticket);
+  scene.scheduleFrameUpdate(Update::Type::Light, id_, count_, ticket);
 }
 void Light::updateDesc(uint32_t frameIdx) {
   *descs[std::clamp(frameIdx, 0u, count_ - 1)].ptr = {

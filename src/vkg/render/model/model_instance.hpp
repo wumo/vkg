@@ -51,7 +51,11 @@ protected:
   bool visible_{true};
   uint32_t customMatId{nullIdx};
 
-  std::vector<Allocation<MeshInstanceDesc>> meshInstDescs;
+  struct MeshInstInfo {
+    DrawGroup drawGroupID{DrawGroup::Unknown};
+    Allocation<MeshInstanceDesc> desc;
+  };
+  std::vector<MeshInstInfo> meshInstDescs;
 
   Transform transform_;
 

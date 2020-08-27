@@ -97,11 +97,14 @@ public:
   auto allocatePrimitiveDesc() const -> Allocation<Primitive::Desc>;
   auto allocateMeshInstDesc() const -> Allocation<ModelInstance::MeshInstanceDesc>;
 
-  void scheduleUpdate(Update::Type type, uint32_t id, uint32_t frames, uint32_t &ticket);
+  void scheduleFrameUpdate(
+    Update::Type type, uint32_t id, uint32_t frames, uint32_t &ticket);
 
   auto addToDrawGroup(uint32_t meshId, DrawGroup oldGroupID = DrawGroup::Unknown)
     -> DrawGroup;
 
+  void setVisible(DrawGroup drawGroup,bool visible);
+  
   void setup(PassBuilder &builder) override;
   void compile(RenderContext &ctx, Resources &resources) override;
 

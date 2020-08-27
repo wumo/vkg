@@ -58,7 +58,7 @@ private:
   FrameGraphResource<BufferInfo> camBuffer;
 
   struct SceneSetDef: DescriptorSetDef {
-    __buffer__(cameras, vkStage::eVertex | vkStage::eFragment);
+    __buffer__(camera, vkStage::eVertex | vkStage::eFragment);
     __buffer__(meshInstances, vkStage::eVertex);
     __buffer__(primitives, vkStage::eVertex);
     __buffer__(matrices, vkStage::eVertex);

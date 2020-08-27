@@ -242,7 +242,12 @@ auto Scene::addToDrawGroup(uint32_t meshId, DrawGroup oldGroupID) -> DrawGroup {
   Host.drawGroupInstCount[value(gID)]++;
   return gID;
 }
-void Scene::scheduleUpdate(
+
+void Scene::setVisible(DrawGroup drawGroup, bool visible) {
+  Host.drawGroupInstCount[value(drawGroup)] += visible ? 1 : -1;
+}
+
+void Scene::scheduleFrameUpdate(
   Update::Type type, uint32_t id, uint32_t frames, uint32_t &ticket) {
   auto size = uint32_t(Host.updates.size());
   if(ticket < size) Host.updates[ticket].frames = frames;

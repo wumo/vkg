@@ -19,12 +19,18 @@ ModelInstance::ModelInstance(
       auto &material = scene.material(mesh.material());
 
       auto meshInsDesc = scene.allocateMeshInstDesc();
-      *meshInsDesc.ptr = {material.descOffset(),       material.count(),
-                          primitive.descOffset(),      primitive.count(),
-                          node.transfOffset(),         transfs[0].offset,
-                          uint32_t(transfs.size()),    true,
-                          scene.addToDrawGroup(meshId)};
-      meshInstDescs.push_back(meshInsDesc);
+      auto drawGroup = scene.addToDrawGroup(meshId);
+      *meshInsDesc.ptr = {
+        material.descOffset(),
+        material.count(),
+        primitive.descOffset(),
+        primitive.count(),
+        node.transfOffset(),
+        transfs[0].offset,
+        uint32_t(transfs.size()),
+        true,
+        drawGroup};
+      meshInstDescs.push_back({drawGroup, meshInsDesc});
     }
 }
 auto ModelInstance::id() const -> uint32_t { return id_; }
@@ -36,12 +42,14 @@ auto ModelInstance::visible() const -> bool { return visible_; }
 auto ModelInstance::customMaterial() const -> uint32_t { return customMatId; }
 auto ModelInstance::setVisible(bool visible) -> void {
   visible_ = visible;
-  for(auto &inst: meshInstDescs)
-    inst.ptr->visible = visible;
+  for(auto &inst: meshInstDescs) {
+    inst.desc.ptr->visible = visible;
+    scene.setVisible(inst.drawGroupID, visible);
+  }
 }
 auto ModelInstance::setTransform(const Transform &transform) -> void {
   transform_ = transform;
-  scene.scheduleUpdate(Update::Type::InstanceTransf, id_, count_, ticket);
+  scene.scheduleFrameUpdate(Update::Type::InstanceTransf, id_, count_, ticket);
 }
 auto ModelInstance::changeModel(uint32_t model) -> void {
   model_ = model;
@@ -56,23 +64,19 @@ auto ModelInstance::changeModel(uint32_t model) -> void {
         scene.material(customMatId != nullIdx ? customMatId : mesh.material());
 
       auto meshInsDesc = meshInstDescs.at(meshInsDescIdx++);
-      *meshInsDesc.ptr = {
-        material.descOffset(),
-        material.count(),
-        primitive.descOffset(),
-        primitive.count(),
-        node.transfOffset(),
-        transfs[0].offset,
-        uint32_t(transfs.size()),
-        visible_,
-        scene.addToDrawGroup(meshId, meshInsDesc.ptr->drawGroupID)};
+      meshInsDesc.drawGroupID = scene.addToDrawGroup(meshId, meshInsDesc.drawGroupID);
+      *meshInsDesc.desc.ptr = {material.descOffset(),    material.count(),
+                               primitive.descOffset(),   primitive.count(),
+                               node.transfOffset(),      transfs[0].offset,
+                               uint32_t(transfs.size()), visible_,
+                               meshInsDesc.drawGroupID};
     }
 }
 auto ModelInstance::setCustomMaterial(uint32_t materialId) -> void {
   if(materialId != nullIdx) {
     auto &mat = scene.material(materialId);
     for(auto &inst: meshInstDescs)
-      inst.ptr->materialDescIdx = mat.descOffset();
+      inst.desc.ptr->materialDescIdx = mat.descOffset();
   } else {
     auto meshInsDescIdx = 0;
     for(auto &m = scene.model(model_); const auto &nodeId: m.nodes())
@@ -82,11 +86,12 @@ auto ModelInstance::setCustomMaterial(uint32_t materialId) -> void {
         auto &primitive = scene.primitive(mesh.primitive());
         auto &material = scene.material(mesh.material());
 
+        //TODO check
         auto meshInsDesc = meshInstDescs.at(meshInsDescIdx++);
-        meshInsDesc.ptr->materialDescIdx = material.descOffset();
-        meshInsDesc.ptr->materialCount = material.count();
-        meshInsDesc.ptr->drawGroupID =
-          scene.addToDrawGroup(meshId, meshInsDesc.ptr->drawGroupID);
+        meshInsDesc.drawGroupID = scene.addToDrawGroup(meshId, meshInsDesc.drawGroupID);
+        meshInsDesc.desc.ptr->materialDescIdx = material.descOffset();
+        meshInsDesc.desc.ptr->materialCount = material.count();
+        meshInsDesc.desc.ptr->drawGroupID = meshInsDesc.drawGroupID;
       }
   }
   customMatId = materialId;

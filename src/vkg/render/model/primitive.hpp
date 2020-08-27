@@ -4,6 +4,7 @@
 #include "vkg/render/ranges.hpp"
 #include "vkg/render/allocation.hpp"
 #include "vkg/render/model/vertex.hpp"
+#include "vkg/base/resource/acceleration_structures.hpp"
 #include <span>
 
 namespace vkg {
@@ -38,6 +39,7 @@ public:
   auto aabb(uint32_t idx) const -> AABB;
   void setAABB(uint32_t idx, const AABB &aabb);
   auto descOffset() const -> uint32_t;
+  auto isRayTraced() const -> bool;
 
   auto update(
     uint32_t idx, std::span<Vertex::Position> positions,
@@ -50,11 +52,12 @@ protected:
   const uint32_t count_;
 
   const PrimitiveTopology topology_;
+  bool isRayTraced_{false};
 
   struct Frame {
     UIntRange index_, position_, normal_, uv_;
     AABB aabb_;
-    uint64_t handle{0};
+    ASDesc blas;
 
     Allocation<Desc> desc;
   };

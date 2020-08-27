@@ -9,6 +9,7 @@
 #include "call_frame_updater.hpp"
 #include "resource/buffers.hpp"
 #include "resource/textures.hpp"
+#include "resource/acceleration_structures.hpp"
 #include "pipeline/shaders.hpp"
 #include "pipeline/render_pass.hpp"
 #include "pipeline/descriptors.hpp"

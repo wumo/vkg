@@ -30,57 +30,57 @@ auto Material::heightTex() const -> uint32_t { return heightTex_; }
 auto Material::descOffset() const -> uint32_t { return descs[0].offset; }
 auto Material::setColorFactor(glm::vec4 colorFactor) -> Material & {
   colorFactor_ = colorFactor;
-  scene.scheduleUpdate(Update::Type::Material, id_, count_, ticket);
+  scene.scheduleFrameUpdate(Update::Type::Material, id_, count_, ticket);
   return *this;
 }
 auto Material::setPbrFactor(glm::vec4 pbrFactor) -> Material & {
   pbrFactor_ = pbrFactor;
-  scene.scheduleUpdate(Update::Type::Material, id_, count_, ticket);
+  scene.scheduleFrameUpdate(Update::Type::Material, id_, count_, ticket);
   return *this;
 }
 auto Material::setEmissiveFactor(glm::vec4 emissiveFactor) -> Material & {
   emissiveFactor_ = emissiveFactor;
-  scene.scheduleUpdate(Update::Type::Material, id_, count_, ticket);
+  scene.scheduleFrameUpdate(Update::Type::Material, id_, count_, ticket);
   return *this;
 }
 auto Material::setOcclusionStrength(float occlusionStrength) -> Material & {
   occlusionStrength_ = occlusionStrength;
-  scene.scheduleUpdate(Update::Type::Material, id_, count_, ticket);
+  scene.scheduleFrameUpdate(Update::Type::Material, id_, count_, ticket);
   return *this;
 }
 auto Material::setAlphaCutoff(float alphaCutoff) -> Material & {
   alphaCutoff_ = alphaCutoff;
-  scene.scheduleUpdate(Update::Type::Material, id_, count_, ticket);
+  scene.scheduleFrameUpdate(Update::Type::Material, id_, count_, ticket);
   return *this;
 }
 auto Material::setColorTex(uint32_t colorTex) -> Material & {
   colorTex_ = colorTex;
-  scene.scheduleUpdate(Update::Type::Material, id_, count_, ticket);
+  scene.scheduleFrameUpdate(Update::Type::Material, id_, count_, ticket);
   return *this;
 }
 auto Material::setPbrTex(uint32_t pbrTex) -> Material & {
   pbrTex_ = pbrTex;
-  scene.scheduleUpdate(Update::Type::Material, id_, count_, ticket);
+  scene.scheduleFrameUpdate(Update::Type::Material, id_, count_, ticket);
   return *this;
 }
 auto Material::setNormalTex(uint32_t normalTex) -> Material & {
   normalTex_ = normalTex;
-  scene.scheduleUpdate(Update::Type::Material, id_, count_, ticket);
+  scene.scheduleFrameUpdate(Update::Type::Material, id_, count_, ticket);
   return *this;
 }
 auto Material::setOcclusionTex(uint32_t occlusionTex) -> Material & {
   occlusionTex_ = occlusionTex;
-  scene.scheduleUpdate(Update::Type::Material, id_, count_, ticket);
+  scene.scheduleFrameUpdate(Update::Type::Material, id_, count_, ticket);
   return *this;
 }
 auto Material::setEmissiveTex(uint32_t emissiveTex) -> Material & {
   emissiveTex_ = emissiveTex;
-  scene.scheduleUpdate(Update::Type::Material, id_, count_, ticket);
+  scene.scheduleFrameUpdate(Update::Type::Material, id_, count_, ticket);
   return *this;
 }
 auto Material::setHeightTex(uint32_t heightTex) -> Material & {
   heightTex_ = heightTex;
-  scene.scheduleUpdate(Update::Type::Material, id_, count_, ticket);
+  scene.scheduleFrameUpdate(Update::Type::Material, id_, count_, ticket);
   return *this;
 }
 void Material::updateDesc(uint32_t frameIdx) {

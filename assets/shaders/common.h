@@ -12,6 +12,7 @@ const uint MaterialType_Refractive = 0x8u;
 const uint MaterialType_None = 0x10u;
 const uint MaterialType_Transparent = 0x20u;
 const uint MaterialType_Terrain = 0x40u;
+
 struct MaterialUBO {
   vec4 baseColorFactor; // a: refractive,
   vec4 pbrFactor;       //  g: roughness, b: metallic, a: ?
@@ -21,6 +22,16 @@ struct MaterialUBO {
   uint colorTex, pbrTex, normalTex, occlusionTex, emissiveTex, heightTex;
   uint type;
 };
+
+const uint DrawGroupUnknown = ~0u;
+const uint DrawGroupUnlit = 0u;
+const uint DrawGroupBRDF = 1u;
+const uint DrawGroupReflective = 2u;
+const uint DrawGroupRefractive = 3u;
+const uint DrawGroupTransparent = 4u;
+const uint DrawGroupTerrain = 5u;
+const uint DrawGroupTransparentLines = 6u;
+const uint DrawGroupOpaqueLines = 7u;
 
 struct MeshInstanceUBO {
   uint material;

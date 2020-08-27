@@ -11,8 +11,34 @@ Primitive::Primitive(
   frames.resize(count);
   for(auto i = 0u; i < count; i++) {
     frames[i] = {
-      index[i], position[i], normal[i], uv[i], aabb, 0, scene.allocatePrimitiveDesc()};
-    *frames[i].desc.ptr = {index[i], position[i], normal[i], uv[i], aabb, 0};
+      index[i], position[i], normal[i], uv[i], aabb, {}, scene.allocatePrimitiveDesc()};
+    if(scene.featureConfig.rayTracing) {
+      switch(topology) {
+        case PrimitiveTopology::Triangles: {
+          isRayTraced_ = true;
+          auto posBufInfo = scene.Dev.positions->bufferInfo();
+          auto indexBufInfo = scene.Dev.indices->bufferInfo();
+          vk::GeometryNV geometry_ = {
+            vk::GeometryTypeNV::eTriangles,
+            vk::GeometryDataNV{vk::GeometryTrianglesNV{
+              posBufInfo.buffer,
+              posBufInfo.offset + position[i].start * sizeof(Vertex::Position),
+              position[i].size, sizeof(Vertex::Position), vk::Format::eR32G32B32Sfloat,
+              indexBufInfo.buffer,
+              indexBufInfo.offset + index[i].start * sizeof(uint32_t), index[i].size,
+              vk::IndexType::eUint32}},
+            vk::GeometryFlagBitsNV::eOpaque};
+          allocAS(
+            scene.device, frames[i].blas, vk::AccelerationStructureTypeNV::eBottomLevel,
+            vk::BuildAccelerationStructureFlagBitsNV::ePreferFastTrace |
+              vk::BuildAccelerationStructureFlagBitsNV::eAllowCompaction,
+            0, 1, &geometry_);
+        } break;
+        default: break;
+      }
+    }
+    *frames[i].desc.ptr = {index[i], position[i], normal[i],
+                           uv[i],    aabb,        frames[i].blas.handle};
   }
 }
 auto Primitive::id() const -> uint32_t { return id_; }
@@ -25,8 +51,9 @@ auto Primitive::position(uint32_t idx) const -> UIntRange {
 auto Primitive::normal(uint32_t idx) const -> UIntRange { return frames[idx].normal_; }
 auto Primitive::uv(uint32_t idx) const -> UIntRange { return frames[idx].uv_; }
 auto Primitive::aabb(uint32_t idx) const -> AABB { return frames[idx].aabb_; }
-
 auto Primitive::descOffset() const -> uint32_t { return frames[0].desc.offset; }
+auto Primitive::isRayTraced() const -> bool { return isRayTraced_; }
+
 void Primitive::setAABB(uint32_t idx, const AABB &aabb) {
   frames[idx].aabb_ = aabb;
   frames[idx].desc.ptr->aabb = aabb;
