@@ -25,7 +25,5 @@ struct SceneConfig {
   uint32_t maxNumTextures{1000};
   /**max number of lights*/
   uint32_t maxNumLights{1};
-
-  bool rayTrace{false};
 };
 }

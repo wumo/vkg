@@ -4,7 +4,7 @@
 #include "vkg/render/graph/frame_graph.hpp"
 #include "vkg/render/model/camera.hpp"
 #include "vkg/render/model/vertex.hpp"
-#include "vkg/render/draw_group.hpp"
+#include "comp_tlas_pass.hpp"
 #include "vkg/render/pass/atmosphere/atmosphere_pass.hpp"
 
 namespace vkg {
@@ -26,7 +26,7 @@ struct RayTracingPassIn {
   FrameGraphResource<BufferInfo> lighting;
   FrameGraphResource<BufferInfo> lights;
 
-  FrameGraphResource<std::span<uint32_t>> drawGroupCount;
+  FrameGraphResource<std::span<uint32_t>> countPerDrawGroup;
 
   FrameGraphResource<AtmosphereSetting> atmosSetting;
   AtmospherePassOut atmosphere;
@@ -93,5 +93,7 @@ private:
   };
 
   std::vector<FrameResource> frames;
+
+  CompTLASPassOut compTlasPassOut;
 };
 }

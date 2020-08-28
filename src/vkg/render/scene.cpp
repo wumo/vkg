@@ -89,7 +89,6 @@ auto Scene::newPrimitive(
   for(int i = 0; i < count; ++i)
     primitive.setAABB(i, aabb);
 
-  if(sceneConfig.rayTrace) {}
   return id;
 }
 

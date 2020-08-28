@@ -173,7 +173,7 @@ void Scene::setup(PassBuilder &builder) {
     builder.newPass<AtmospherePass>("Atmosphere", {sceneSetup.out().atmosphereSetting});
 
   FrameGraphResource<Texture *> backImg;
-  if(sceneConfig.rayTrace) {
+  if(featureConfig.rayTrace) {
     auto &rayTracing = builder.newPass<RayTracingPass>(
       "RayTracing", {
                       sceneSetup.out().backImg,

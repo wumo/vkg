@@ -23,9 +23,9 @@ struct ProcedurePayload {
 const uint RTTriangleFacingCullDisable = 0x01;
 
 struct RTGeometryInstance {
-  mat3x4 transform;
-  uint id_mask;     // mask:8 <-> id:24;
-  uint shader_flag; // flag:8 <-> shader:24;
+  mat3x4 transform; // row-major 3x4
+  uint id_mask;     // [mask:8][id:24]
+  uint shader_flag; // [flag:8][shader:24]
   uint64_t handle;
 };
 

@@ -5,13 +5,13 @@ using namespace vkg;
 
 auto main() -> int {
   WindowConfig windowConfig{};
-  FeatureConfig featureConfig{.numFrames = 2};
+  FeatureConfig featureConfig{.numFrames = 2, .rayTrace = true};
   Renderer app{windowConfig, featureConfig};
   SceneConfig sceneConfig{
-    .maxNumTransforms = 1000'0000,
-    .maxNumPrimitives = 1000'0000,
-    .maxNumMeshInstances = 1000'0000};
-  auto &scene = app.addScene();
+    .maxNumTransforms = 100'0000,
+    .maxNumPrimitives = 100'0000,
+    .maxNumMeshInstances = 100'0000};
+  auto &scene = app.addScene(sceneConfig);
 
   auto kPi = glm::pi<float>();
   float seasonAngle = kPi / 4;
@@ -197,7 +197,7 @@ auto main() -> int {
     //  t.translation = -center;
     scene.newModelInstance(animModel, t, false);
 
-    uint32_t num = 100;
+    uint32_t num = 1;
     insts.reserve(num * num);
     float unit = -5;
     for(int a = 0; a < num; ++a) {

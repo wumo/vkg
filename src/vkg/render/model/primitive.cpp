@@ -12,7 +12,7 @@ Primitive::Primitive(
   for(auto i = 0u; i < count; i++) {
     frames[i] = {
       index[i], position[i], normal[i], uv[i], aabb, {}, scene.allocatePrimitiveDesc()};
-    if(scene.featureConfig.rayTracing) {
+    if(scene.featureConfig.rayTrace) {
       switch(topology) {
         case PrimitiveTopology::Triangles: {
           isRayTraced_ = true;

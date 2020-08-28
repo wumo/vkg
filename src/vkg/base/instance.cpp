@@ -30,7 +30,7 @@ Instance::Instance(FeatureConfig featureConfig) {
   enabledExtensions.insert(VK_EXT_DEBUG_UTILS_EXTENSION_NAME);
   layers.push_back("VK_LAYER_KHRONOS_validation");
 #endif
-  if(featureConfig.rayTracing) {
+  if(featureConfig.rayTrace) {
     errorIf(
       !supported_.deviceProperties2, "ray tracing requires extension: ",
       VK_KHR_GET_PHYSICAL_DEVICE_PROPERTIES_2_EXTENSION_NAME);

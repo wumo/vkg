@@ -151,7 +151,7 @@ Device::Device(
   deviceExtensions.push_back(VK_KHR_DEDICATED_ALLOCATION_EXTENSION_NAME);
   deviceExtensions.push_back(VK_KHR_GET_MEMORY_REQUIREMENTS_2_EXTENSION_NAME);
 
-  if(featureConfig.rayTracing) {
+  if(featureConfig.rayTrace) {
     deviceExtensions.push_back(VK_NV_RAY_TRACING_EXTENSION_NAME);
     if(instance.supported().externalSync) {
       append(

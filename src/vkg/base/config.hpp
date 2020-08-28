@@ -10,6 +10,6 @@ struct FeatureConfig {
   bool fullscreen{false};
   bool vsync{false};
   uint32_t numFrames{1};
-  bool rayTracing{false};
+  bool rayTrace{false};
 };
 }
