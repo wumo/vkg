@@ -118,13 +118,10 @@ Device::Device(
   memProps_ = physicalDevice_.getMemoryProperties();
 
   std::vector<const char *> deviceExtensions{VK_KHR_SWAPCHAIN_EXTENSION_NAME};
-  vk::PhysicalDeviceScalarBlockLayoutFeaturesEXT scalarBlockLayoutFeature;
-  vk::PhysicalDeviceDescriptorIndexingFeaturesEXT descriptorIndexingFeature;
-  vk::PhysicalDeviceMultiviewFeatures multiviewFeatures;
-  vk::PhysicalDeviceTimelineSemaphoreFeatures timelineSemaphoreFeatures;
+  vk::PhysicalDeviceRayTracingFeaturesKHR rayTracingFeatures;
 
   auto features2 = physicalDevice_.getFeatures2();
-  void **pNext = &features2.pNext;
+  auto *pNext = &features2.pNext;
 
   auto features12 =
     physicalDevice_
@@ -152,7 +149,21 @@ Device::Device(
   deviceExtensions.push_back(VK_KHR_GET_MEMORY_REQUIREMENTS_2_EXTENSION_NAME);
 
   if(featureConfig.rayTrace) {
-    deviceExtensions.push_back(VK_NV_RAY_TRACING_EXTENSION_NAME);
+    rayTracingFeatures =
+      physicalDevice_
+        .getFeatures2<
+          vk::PhysicalDeviceFeatures2, vk::PhysicalDeviceRayTracingFeaturesKHR>()
+        .get<vk::PhysicalDeviceRayTracingFeaturesKHR>();
+
+    *pNext = &rayTracingFeatures;
+    pNext = &rayTracingFeatures.pNext;
+
+    append(
+      deviceExtensions,
+      {VK_KHR_RAY_TRACING_EXTENSION_NAME, VK_KHR_MAINTENANCE3_EXTENSION_NAME,
+       VK_KHR_PIPELINE_LIBRARY_EXTENSION_NAME,
+       VK_KHR_DEFERRED_HOST_OPERATIONS_EXTENSION_NAME,
+       VK_KHR_BUFFER_DEVICE_ADDRESS_EXTENSION_NAME});
     if(instance.supported().externalSync) {
       append(
         deviceExtensions, {

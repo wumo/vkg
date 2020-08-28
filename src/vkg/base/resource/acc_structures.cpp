@@ -1,14 +1,13 @@
-#include "acceleration_structures.hpp"
+#include "acc_structures.hpp"
 namespace vkg {
 
 void allocAS(
-  Device &device, ASDesc &asDesc, vk::AccelerationStructureTypeNV type,
-  const vk::BuildAccelerationStructureFlagsNV &flags, uint32_t instanceCount,
-  uint32_t geometryCount, const vk::GeometryNV *geometries,
+  Device &device, ASDesc &asDesc, vk::AccelerationStructureTypeKHR type,
+  const vk::BuildAccelerationStructureFlagsKHR &flags, uint32_t maxGeometryCount,
+  const vk::AccelerationStructureCreateGeometryTypeInfoKHR *geometries,
   vk::DeviceSize compactedSize) {
-  asDesc.info = {type, flags, instanceCount, geometryCount, geometries};
-  asDesc.as = device.vkDevice().createAccelerationStructureNVUnique(
-    {compactedSize, asDesc.info}, nullptr);
+  asDesc.as = device.vkDevice().createAccelerationStructureKHRUnique(
+    {compactedSize, type, flags, maxGeometryCount, geometries}, nullptr);
 
   vk::AccelerationStructureMemoryRequirementsInfoNV memReqInfo{
     vk::AccelerationStructureMemoryRequirementsTypeNV::eObject, *asDesc.as};

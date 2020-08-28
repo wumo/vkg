@@ -10,14 +10,39 @@ Primitive::Primitive(
   : scene{scene}, id_{id}, count_{count}, topology_{topology} {
   frames.resize(count);
   for(auto i = 0u; i < count; i++) {
-    frames[i] = {
+    auto &frame = frames[i];
+    frame = {
       index[i], position[i], normal[i], uv[i], aabb, {}, scene.allocatePrimitiveDesc()};
     if(scene.featureConfig.rayTrace) {
       switch(topology) {
         case PrimitiveTopology::Triangles: {
           isRayTraced_ = true;
+          auto dev = scene.device.vkDevice();
+          frame.blas.geometryInfo = {vk::GeometryTypeKHR::eTriangles, index[i].size / 3,
+                                     vk::IndexType::eUint32,          position[i].size,
+                                     vk::Format::eR32G32B32Sfloat,    false};
+
           auto posBufInfo = scene.Dev.positions->bufferInfo();
           auto indexBufInfo = scene.Dev.indices->bufferInfo();
+
+          auto vertexAddress = dev.getBufferAddress({posBufInfo.buffer});
+          auto indexAddress = dev.getBufferAddress({indexBufInfo.buffer});
+          frame.blas.geometry = {
+            frame.blas.geometryInfo.geometryType,
+            vk::AccelerationStructureGeometryTrianglesDataKHR{
+              frame.blas.geometryInfo.vertexFormat,
+              vertexAddress,
+              sizeof(Vertex::Position),
+              frame.blas.geometryInfo.indexType,
+              indexAddress,
+              {}},
+            vk::GeometryFlagBitsKHR::eOpaque};
+
+          frame.blas.buildOffset = {
+            frame.blas.geometryInfo.maxPrimitiveCount,
+            uint32_t(indexBufInfo.offset + index[i].start * sizeof(uint32_t)),
+            position[i].start, 0};
+
           vk::GeometryNV geometry_ = {
             vk::GeometryTypeNV::eTriangles,
             vk::GeometryDataNV{vk::GeometryTrianglesNV{
@@ -29,16 +54,16 @@ Primitive::Primitive(
               vk::IndexType::eUint32}},
             vk::GeometryFlagBitsNV::eOpaque};
           allocAS(
-            scene.device, frames[i].blas, vk::AccelerationStructureTypeNV::eBottomLevel,
-            vk::BuildAccelerationStructureFlagBitsNV::ePreferFastTrace |
-              vk::BuildAccelerationStructureFlagBitsNV::eAllowCompaction,
-            0, 1, &geometry_);
+            scene.device, frames[i].blas, vk::AccelerationStructureTypeKHR::eBottomLevel,
+            vk::BuildAccelerationStructureFlagBitsKHR::ePreferFastTrace |
+              vk::BuildAccelerationStructureFlagBitsKHR::eAllowCompaction,
+            1, &frame.blas.geometryInfo);
         } break;
         default: break;
       }
     }
-    *frames[i].desc.ptr = {index[i], position[i], normal[i],
-                           uv[i],    aabb,        frames[i].blas.handle};
+    *frame.desc.ptr = {index[i], position[i], normal[i],
+                       uv[i],    aabb,        frames[i].blas.handle};
   }
 }
 auto Primitive::id() const -> uint32_t { return id_; }

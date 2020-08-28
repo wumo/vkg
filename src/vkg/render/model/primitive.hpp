@@ -4,7 +4,7 @@
 #include "vkg/render/ranges.hpp"
 #include "vkg/render/allocation.hpp"
 #include "vkg/render/model/vertex.hpp"
-#include "vkg/base/resource/acceleration_structures.hpp"
+#include "vkg/base/resource/acc_structures.hpp"
 #include <span>
 
 namespace vkg {

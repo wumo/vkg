@@ -41,7 +41,7 @@ set(sources
   src/vkg/base/resource/texture_blit.cpp
   src/vkg/base/resource/texture_upload.cpp
   src/vkg/base/resource/texture_mipmap.cpp
-  src/vkg/base/resource/acceleration_structures.cpp
+  src/vkg/base/resource/acc_structures.cpp
   
   src/vkg/base/pipeline/pipeline_query.cpp
   src/vkg/base/pipeline/render_pass.cpp
@@ -107,6 +107,7 @@ set(sources
   src/vkg/render/pass/raytracing/comp_tlas_pass.cpp)
 
 set(definitions "")
+list(APPEND definitions "VK_ENABLE_BETA_EXTENSIONS")
 if(WIN32)
   list(APPEND definitions "VK_USE_PLATFORM_WIN32_KHR")
 endif(WIN32)
