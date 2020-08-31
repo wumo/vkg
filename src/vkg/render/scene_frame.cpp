@@ -115,7 +115,7 @@ public:
        * when user just updates it.
        */
       auto fetchUpdable = [](Scene &scene_, Update &update) {
-        FrameUpdatable *updatable;
+        FrameUpdatable *updatable{nullptr};
         switch(update.type) {
           case Update::Type::Material: updatable = &scene_.material(update.id); break;
           case Update::Type::Light: updatable = &scene_.light(update.id); break;
@@ -130,7 +130,7 @@ public:
       uint32_t i = 0;
       while(i < updates.size()) {
         auto update = updates[i];
-        auto updatable = fetchUpdable(scene, update);
+        auto *updatable = fetchUpdable(scene, update);
         if(update.frames == 0) {       //remove
           updatable->ticket = nullIdx; //clear ticket
           if(i == updates.size() - 1)  //already the last one, just pop back

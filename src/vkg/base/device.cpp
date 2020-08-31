@@ -118,7 +118,6 @@ Device::Device(
   memProps_ = physicalDevice_.getMemoryProperties();
 
   std::vector<const char *> deviceExtensions{VK_KHR_SWAPCHAIN_EXTENSION_NAME};
-  vk::PhysicalDeviceRayTracingFeaturesKHR rayTracingFeatures;
 
   auto features2 = physicalDevice_.getFeatures2();
   auto *pNext = &features2.pNext;
@@ -149,21 +148,11 @@ Device::Device(
   deviceExtensions.push_back(VK_KHR_GET_MEMORY_REQUIREMENTS_2_EXTENSION_NAME);
 
   if(featureConfig.rayTrace) {
-    rayTracingFeatures =
-      physicalDevice_
-        .getFeatures2<
-          vk::PhysicalDeviceFeatures2, vk::PhysicalDeviceRayTracingFeaturesKHR>()
-        .get<vk::PhysicalDeviceRayTracingFeaturesKHR>();
-
-    *pNext = &rayTracingFeatures;
-    pNext = &rayTracingFeatures.pNext;
-
     append(
-      deviceExtensions,
-      {VK_KHR_RAY_TRACING_EXTENSION_NAME, VK_KHR_MAINTENANCE3_EXTENSION_NAME,
-       VK_KHR_PIPELINE_LIBRARY_EXTENSION_NAME,
-       VK_KHR_DEFERRED_HOST_OPERATIONS_EXTENSION_NAME,
-       VK_KHR_BUFFER_DEVICE_ADDRESS_EXTENSION_NAME});
+      deviceExtensions, {
+                          VK_NV_RAY_TRACING_EXTENSION_NAME,
+                          VK_KHR_MAINTENANCE3_EXTENSION_NAME,
+                        });
     if(instance.supported().externalSync) {
       append(
         deviceExtensions, {
@@ -181,9 +170,11 @@ Device::Device(
       deviceExtensions.push_back(VK_KHR_EXTERNAL_FENCE_FD_EXTENSION_NAME);
 #endif
     }
-    auto result = physicalDevice_.getProperties2<
-      vk::PhysicalDeviceProperties2, vk::PhysicalDeviceRayTracingPropertiesNV>();
-    rayTracingProperties_ = result.get<vk::PhysicalDeviceRayTracingPropertiesNV>();
+    rtProperties_ =
+      physicalDevice_
+        .getProperties2<
+          vk::PhysicalDeviceProperties2, vk::PhysicalDeviceRayTracingPropertiesNV>()
+        .get<vk::PhysicalDeviceRayTracingPropertiesNV>();
   }
 
   checkDeviceExtensionSupport(physicalDevice_, deviceExtensions);
@@ -272,7 +263,7 @@ auto Device::vkDevice() -> vk::Device { return *device_; }
 Device::operator vk::Device() { return *device_; }
 auto Device::allocator() -> VmaAllocator { return *allocator_; }
 auto Device::rayTracingProperties() -> const vk::PhysicalDeviceRayTracingPropertiesNV & {
-  return rayTracingProperties_;
+  return rtProperties_;
 }
 auto Device::multiviewProperties() -> const vk::PhysicalDeviceMultiviewProperties & {
   return multiviewProperties_;

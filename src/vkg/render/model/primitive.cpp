@@ -17,33 +17,14 @@ Primitive::Primitive(
       switch(topology) {
         case PrimitiveTopology::Triangles: {
           isRayTraced_ = true;
-          auto dev = scene.device.vkDevice();
-          frame.blas.geometryInfo = {vk::GeometryTypeKHR::eTriangles, index[i].size / 3,
-                                     vk::IndexType::eUint32,          position[i].size,
-                                     vk::Format::eR32G32B32Sfloat,    false};
-
           auto posBufInfo = scene.Dev.positions->bufferInfo();
           auto indexBufInfo = scene.Dev.indices->bufferInfo();
 
-          auto vertexAddress = dev.getBufferAddress({posBufInfo.buffer});
-          auto indexAddress = dev.getBufferAddress({indexBufInfo.buffer});
-          frame.blas.geometry = {
-            frame.blas.geometryInfo.geometryType,
-            vk::AccelerationStructureGeometryTrianglesDataKHR{
-              frame.blas.geometryInfo.vertexFormat,
-              vertexAddress,
-              sizeof(Vertex::Position),
-              frame.blas.geometryInfo.indexType,
-              indexAddress,
-              {}},
-            vk::GeometryFlagBitsKHR::eOpaque};
-
-          frame.blas.buildOffset = {
-            frame.blas.geometryInfo.maxPrimitiveCount,
-            uint32_t(indexBufInfo.offset + index[i].start * sizeof(uint32_t)),
-            position[i].start, 0};
-
-          vk::GeometryNV geometry_ = {
+          frames[i].blas.type = vk::AccelerationStructureTypeNV::eBottomLevel;
+          frames[i].blas.flags =
+            vk::BuildAccelerationStructureFlagBitsNV::ePreferFastTrace |
+            vk::BuildAccelerationStructureFlagBitsNV::eAllowCompaction;
+          frames[i].blas.geometry = {
             vk::GeometryTypeNV::eTriangles,
             vk::GeometryDataNV{vk::GeometryTrianglesNV{
               posBufInfo.buffer,
@@ -53,11 +34,8 @@ Primitive::Primitive(
               indexBufInfo.offset + index[i].start * sizeof(uint32_t), index[i].size,
               vk::IndexType::eUint32}},
             vk::GeometryFlagBitsNV::eOpaque};
-          allocAS(
-            scene.device, frames[i].blas, vk::AccelerationStructureTypeKHR::eBottomLevel,
-            vk::BuildAccelerationStructureFlagBitsKHR::ePreferFastTrace |
-              vk::BuildAccelerationStructureFlagBitsKHR::eAllowCompaction,
-            1, &frame.blas.geometryInfo);
+          allocAS(scene.device, frames[i].blas, 0, 1, &frames[i].blas.geometry);
+          buildAS(i);
         } break;
         default: break;
       }
@@ -90,6 +68,7 @@ auto Primitive::update(
   scene.Dev.positions->update(idx, frames[idx].position_, positions);
   scene.Dev.normals->update(idx, frames[idx].normal_, normals);
   setAABB(idx, aabb);
+  buildAS(idx);
 }
 auto Primitive::update(uint32_t idx, PrimitiveBuilder &builder) -> void {
   errorIf(
@@ -106,5 +85,49 @@ auto Primitive::update(uint32_t idx, PrimitiveBuilder &builder) -> void {
   update(
     idx, builder.positions().subspan(p.position.start, p.position.size),
     builder.normals().subspan(p.normal.start, p.normal.size), p.aabb);
+}
+void Primitive::buildAS(uint32_t idx) {
+  auto &frame = frames[idx];
+  auto scratchBuffer = allocBuildScratchBuffer(scene.device, *frame.blas.as);
+  auto scratchBufferInfo = scratchBuffer->bufferInfo();
+  vk::AccelerationStructureInfoNV info{
+    frame.blas.type, frame.blas.flags, 0, 1, &frame.blas.geometry};
+
+  vk::QueryPoolCreateInfo qpci{};
+  qpci.queryCount = 1;
+  qpci.queryType = vk::QueryType::eAccelerationStructureCompactedSizeNV;
+  auto vkDevice = scene.device.vkDevice();
+  auto queryPool = vkDevice.createQueryPoolUnique(qpci);
+  scene.device.execSync(
+    [&](vk::CommandBuffer cb) {
+      cb.buildAccelerationStructureNV(
+        info, nullptr, 0, false, *frame.blas.as, nullptr, scratchBufferInfo.buffer,
+        scratchBufferInfo.offset);
+      cb.writeAccelerationStructuresPropertiesNV(
+        *frame.blas.as, vk::QueryType::eAccelerationStructureCompactedSizeNV, *queryPool,
+        0);
+    },
+    idx);
+  // Get the size result back
+  vk::DeviceSize compactSize{0};
+  vkDevice.getQueryPoolResults<vk::DeviceSize>(
+    *queryPool, 0, 1, compactSize, sizeof(vk::DeviceSize),
+    vk::QueryResultFlagBits::eWait);
+
+  if(compactSize > 0) {
+    auto originalASDesc = std::move(frame.blas);
+    auto originalSize = static_cast<uint32_t>(originalASDesc.buffer->size());
+    debugLog("compact from ", originalSize, " to ", compactSize);
+    //do compaction
+    scene.device.execSync(
+      [&](vk::CommandBuffer cb) {
+        // Compacting
+        allocAS(scene.device, frame.blas, 0, 0, nullptr, compactSize);
+        cb.copyAccelerationStructureNV(
+          *frame.blas.as, *originalASDesc.as,
+          vk::CopyAccelerationStructureModeNV::eCompact);
+      },
+      idx);
+  }
 }
 }

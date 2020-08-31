@@ -3,18 +3,21 @@
 
 namespace vkg {
 struct ASDesc {
-  vk::UniqueAccelerationStructureKHR as;
   std::unique_ptr<Buffer> buffer;
-  uint64_t handle;
+  vk::UniqueAccelerationStructureNV as;
+  uint64_t handle{0};
 
-  vk::AccelerationStructureCreateGeometryTypeInfoKHR geometryInfo;
-  vk::AccelerationStructureGeometryKHR geometry;
-  vk::AccelerationStructureBuildOffsetInfoKHR buildOffset;
+  vk::AccelerationStructureTypeNV type{};
+  vk::BuildAccelerationStructureFlagsNV flags{};
+  vk::GeometryNV geometry;
 };
 
 void allocAS(
-  Device &device, ASDesc &asDesc, vk::AccelerationStructureTypeKHR type,
-  const vk::BuildAccelerationStructureFlagsKHR &flags, uint32_t maxGeometryCount,
-  const vk::AccelerationStructureCreateGeometryTypeInfoKHR *geometries,
-  vk::DeviceSize compactedSize = 0);
+  Device &device, ASDesc &asDesc, uint32_t instanceCount, uint32_t geometryCount,
+  const vk::GeometryNV *geometries, vk::DeviceSize compactedSize = 0);
+
+auto allocBuildScratchBuffer(Device &device, vk::AccelerationStructureNV as)
+  -> std::unique_ptr<Buffer>;
+auto allocUpdateScratchBuffer(Device &device, vk::AccelerationStructureNV as)
+  -> std::unique_ptr<Buffer>;
 }

@@ -107,7 +107,7 @@ set(sources
   src/vkg/render/pass/raytracing/comp_tlas_pass.cpp)
 
 set(definitions "")
-list(APPEND definitions "VK_ENABLE_BETA_EXTENSIONS")
+#list(APPEND definitions "VK_ENABLE_BETA_EXTENSIONS")
 if(WIN32)
   list(APPEND definitions "VK_USE_PLATFORM_WIN32_KHR")
 endif(WIN32)

@@ -70,7 +70,7 @@ private:
 
   SupportedExtension supported_;
 
-  vk::PhysicalDeviceRayTracingPropertiesNV rayTracingProperties_;
+  vk::PhysicalDeviceRayTracingPropertiesNV rtProperties_;
   vk::PhysicalDeviceMultiviewProperties multiviewProperties_;
 
   uint32_t queueFamily_{VK_QUEUE_FAMILY_IGNORED};

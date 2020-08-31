@@ -47,6 +47,8 @@ public:
   auto update(uint32_t idx, PrimitiveBuilder &builder) -> void;
 
 protected:
+  void buildAS(uint32_t idx);
+
   Scene &scene;
   const uint32_t id_;
   const uint32_t count_;

@@ -103,8 +103,8 @@ public:
   auto addToDrawGroup(uint32_t meshId, DrawGroup oldGroupID = DrawGroup::Unknown)
     -> DrawGroup;
 
-  void setVisible(DrawGroup drawGroup,bool visible);
-  
+  void setVisible(DrawGroup drawGroup, bool visible);
+
   void setup(PassBuilder &builder) override;
   void compile(RenderContext &ctx, Resources &resources) override;
 
@@ -157,7 +157,6 @@ private:
 
   vk::Rect2D renderArea;
 
-  bool boundPassData{false};
   uint64_t swapchainVersion{0};
 };
 }

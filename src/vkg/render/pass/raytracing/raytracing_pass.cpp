@@ -12,7 +12,11 @@ void RayTracingPass::setup(PassBuilder &builder) {
     .backImg = builder.write(passIn.backImg),
   };
 }
-void RayTracingPass::compile(RenderContext &ctx, Resources &resources) {}
+void RayTracingPass::compile(RenderContext &ctx, Resources &resources) {
+
+
+
+}
 void RayTracingPass::execute(RenderContext &ctx, Resources &resources) {}
 
 }
