@@ -4,14 +4,34 @@
 #include "../tonemap.h"
 #include "../math.h"
 
-struct RayTracingRayPayload {
-  vec3 color;
-  float hitT;
-  int recursion;
+struct RayDesc {
+  vec3 origin;
+  vec3 direction;
+  float tmin;
+  float tmax;
+  uint rayFlags;
+  uint cullMask;
+  uint sbtRecordOffset;
+  uint sbtRecordStride;
+  uint missIndex;
+};
+#define trace(tlas, ray, payload)                                               \
+  traceNV(                                                                      \
+    tlas, ray.rayFlags, ray.cullMask, ray.sbtRecordOffset, ray.sbtRecordStride, \
+    ray.missIndex, ray.origin, ray.tmin, ray.direction, ray.tmax, payload);
+
+struct RayPayload {
+  vec3 result;
+  vec3 radiance;
+  vec3 attenuation;
+  vec3 origin;
+  vec3 direction;
   uint seed;
+  int depth;
+  int done;
 };
 
-struct RayTracingShadowRayPayload {
+struct ShadowRayPayload {
   bool shadowed;
 };
 

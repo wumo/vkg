@@ -14,7 +14,8 @@ void allocAS(
   auto memReq = dev.getAccelerationStructureMemoryRequirementsNV(memReqInfo);
 
   asDesc.buffer = buffer::devRayTracingBuffer(
-    device, memReq.memoryRequirements.size, memReq.memoryRequirements.memoryTypeBits);
+    device, memReq.memoryRequirements.size, memReq.memoryRequirements.memoryTypeBits,
+    vk::to_string(asDesc.type));
   auto [mem, offset] = asDesc.buffer->devMem();
   vk::BindAccelerationStructureMemoryInfoNV bindInfo{*asDesc.as, mem, offset};
   dev.bindAccelerationStructureMemoryNV(bindInfo);
@@ -28,7 +29,8 @@ auto allocBuildScratchBuffer(Device &device, vk::AccelerationStructureNV as)
   auto memReq =
     device.vkDevice().getAccelerationStructureMemoryRequirementsNV(memReqInfo);
   return buffer::devRayTracingBuffer(
-    device, memReq.memoryRequirements.size, memReq.memoryRequirements.memoryTypeBits);
+    device, memReq.memoryRequirements.size, memReq.memoryRequirements.memoryTypeBits,
+    "buildScratch");
 }
 auto allocUpdateScratchBuffer(Device &device, vk::AccelerationStructureNV as)
   -> std::unique_ptr<Buffer> {
@@ -37,6 +39,7 @@ auto allocUpdateScratchBuffer(Device &device, vk::AccelerationStructureNV as)
   auto memReq =
     device.vkDevice().getAccelerationStructureMemoryRequirementsNV(memReqInfo);
   return buffer::devRayTracingBuffer(
-    device, memReq.memoryRequirements.size, memReq.memoryRequirements.memoryTypeBits);
+    device, memReq.memoryRequirements.size, memReq.memoryRequirements.memoryTypeBits,
+    "updateScratch");
 }
 }

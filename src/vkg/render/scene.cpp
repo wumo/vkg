@@ -15,13 +15,13 @@ Scene::Scene(Renderer &renderer, SceneConfig sceneConfig, std::string name)
     {sceneConfig.extentW, sceneConfig.extentH}};
 
   Dev.positions = std::make_unique<ContiguousAllocation<Vertex::Position>>(
-    buffer::devVertexBuffer, device, sceneConfig.maxNumVertices, "positions");
+    buffer::devVertexStorageBuffer, device, sceneConfig.maxNumVertices, "positions");
   Dev.normals = std::make_unique<ContiguousAllocation<Vertex::Normal>>(
-    buffer::devVertexBuffer, device, sceneConfig.maxNumVertices, "normals");
+    buffer::devVertexStorageBuffer, device, sceneConfig.maxNumVertices, "normals");
   Dev.uvs = std::make_unique<ContiguousAllocation<Vertex::UV>>(
-    buffer::devVertexBuffer, device, sceneConfig.maxNumVertices, "uvs");
+    buffer::devVertexStorageBuffer, device, sceneConfig.maxNumVertices, "uvs");
   Dev.indices = std::make_unique<ContiguousAllocation<uint32_t>>(
-    buffer::devIndexBuffer, device, sceneConfig.maxNumIndices, "indices");
+    buffer::devIndexStorageBuffer, device, sceneConfig.maxNumIndices, "indices");
   Dev.primitives = std::make_unique<RandomHostAllocation<Primitive::Desc>>(
     buffer::hostStorageBuffer, device, sceneConfig.maxNumPrimitives, "primitives");
   Dev.materials = std::make_unique<RandomHostAllocation<Material::Desc>>(

@@ -22,6 +22,7 @@
 #include "pipeline/pipeline_macro.hpp"
 #include "pipeline/graphics_pipeline.hpp"
 #include "pipeline/compute_pipeline_maker.hpp"
+#include "pipeline/raytracing_pipeline.hpp"
 #include "pipeline/pipeline_query.hpp"
 
 namespace vkg {

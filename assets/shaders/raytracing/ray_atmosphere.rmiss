@@ -6,12 +6,12 @@
 #include "resources.h"
 #include "../atmosphere/lighting.h"
 
-layout(location = 0) rayPayloadInNV RayTracingRayPayload prd;
+layout(location = 0) rayPayloadInNV RayPayload prd;
 
 void main() {
   vec3 view_direction = gl_WorldRayDirectionNV;
   vec3 backgroundColor = skyBackground(gl_WorldRayOriginNV, view_direction);
-  prd.color = backgroundColor;
+  // prd.color = backgroundColor;
   // prd.color = vec3(0.412f, 0.796f, 1.0f);;
-  prd.hitT = -1;
+  // prd.hitT = -1;
 }

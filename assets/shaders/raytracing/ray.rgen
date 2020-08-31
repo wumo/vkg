@@ -5,7 +5,7 @@
 #include "resources.h"
 #include "../sampling.h"
 
-layout(location = 0) rayPayloadNV RayTracingRayPayload prd;
+layout(location = 0) rayPayloadNV RayPayload prd;
 
 vec3 d(uint x, uint y, vec3 r, vec3 u, vec3 v, vec2 jitter) {
   vec2 p = (vec2(x, y) + jitter) / gl_LaunchSizeNV.xy;
@@ -14,37 +14,50 @@ vec3 d(uint x, uint y, vec3 r, vec3 u, vec3 v, vec2 jitter) {
 }
 
 void main() {
-  const vec3 origin = vec3(cam.eye);
   const float a = cam.w / cam.h;
   const float f = tan(cam.fov / 2);
   const vec3 r = cam.zNear * a * f * cam.r.xyz;
   const vec3 u = -f * cam.zNear * normalize(cross(cam.r.xyz, cam.v.xyz));
   const vec3 v = cam.zNear * cam.v.xyz;
-  vec3 dir = d(gl_LaunchIDNV.x, gl_LaunchIDNV.y, r, u, v, vec2(0.5));
-
-  const uint rayFlags = gl_RayFlagsOpaqueNV;
-  const uint cullMask = 0xFF;
-  const float tmin = cam.zNear;
-  const float tmax = cam.zFar;
 
   vec3 hitValue = vec3(0);
-  prd.recursion = MAX_RECURSION;
-  prd.seed = tea(gl_LaunchIDNV.y * gl_LaunchSizeNV.x + gl_LaunchIDNV.x, cam.frame);
-  traceNV(Scene, rayFlags, cullMask, 0, 1, 0, origin, tmin, dir, tmax, 0);
-  hitValue += prd.color;
 
-  if(prd.hitT < 0) prd.hitT = cam.zFar;
-  vec4 pos = cam.projView * vec4(origin + prd.hitT * dir, 1.0);
-  imageStore(depthImg, ivec2(gl_LaunchIDNV.xy), vec4(pos.z / pos.w, 0, 0, 0.0f));
+  RayDesc ray;
+  ray.rayFlags = gl_RayFlagsOpaqueNV;
+  ray.cullMask = 0xFF;
+  ray.tmin = cam.zNear;
+  ray.tmax = cam.zFar;
+  ray.sbtRecordOffset = 0;
+  ray.sbtRecordStride = 1;
+  ray.missIndex = 0;
 
-  for(int smpl = 1; smpl < NBSamples; ++smpl) {
+  for(int smpl = 0; smpl < nbSamples; ++smpl) {
+    prd.result = vec3(0.f);
+    prd.attenuation = vec3(1.f);
+    prd.done = 0;
     prd.seed =
       tea(gl_LaunchIDNV.y * gl_LaunchSizeNV.x + gl_LaunchIDNV.x, cam.frame + smpl);
-    dir = d(gl_LaunchIDNV.x, gl_LaunchIDNV.y, r, u, v, rnd2(prd.seed));
-    prd.recursion = MAX_RECURSION;
-    traceNV(Scene, rayFlags, cullMask, 0, 1, 0, origin, tmin, dir, tmax, 0);
-    hitValue += prd.color;
+    prd.depth = 0;
+    ray.origin = cam.eye.xyz;
+    ray.direction = d(
+      gl_LaunchIDNV.x, gl_LaunchIDNV.y, r, u, v, smpl == 0 ? vec2(0.5) : rnd2(prd.seed));
+
+    for(;;) {
+      trace(tlas, ray, 0);
+
+      prd.result += prd.radiance * prd.attenuation;
+
+      if(prd.depth == 0) {}
+
+      prd.depth++;
+      if(prd.done == 1 || prd.depth >= maxDepth) break;
+      ray.origin = prd.origin;
+      ray.direction = prd.direction;
+    }
+    hitValue += prd.result;
   }
-  vec3 hitColor = LINEARtoSRGB(hitValue / NBSamples);
+
+  vec3 hitColor = hitValue / nbSamples;
+  hitColor = vec3(1);
   imageStore(colorImg, ivec2(gl_LaunchIDNV.xy), vec4(hitColor, 1.f));
 }

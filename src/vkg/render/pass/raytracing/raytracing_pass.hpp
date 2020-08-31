@@ -41,13 +41,15 @@ public:
   void execute(RenderContext &ctx, Resources &resources) override;
 
 private:
+  bool refitTLAS{true};
+
   struct RTSetDef: DescriptorSetDef {
     __accelerationStructure__(
       as, vkStage::eRaygenNV | vkStage::eClosestHitNV | vkStage::eMissNV);
     __image2D__(hdr, vkStage::eRaygenNV | vkStage::eMissNV);
     __image2D__(depth, vkStage::eRaygenNV | vkStage::eMissNV);
 
-    __uniform__(
+    __buffer__(
       camera, vkStage::eVertex | vkStage::eFragment | vkStage::eRaygenNV |
                 vkStage::eClosestHitNV | vkStage::eMissNV);
 
@@ -77,6 +79,8 @@ private:
   } atmosphereSetDef;
 
   struct PushConstant {
+    uint32_t maxDepth;
+    uint32_t nbSamples;
     uint32_t frame;
   } pushConstant{};
   struct RTPipeDef: PipelineLayoutDef {
@@ -84,16 +88,26 @@ private:
       constant, vkStage::eRaygenNV | vkStage::eClosestHitNV, PushConstant);
     __set__(rt, RTSetDef);
     __set__(atmosphere, AtmosphereSetDef);
-  } rtPipeDef;
+  } pipeDef;
 
   struct FrameResource {
-    vk::DescriptorSet set;
+    Texture *backImg;
+    std::unique_ptr<Texture> depthImg;
+    uint64_t lastNumValidSampler{0};
+
+    vk::DescriptorSet rtSet, atmosphereSet;
 
     ASDesc tlas;
   };
-
   std::vector<FrameResource> frames;
 
+  vk::UniqueDescriptorPool descriptorPool;
+  vk::UniquePipeline pipe;
+  ShaderBindingTable sbt;
+
   CompTLASPassOut compTlasPassOut;
+  FrameGraphResource<BufferInfo> camBuffer;
+
+  bool init{false};
 };
 }
