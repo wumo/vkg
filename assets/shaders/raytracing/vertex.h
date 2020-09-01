@@ -77,13 +77,17 @@ void getVertexState(
 
 void getMaterialInfo(
   in MaterialUBO material, in vec2 texcoord0, inout MaterialInfo materialInfo) {
-  vec3 baseColor = material.colorTex != nullIdx ?
-                     SRGBtoLINEAR4(texture(textures[material.colorTex], texcoord0)).xyz :
-                     vec3(1, 1, 1);
-  baseColor = material.baseColorFactor.rgb * baseColor;
+  vec4 baseColor = material.colorTex != nullIdx ?
+                     SRGBtoLINEAR4(texture(textures[material.colorTex], texcoord0)) :
+                     vec4(1, 1, 1, 1);
+  baseColor = material.baseColorFactor * baseColor;
 
   if(material.type == MaterialType_None) {
-    materialInfo.diffuseColor = baseColor;
+    materialInfo.diffuseColor = baseColor.rgb;
+    return;
+  } else if(material.type == MaterialType_Transparent) {
+    materialInfo.diffuseColor = baseColor.rgb;
+    materialInfo.eta = baseColor.a;
     return;
   }
 
@@ -100,7 +104,7 @@ void getMaterialInfo(
     float oneMinusSpecularStrength = 1.0 - max(max(f0.r, f0.g), f0.b);
     perceptualRoughness =
       (1.0 - specular.w * material.pbrFactor.w); // glossiness to roughness
-    diffuseColor = baseColor * oneMinusSpecularStrength;
+    diffuseColor = baseColor.rgb * oneMinusSpecularStrength;
     //    float metallic=solveMetallic(diffuseColor,specularColor,oneMinusSpecularStrength);
   } else {
     vec2 pbr = material.pbrTex != nullIdx ?
@@ -110,8 +114,8 @@ void getMaterialInfo(
     perceptualRoughness = pbr.x;
     float metallic = pbr.y;
     vec3 f0 = vec3(0.04);
-    diffuseColor = baseColor * (vec3(1.0) - f0) * (1.0 - metallic);
-    specularColor = mix(f0, baseColor, metallic);
+    diffuseColor = baseColor.rgb * (vec3(1.0) - f0) * (1.0 - metallic);
+    specularColor = mix(f0, baseColor.rgb, metallic);
   }
 
   float ao = material.occlusionTex != nullIdx ?
@@ -119,9 +123,10 @@ void getMaterialInfo(
                1;
   ao = mix(1, ao, material.occlusionStrength);
 
-  vec3 emissive = material.emissiveTex != nullIdx ?
-                    SRGBtoLINEAR4(texture(textures[material.emissiveTex], texcoord0)).rgb :
-                    vec3(0, 0, 0);
+  vec3 emissive =
+    material.emissiveTex != nullIdx ?
+      SRGBtoLINEAR4(texture(textures[material.emissiveTex], texcoord0)).rgb :
+      vec3(0, 0, 0);
   emissive = material.emissiveFactor.rgb * emissive;
 
   float eta = material.baseColorFactor.a;

@@ -44,6 +44,7 @@ const uint unlitMask = 0x01;
 const uint brdfMask = 0x02;
 const uint reflectiveMask = 0x04;
 const uint refractiveMask = 0x08;
+const uint transparentMask = 0x10;
 
 const uint opaqueMask = brdfMask | reflectiveMask | refractiveMask;
 

@@ -49,25 +49,24 @@ private:
     __image2D__(hdr, vkStage::eRaygenNV | vkStage::eMissNV);
     __image2D__(depth, vkStage::eRaygenNV | vkStage::eMissNV);
 
-    __buffer__(
-      camera, vkStage::eVertex | vkStage::eFragment | vkStage::eRaygenNV |
-                vkStage::eClosestHitNV | vkStage::eMissNV);
+    __buffer__(camera, vkStage::eRaygenNV | vkStage::eClosestHitNV | vkStage::eMissNV);
 
     __buffer__(
-      meshInstances, vkStage::eVertex | vkStage::eClosestHitNV | vkStage::eMissNV);
+      meshInstances, vkStage::eClosestHitNV | vkStage::eMissNV | vkStage::eAnyHitNV);
 
-    __buffer__(primitives, vkStage::eClosestHitNV | vkStage::eMissNV);
-    __buffer__(positions, vkStage::eClosestHitNV | vkStage::eMissNV);
-    __buffer__(normals, vkStage::eClosestHitNV | vkStage::eMissNV);
-    __buffer__(uvs, vkStage::eClosestHitNV | vkStage::eMissNV);
-    __buffer__(indices, vkStage::eClosestHitNV | vkStage::eMissNV);
+    __buffer__(
+      primitives, vkStage::eClosestHitNV | vkStage::eMissNV | vkStage::eAnyHitNV);
+    __buffer__(positions, vkStage::eClosestHitNV | vkStage::eMissNV | vkStage::eAnyHitNV);
+    __buffer__(normals, vkStage::eClosestHitNV | vkStage::eMissNV | vkStage::eAnyHitNV);
+    __buffer__(uvs, vkStage::eClosestHitNV | vkStage::eMissNV | vkStage::eAnyHitNV);
+    __buffer__(indices, vkStage::eClosestHitNV | vkStage::eMissNV | vkStage::eAnyHitNV);
 
-    __buffer__(materials, vkStage::eFragment | vkStage::eClosestHitNV | vkStage::eMissNV);
+    __buffer__(materials, vkStage::eClosestHitNV | vkStage::eMissNV | vkStage::eAnyHitNV);
     __sampler2D__(
-      textures, vkStage::eFragment | vkStage::eClosestHitNV | vkStage::eMissNV);
+      textures, vkStage::eClosestHitNV | vkStage::eMissNV | vkStage::eAnyHitNV);
 
-    __uniform__(lighting, vkStage::eFragment | vkStage::eClosestHitNV | vkStage::eMissNV);
-    __buffer__(lights, vkStage::eFragment | vkStage::eClosestHitNV | vkStage::eMissNV);
+    __uniform__(lighting, vkStage::eClosestHitNV | vkStage::eMissNV);
+    __buffer__(lights, vkStage::eClosestHitNV | vkStage::eMissNV);
   } rtSetDef;
 
   struct AtmosphereSetDef: DescriptorSetDef {
@@ -85,7 +84,8 @@ private:
   } pushConstant{};
   struct RTPipeDef: PipelineLayoutDef {
     __push_constant__(
-      constant, vkStage::eRaygenNV | vkStage::eClosestHitNV | vkStage::eMissNV,
+      constant,
+      vkStage::eRaygenNV | vkStage::eClosestHitNV | vkStage::eMissNV | vkStage::eAnyHitNV,
       PushConstant);
     __set__(rt, RTSetDef);
     __set__(atmosphere, AtmosphereSetDef);

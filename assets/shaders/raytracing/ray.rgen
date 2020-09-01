@@ -33,6 +33,7 @@ void main() {
 
   for(int smpl = 0; smpl < nbSamples; ++smpl) {
     vec3 result = vec3(0.f);
+    prd.radiance = vec3(0);
     prd.attenuation = vec3(1.f);
     prd.done = 0;
     prd.seed =

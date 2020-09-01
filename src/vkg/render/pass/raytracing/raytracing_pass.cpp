@@ -275,7 +275,7 @@ void RayTracingPass::execute(RenderContext &ctx, Resources &resources) {
   cb.pushConstants<PushConstant>(
     pipeDef.layout(),
     vk::ShaderStageFlagBits::eRaygenNV | vk::ShaderStageFlagBits::eClosestHitNV |
-      vk::ShaderStageFlagBits::eMissNV,
+      vk::ShaderStageFlagBits::eMissNV | vk::ShaderStageFlagBits::eAnyHitNV,
     0, pushConstant);
 
   auto *_sbt = atmosSetting.isEnabled() ? &atmosSbt : &sbt;
