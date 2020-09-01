@@ -2,7 +2,14 @@
 #include "raytracing/ray_rgen.hpp"
 #include "raytracing/ray_rmiss.hpp"
 #include "raytracing/shadow_ray_rmiss.hpp"
-#include "raytracing/ray_rchit.hpp"
+#include "raytracing/hit/unlit_rchit.hpp"
+#include "raytracing/hit/brdf_rchit.hpp"
+#include "raytracing/hit/reflective_rchit.hpp"
+#include "raytracing/hit/refractive_rchit.hpp"
+#include "raytracing/hit/brdf_atmos_rchit.hpp"
+#include "raytracing/hit/reflective_atmos_rchit.hpp"
+#include "raytracing/hit/refractive_atmos_rchit.hpp"
+#include "raytracing/ray_atmos_rmiss.hpp"
 
 namespace vkg {
 
@@ -102,16 +109,46 @@ void RayTracingPass::compile(RenderContext &ctx, Resources &resources) {
     pipeDef.init(ctx.device);
 
     {
-      RayTracingPipelineMaker maker{ctx.device};
-      maker.maxRecursionDepth(2)
-        .rayGenGroup(
-          Shader{shader::raytracing::ray_rgen_span, sceneConfig.maxNumTextures})
-        .missGroup(Shader{shader::raytracing::ray_rmiss_span, sceneConfig.maxNumTextures})
-        .missGroup(
-          Shader{shader::raytracing::shadow_ray_rmiss_span, sceneConfig.maxNumTextures})
-        .hitGroup(
-          {Shader{shader::raytracing::ray_rchit_span, sceneConfig.maxNumTextures}});
-      std::tie(pipe, sbt) = maker.createUnique(pipeDef.layout(), nullptr);
+      {
+        RayTracingPipelineMaker maker{ctx.device};
+        maker.maxRecursionDepth(2)
+          .rayGenGroup(
+            Shader{shader::raytracing::ray_rgen_span, sceneConfig.maxNumTextures})
+          .missGroup(
+            Shader{shader::raytracing::ray_rmiss_span, sceneConfig.maxNumTextures})
+          .missGroup(
+            Shader{shader::raytracing::shadow_ray_rmiss_span, sceneConfig.maxNumTextures})
+          .hitGroup({Shader{
+            shader::raytracing::hit::unlit_rchit_span, sceneConfig.maxNumTextures}})
+          .hitGroup({Shader{
+            shader::raytracing::hit::brdf_rchit_span, sceneConfig.maxNumTextures}})
+          .hitGroup({Shader{
+            shader::raytracing::hit::reflective_rchit_span, sceneConfig.maxNumTextures}})
+          .hitGroup({Shader{
+            shader::raytracing::hit::refractive_rchit_span, sceneConfig.maxNumTextures}});
+        std::tie(pipe, sbt) = maker.createUnique(pipeDef.layout(), nullptr);
+      }
+      {
+        RayTracingPipelineMaker maker{ctx.device};
+        maker.maxRecursionDepth(2)
+          .rayGenGroup(
+            Shader{shader::raytracing::ray_rgen_span, sceneConfig.maxNumTextures})
+          .missGroup(
+            Shader{shader::raytracing::ray_atmos_rmiss_span, sceneConfig.maxNumTextures})
+          .missGroup(
+            Shader{shader::raytracing::shadow_ray_rmiss_span, sceneConfig.maxNumTextures})
+          .hitGroup({Shader{
+            shader::raytracing::hit::unlit_rchit_span, sceneConfig.maxNumTextures}})
+          .hitGroup({Shader{
+            shader::raytracing::hit::brdf_atmos_rchit_span, sceneConfig.maxNumTextures}})
+          .hitGroup({Shader{
+            shader::raytracing::hit::reflective_atmos_rchit_span,
+            sceneConfig.maxNumTextures}})
+          .hitGroup({Shader{
+            shader::raytracing::hit::refractive_atmos_rchit_span,
+            sceneConfig.maxNumTextures}});
+        std::tie(atmosPipe, atmosSbt) = maker.createUnique(pipeDef.layout(), nullptr);
+      }
     }
 
     descriptorPool = DescriptorPoolMaker()
@@ -213,16 +250,18 @@ void RayTracingPass::execute(RenderContext &ctx, Resources &resources) {
     cb, *frame.depthImg, vk::ImageLayout::eGeneral, vk::AccessFlagBits::eShaderWrite,
     vk::PipelineStageFlagBits::eRayTracingShaderNV);
 
-  cb.bindPipeline(vk::PipelineBindPoint::eRayTracingNV, *pipe);
   cb.bindDescriptorSets(
     vk::PipelineBindPoint::eRayTracingNV, pipeDef.layout(), pipeDef.rt.set(), frame.rtSet,
     nullptr);
-  if(atmosSetting.isEnabled())
+  if(atmosSetting.isEnabled()) {
     cb.bindDescriptorSets(
       vk::PipelineBindPoint::eRayTracingNV, pipeDef.layout(), pipeDef.atmosphere.set(),
       frame.atmosphereSet, nullptr);
+    cb.bindPipeline(vk::PipelineBindPoint::eRayTracingNV, *atmosPipe);
+  } else
+    cb.bindPipeline(vk::PipelineBindPoint::eRayTracingNV, *pipe);
   pushConstant = {
-    .maxDepth = 1,
+    .maxDepth = 2,
     .nbSamples = 1,
     .frame = ctx.frameIndex,
   };
@@ -232,11 +271,12 @@ void RayTracingPass::execute(RenderContext &ctx, Resources &resources) {
       vk::ShaderStageFlagBits::eMissNV,
     0, pushConstant);
 
-  auto sbtBuffer = sbt.shaderBindingTable->bufferInfo().buffer;
+  auto *_sbt = atmosSetting.isEnabled() ? &atmosSbt : &sbt;
+  auto sbtBuffer = _sbt->shaderBindingTable->bufferInfo().buffer;
   cb.traceRaysNV(
-    sbtBuffer, sbt.rayGenOffset, sbtBuffer, sbt.missGroupOffset, sbt.missGroupStride,
-    sbtBuffer, sbt.hitGroupOffset, sbt.hitGroupStride, nullptr, 0, 0,
-    frame.backImg->extent().width, frame.backImg->extent().height, 1);
+    sbtBuffer, _sbt->rayGenOffset, sbtBuffer, _sbt->missGroupOffset,
+    _sbt->missGroupStride, sbtBuffer, _sbt->hitGroupOffset, _sbt->hitGroupStride, nullptr,
+    0, 0, frame.backImg->extent().width, frame.backImg->extent().height, 1);
 
   ctx.device.end(cb);
 }

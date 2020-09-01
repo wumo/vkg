@@ -25,18 +25,19 @@ void main() {
   RayDesc ray;
   ray.rayFlags = gl_RayFlagsOpaqueNV;
   ray.cullMask = 0xFF;
-  ray.tmin = cam.zNear;
+  ray.tmin = 0;
   ray.tmax = cam.zFar;
   ray.sbtRecordOffset = 0;
-  ray.sbtRecordStride = 1;
+  ray.sbtRecordStride = 0;
   ray.missIndex = 0;
 
   for(int smpl = 0; smpl < nbSamples; ++smpl) {
-    prd.result = vec3(0.f);
+    vec3 result = vec3(0.f);
     prd.attenuation = vec3(1.f);
     prd.done = 0;
     prd.seed =
       tea(gl_LaunchIDNV.y * gl_LaunchSizeNV.x + gl_LaunchIDNV.x, cam.frame + smpl);
+
     ray.origin = cam.eye.xyz;
     ray.direction = d(
       gl_LaunchIDNV.x, gl_LaunchIDNV.y, r, u, v, smpl == 0 ? vec2(0.5) : rnd2(prd.seed));
@@ -44,15 +45,18 @@ void main() {
     for(int depth = 0; depth < maxDepth; ++depth) {
       trace(tlas, ray, 0);
 
-      prd.result += prd.radiance * prd.attenuation;
+      result += prd.radiance;
 
-      if(depth == 0) {}
+      if(depth == 0) {
+      } else {
+        ray.cullMask = opaqueMask;
+      }
 
       if(prd.done == 1) break;
       ray.origin = prd.origin;
       ray.direction = prd.direction;
     }
-    hitValue += prd.result;
+    hitValue += result;
   }
 
   vec3 hitColor = hitValue / nbSamples;

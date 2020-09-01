@@ -71,11 +71,11 @@ private:
   } rtSetDef;
 
   struct AtmosphereSetDef: DescriptorSetDef {
-    __uniform__(atmosphere, vkStage::eFragment);
-    __uniform__(sun, vkStage::eFragment);
-    __sampler2D__(transmittance, vkStage::eFragment);
-    __sampler3D__(scattering, vkStage::eFragment);
-    __sampler2D__(irradiance, vkStage::eFragment);
+    __uniform__(atmosphere, vkStage::eClosestHitNV | vkStage::eMissNV);
+    __uniform__(sun, vkStage::eClosestHitNV | vkStage::eMissNV);
+    __sampler2D__(transmittance, vkStage::eClosestHitNV | vkStage::eMissNV);
+    __sampler3D__(scattering, vkStage::eClosestHitNV | vkStage::eMissNV);
+    __sampler2D__(irradiance, vkStage::eClosestHitNV | vkStage::eMissNV);
   } atmosphereSetDef;
 
   struct PushConstant {
@@ -103,8 +103,8 @@ private:
   std::vector<FrameResource> frames;
 
   vk::UniqueDescriptorPool descriptorPool;
-  vk::UniquePipeline pipe;
-  ShaderBindingTable sbt;
+  vk::UniquePipeline pipe, atmosPipe;
+  ShaderBindingTable sbt, atmosSbt;
 
   CompTLASPassOut compTlasPassOut;
   FrameGraphResource<BufferInfo> camBuffer;

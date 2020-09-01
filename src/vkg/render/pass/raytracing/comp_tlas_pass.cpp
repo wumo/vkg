@@ -52,7 +52,8 @@ void CompTLASPass::compile(RenderContext &ctx, Resources &resources) {
   setDef.update(frame.set);
 
   auto countPerDrawGroup = resources.get(passIn.countPerDrawGroup);
-  auto tlasCount = countPerDrawGroup[value(DrawGroup::BRDF)] +
+  auto tlasCount = countPerDrawGroup[value(DrawGroup::Unlit)] +
+                   countPerDrawGroup[value(DrawGroup::BRDF)] +
                    countPerDrawGroup[value(DrawGroup::Reflective)] +
                    countPerDrawGroup[value(DrawGroup::Refractive)];
   resources.set(passOut.tlasCount, tlasCount);

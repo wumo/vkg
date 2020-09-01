@@ -21,7 +21,6 @@ struct RayDesc {
     ray.missIndex, ray.origin, ray.tmin, ray.direction, ray.tmax, payload);
 
 struct RayPayload {
-  vec3 result;
   vec3 radiance;
   vec3 attenuation;
   vec3 origin;
@@ -40,6 +39,13 @@ struct ProcedurePayload {
 };
 
 const uint RTTriangleFacingCullDisable = 0x01;
+
+const uint unlitMask = 0x01;
+const uint brdfMask = 0x02;
+const uint reflectiveMask = 0x04;
+const uint refractiveMask = 0x08;
+
+const uint opaqueMask = brdfMask | reflectiveMask | refractiveMask;
 
 struct RTGeometryInstance {
   mat3x4 transform; // row-major 3x4

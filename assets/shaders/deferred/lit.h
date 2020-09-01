@@ -74,10 +74,10 @@ PointInfo unpack() {
 void main() {
   PointInfo p = unpack();
   if(p.depth == 1) { //
-    outColor.rgb = LINEARtoSRGB(shadeBackground(camera));
+    outColor = vec4(shadeBackground(camera), 1);
   } else {
     if(isZero(p.normal)) {
-      outColor.rgb = LINEARtoSRGB(p.diffuseColor);
+      outColor = vec4(p.diffuseColor, 1);
       return;
     }
     p.perceptualRoughness = clamp(p.perceptualRoughness, 0.0, 1.0);

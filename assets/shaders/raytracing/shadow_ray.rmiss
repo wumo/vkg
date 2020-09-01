@@ -4,6 +4,6 @@
 
 #include "rt_common.h"
 
-layout(location = 2) rayPayloadInNV ShadowRayPayload ShadowRay;
+layout(location = 1) rayPayloadInNV ShadowRayPayload ShadowRay;
 
 void main() { ShadowRay.shadowed = false; }

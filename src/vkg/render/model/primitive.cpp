@@ -92,41 +92,41 @@ void Primitive::buildAS(uint32_t idx) {
   vk::AccelerationStructureInfoNV info{
     frame.blas.type, frame.blas.flags, 0, 1, &frame.blas.geometry};
 
-  vk::QueryPoolCreateInfo qpci{};
-  qpci.queryCount = 1;
-  qpci.queryType = vk::QueryType::eAccelerationStructureCompactedSizeNV;
-  auto vkDevice = scene.device.vkDevice();
-  auto queryPool = vkDevice.createQueryPoolUnique(qpci);
+  //  vk::QueryPoolCreateInfo qpci{};
+  //  qpci.queryCount = 1;
+  //  qpci.queryType = vk::QueryType::eAccelerationStructureCompactedSizeNV;
+  //  auto vkDevice = scene.device.vkDevice();
+  //  auto queryPool = vkDevice.createQueryPoolUnique(qpci);
   scene.device.execSync(
     [&](vk::CommandBuffer cb) {
       cb.buildAccelerationStructureNV(
         info, nullptr, 0, false, *frame.blas.as, nullptr, scratchBufferInfo.buffer,
         scratchBufferInfo.offset);
-      cb.writeAccelerationStructuresPropertiesNV(
-        *frame.blas.as, vk::QueryType::eAccelerationStructureCompactedSizeNV, *queryPool,
-        0);
+      //      cb.writeAccelerationStructuresPropertiesNV(
+      //        *frame.blas.as, vk::QueryType::eAccelerationStructureCompactedSizeNV, *queryPool,
+      //        0);
     },
     idx);
-  // Get the size result back
-  vk::DeviceSize compactSize{0};
-  vkDevice.getQueryPoolResults<vk::DeviceSize>(
-    *queryPool, 0, 1, compactSize, sizeof(vk::DeviceSize),
-    vk::QueryResultFlagBits::eWait);
-
-  if(compactSize > 0) {
-    auto originalASDesc = std::move(frame.blas);
-    auto originalSize = static_cast<uint32_t>(originalASDesc.buffer->size());
-    debugLog("compact from ", originalSize, " to ", compactSize);
-    //do compaction
-    scene.device.execSync(
-      [&](vk::CommandBuffer cb) {
-        // Compacting
-        allocAS(scene.device, frame.blas, 0, 0, nullptr, compactSize);
-        cb.copyAccelerationStructureNV(
-          *frame.blas.as, *originalASDesc.as,
-          vk::CopyAccelerationStructureModeNV::eCompact);
-      },
-      idx);
-  }
+  //  // Get the size result back
+  //  vk::DeviceSize compactSize{0};
+  //  vkDevice.getQueryPoolResults<vk::DeviceSize>(
+  //    *queryPool, 0, 1, compactSize, sizeof(vk::DeviceSize),
+  //    vk::QueryResultFlagBits::eWait);
+  //
+  //  if(compactSize > 0) {
+  //    auto originalASDesc = std::move(frame.blas);
+  //    auto originalSize = static_cast<uint32_t>(originalASDesc.buffer->size());
+  //    debugLog("compact from ", originalSize, " to ", compactSize);
+  //    //do compaction
+  //    scene.device.execSync(
+  //      [&](vk::CommandBuffer cb) {
+  //        // Compacting
+  //        allocAS(scene.device, frame.blas, 0, 0, nullptr, compactSize);
+  //        cb.copyAccelerationStructureNV(
+  //          *frame.blas.as, *originalASDesc.as,
+  //          vk::CopyAccelerationStructureModeNV::eCompact);
+  //      },
+  //      idx);
+  //  }
 }
 }

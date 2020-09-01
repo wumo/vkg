@@ -38,10 +38,24 @@ void main() {
   if(!mesh.visible) return;
 
   uint shaderId = nullIdx;
+  uint mask = 0;
   switch(mesh.drawGroupID) {
+    case DrawGroupUnlit:
+      shaderId = 0;
+      mask = unlitMask;
+      break;
     case DrawGroupBRDF:
+      shaderId = 1;
+      mask = brdfMask;
+      break;
     case DrawGroupReflective:
-    case DrawGroupRefractive: shaderId = 0; break;
+      shaderId = 2;
+      mask = reflectiveMask;
+      break;
+    case DrawGroupRefractive:
+      shaderId = 3;
+      mask = refractiveMask;
+      break;
   }
   if(shaderId == nullIdx) return;
 
@@ -52,7 +66,7 @@ void main() {
 
   uint id_mask = 0;
   id_mask = bitfieldInsert(id_mask, id, 0, 24);
-  id_mask = bitfieldInsert(id_mask, 0xff, 24, 8);
+  id_mask = bitfieldInsert(id_mask, mask, 24, 8);
   ins.id_mask = id_mask;
 
   uint shader_flag = 0;

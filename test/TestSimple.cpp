@@ -51,31 +51,33 @@ auto main() -> int {
   auto texMat = scene.newMaterial(MaterialType::eBRDF);
   scene.material(texMat).setColorTex(colorTex).setPbrFactor({0, 0.3, 0.4, 0});
 
-//  auto primitives =
-//    scene.newPrimitives(PrimitiveBuilder().axis({}, 10.f, 0.1f, 0.5f, 50).newPrimitive());
-//
-//  auto originMesh = scene.newMesh(primitives[0], yellowMat);
-//  auto xMesh = scene.newMesh(primitives[1], redMat);
-//  auto yMesh = scene.newMesh(primitives[2], greenMat);
-//  auto zMesh = scene.newMesh(primitives[3], blueMat);
-//  auto axisNode = scene.newNode();
-//  scene.node(axisNode).addMeshes({originMesh, xMesh, yMesh, zMesh});
-//  auto axisModel = scene.newModel({axisNode});
-//
-//  scene.newModelInstance(axisModel);
+  //  {
+  //    auto primitives = scene.newPrimitives(
+  //      PrimitiveBuilder().axis({}, 10.f, 0.1f, 0.5f, 50).newPrimitive());
+  //
+  //    auto originMesh = scene.newMesh(primitives[0], yellowMat);
+  //    auto xMesh = scene.newMesh(primitives[1], redMat);
+  //    auto yMesh = scene.newMesh(primitives[2], greenMat);
+  //    auto zMesh = scene.newMesh(primitives[3], blueMat);
+  //    auto axisNode = scene.newNode();
+  //    scene.node(axisNode).addMeshes({originMesh, xMesh, yMesh, zMesh});
+  //    auto axisModel = scene.newModel({axisNode});
+  //
+  //    scene.newModelInstance(axisModel);
+  //  }
 
-//  { // texture
-//    auto primitive =
-//      scene.newPrimitives(PrimitiveBuilder()
-//                            .rectangle({}, {5.f, 0.f, -5.f}, {0.f, 10.f, 0.f})
-//                            .newPrimitive())[0];
-//    auto mesh = scene.newMesh(primitive, texMat);
-//    auto node = scene.newNode();
-//    scene.node(node).addMeshes({mesh});
-//    auto model = scene.newModel({node});
-//    scene.newModelInstance(model);
-//  }
-
+  //  { // texture
+  //    auto primitive =
+  //      scene.newPrimitives(PrimitiveBuilder()
+  //                            .rectangle({}, {5.f, 0.f, -5.f}, {0.f, 10.f, 0.f})
+  //                            .newPrimitive())[0];
+  //    auto mesh = scene.newMesh(primitive, texMat);
+  //    auto node = scene.newNode();
+  //    scene.node(node).addMeshes({mesh});
+  //    auto model = scene.newModel({node});
+  //    scene.newModelInstance(model);
+  //  }
+  //
   //  { // brdf
   //    auto primitives =
   //      scene.newPrimitives(PrimitiveBuilder()
@@ -96,7 +98,7 @@ auto main() -> int {
   //    scene.node(node2).addMeshes({scene.newMesh(primitives[1], pbrMat.id())});
   //    scene.newModelInstance(scene.newModel({node2}));
   //  }
-
+  //
   {
     // brdf
     auto primitives = scene.newPrimitives(PrimitiveBuilder()
@@ -121,44 +123,44 @@ auto main() -> int {
     scene.newModelInstance(model2);
   }
 
-  //  uint32_t animModel{};
-  //  std::vector<uint32_t> insts;
-  //  {
-  //    std::string name = "DamagedHelmet";
-  //    animModel =
-  //      scene.loadModel("assets/glTF-models/2.0/" + name + "/glTF/" + name + ".gltf");
-  //
-  //    //    auto primitive =
-  //    //      scene.newPrimitive(PrimitiveBuilder()
-  //    //                           .box({}, glm::vec3{0, 0, 1}, glm::vec3{1, 0, 0}, 1)
-  //    //                           .newPrimitive())[0];
-  //    //    auto mesh = scene.newMesh(primitive, redMat);
-  //    //    auto node = scene.newNode();
-  //    //    scene.node(node).addMeshes({mesh});
-  //    //    animModel = scene.newModel({node});
-  //
-  //    auto &model = scene.model(animModel);
-  //    auto aabb = model.aabb();
-  //    auto range = aabb.max - aabb.min;
-  //    auto scale = 5 / std::max(std::max(range.x, range.y), range.z);
-  //    auto center = aabb.center();
-  //    auto halfRange = aabb.halfRange();
-  //    Transform t{
-  //      {-center * scale + glm::vec3{8, scale * range.y / 2.f, 8}}, glm::vec3{scale}};
-  //    //  t.translation = -center;
-  //    scene.newModelInstance(animModel, t, false);
-  //
-  //    uint32_t num = 100;
-  //    insts.reserve(num * num);
-  //    float unit = -5;
-  //    for(int a = 0; a < num; ++a) {
-  //      for(int b = 0; b < num; ++b) {
-  //        t.translation = -center * scale +
-  //                        glm::vec3{-10 + unit * a, scale * range.y / 2.f, -10 + unit * b};
-  //        insts.push_back(scene.newModelInstance(animModel, t, true));
-  //      }
-  //    }
-  //  }
+  uint32_t animModel{};
+  std::vector<uint32_t> insts;
+  {
+    std::string name = "DamagedHelmet";
+    animModel =
+      scene.loadModel("assets/glTF-models/2.0/" + name + "/glTF/" + name + ".gltf");
+
+    //    auto primitive =
+    //      scene.newPrimitive(PrimitiveBuilder()
+    //                           .box({}, glm::vec3{0, 0, 1}, glm::vec3{1, 0, 0}, 1)
+    //                           .newPrimitive())[0];
+    //    auto mesh = scene.newMesh(primitive, redMat);
+    //    auto node = scene.newNode();
+    //    scene.node(node).addMeshes({mesh});
+    //    animModel = scene.newModel({node});
+
+    auto &model = scene.model(animModel);
+    auto aabb = model.aabb();
+    auto range = aabb.max - aabb.min;
+    auto scale = 5 / std::max(std::max(range.x, range.y), range.z);
+    auto center = aabb.center();
+    auto halfRange = aabb.halfRange();
+    Transform t{
+      {-center * scale + glm::vec3{8, scale * range.y / 2.f, 8}}, glm::vec3{scale}};
+    //  t.translation = -center;
+    scene.newModelInstance(animModel, t, false);
+
+    //    uint32_t num = 100;
+    //    insts.reserve(num * num);
+    //    float unit = -5;
+    //    for(int a = 0; a < num; ++a) {
+    //      for(int b = 0; b < num; ++b) {
+    //        t.translation = -center * scale +
+    //                        glm::vec3{-10 + unit * a, scale * range.y / 2.f, -10 + unit * b};
+    //        insts.push_back(scene.newModelInstance(animModel, t, true));
+    //      }
+    //    }
+  }
 
   auto &input = app.window().input();
   auto &camera = scene.camera();
@@ -171,6 +173,15 @@ auto main() -> int {
     static auto lastChange = std::chrono::high_resolution_clock::now();
 
     panningCamera.update(input);
+
+    for(auto insId: insts) {
+      auto &ins = scene.modelInstance(insId);
+      auto t = ins.transform();
+      t.rotation =
+        glm::angleAxis(glm::radians(float(elapsed) * 0.1f), glm::vec3{0, 1, 0}) *
+        t.rotation;
+      ins.setTransform(t);
+    }
   });
   return 0;
 }
