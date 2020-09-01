@@ -117,9 +117,10 @@ public:
       auto fetchUpdable = [](Scene &scene_, Update &update) {
         FrameUpdatable *updatable{nullptr};
         switch(update.type) {
+          case Update::Type::Primitive: updatable = &scene_.primitive(update.id); break;
           case Update::Type::Material: updatable = &scene_.material(update.id); break;
           case Update::Type::Light: updatable = &scene_.light(update.id); break;
-          case Update::Type::InstanceTransf:
+          case Update::Type::Instance:
             updatable = &scene_.modelInstance(update.id);
             break;
         }
@@ -129,7 +130,7 @@ public:
       auto &updates = scene.Host.updates;
       uint32_t i = 0;
       while(i < updates.size()) {
-        auto update = updates[i];
+        auto &update = updates[i];
         auto *updatable = fetchUpdable(scene, update);
         if(update.frames == 0) {       //remove
           updatable->ticket = nullIdx; //clear ticket
@@ -144,7 +145,7 @@ public:
                     // loop will still terminate because of size decrement.)
         }
         update.frames--;
-        updatable->updateDesc(ctx.frameIndex);
+        updatable->updateFrame(ctx.frameIndex, ctx.cb);
         i++;
       }
     }

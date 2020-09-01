@@ -184,10 +184,13 @@ void RayTracingPass::compile(RenderContext &ctx, Resources &resources) {
       samplers.data() + frame.lastNumValidSampler);
     frame.lastNumValidSampler = numValidSampler;
   }
-
-  frame.tlas.type = vk::AccelerationStructureTypeNV::eTopLevel;
-  frame.tlas.flags = vk::BuildAccelerationStructureFlagBitsNV::ePreferFastTrace;
-  allocAS(ctx.device, frame.tlas, resources.get(compTlasPassOut.tlasCount), 0, nullptr);
+  auto tlasCount = resources.get(compTlasPassOut.tlasCount);
+  if(!frame.tlas.as || tlasCount > frame.tlas.geometryCount) {
+    frame.tlas.type = vk::AccelerationStructureTypeNV::eTopLevel;
+    frame.tlas.flags = vk::BuildAccelerationStructureFlagBitsNV::ePreferFastTrace;
+    frame.tlas.geometryCount = tlasCount;
+    allocAS(ctx.device, frame.tlas, tlasCount, 0, nullptr);
+  }
 
   rtSetDef.as(*frame.tlas.as);
   rtSetDef.hdr(frame.backImg->imageView());
@@ -226,8 +229,12 @@ void RayTracingPass::execute(RenderContext &ctx, Resources &resources) {
 
   vk::AccelerationStructureInfoNV info{
     frame.tlas.type, frame.tlas.flags, tlasCount, 0, nullptr};
-  auto scratchBuffer = allocBuildScratchBuffer(ctx.device, *frame.tlas.as);
-  auto scratchBufInfo = scratchBuffer->bufferInfo();
+  if(
+    !frame.tlas.scratchBuffer || buildScratchBufferSize(ctx.device, *frame.tlas.as) >
+                                   frame.tlas.scratchBuffer->bufferInfo().size)
+    frame.tlas.scratchBuffer =
+      allocBuildScratchBuffer(ctx.device, *frame.tlas.as, "tlasScratchBuffer");
+  auto scratchBufInfo = frame.tlas.scratchBuffer->bufferInfo();
   cb.buildAccelerationStructureNV(
     info, tlasInstances.buffer, tlasInstances.offset, false, *frame.tlas.as, nullptr,
     scratchBufInfo.buffer, scratchBufInfo.offset);

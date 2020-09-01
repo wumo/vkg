@@ -13,34 +13,17 @@ Primitive::Primitive(
     auto &frame = frames[i];
     frame = {
       index[i], position[i], normal[i], uv[i], aabb, {}, scene.allocatePrimitiveDesc()};
-    if(scene.featureConfig.rayTrace) {
-      switch(topology) {
-        case PrimitiveTopology::Triangles: {
-          isRayTraced_ = true;
-          auto posBufInfo = scene.Dev.positions->bufferInfo();
-          auto indexBufInfo = scene.Dev.indices->bufferInfo();
-
-          frame.blas.type = vk::AccelerationStructureTypeNV::eBottomLevel;
-          frame.blas.flags = vk::BuildAccelerationStructureFlagBitsNV::ePreferFastTrace |
-                             vk::BuildAccelerationStructureFlagBitsNV::eAllowCompaction;
-          frame.blas.geometry = {
-            vk::GeometryTypeNV::eTriangles,
-            vk::GeometryDataNV{vk::GeometryTrianglesNV{
-              posBufInfo.buffer,
-              posBufInfo.offset + position[i].start * sizeof(Vertex::Position),
-              position[i].size, sizeof(Vertex::Position), vk::Format::eR32G32B32Sfloat,
-              indexBufInfo.buffer,
-              indexBufInfo.offset + index[i].start * sizeof(uint32_t), index[i].size,
-              vk::IndexType::eUint32}},
-            vk::GeometryFlagBitsNV::eOpaque};
-          allocAS(scene.device, frame.blas, 0, 1, &frame.blas.geometry);
-          buildAS(i);
-        } break;
-        default: break;
-      }
-    }
     *frame.desc.ptr = {index[i], position[i], normal[i],
                        uv[i],    aabb,        frames[i].blas.handle};
+  }
+  if(scene.featureConfig.rayTrace) {
+    switch(topology) {
+      case PrimitiveTopology::Triangles:
+        isRayTraced_ = true;
+        scene.scheduleFrameUpdate(Update::Type::Primitive, id_, count_, ticket);
+        break;
+      default: break;
+    }
   }
 }
 auto Primitive::id() const -> uint32_t { return id_; }
@@ -54,7 +37,6 @@ auto Primitive::normal(uint32_t idx) const -> UIntRange { return frames[idx].nor
 auto Primitive::uv(uint32_t idx) const -> UIntRange { return frames[idx].uv_; }
 auto Primitive::aabb(uint32_t idx) const -> AABB { return frames[idx].aabb_; }
 auto Primitive::descOffset() const -> uint32_t { return frames[0].desc.offset; }
-auto Primitive::isRayTraced() const -> bool { return isRayTraced_; }
 
 void Primitive::setAABB(uint32_t idx, const AABB &aabb) {
   frames[idx].aabb_ = aabb;
@@ -67,7 +49,7 @@ auto Primitive::update(
   scene.Dev.positions->update(idx, frames[idx].position_, positions);
   scene.Dev.normals->update(idx, frames[idx].normal_, normals);
   setAABB(idx, aabb);
-  buildAS(idx);
+  scene.scheduleFrameUpdate(Update::Type::Primitive, id_, count_, ticket);
 }
 auto Primitive::update(uint32_t idx, PrimitiveBuilder &builder) -> void {
   errorIf(
@@ -85,48 +67,59 @@ auto Primitive::update(uint32_t idx, PrimitiveBuilder &builder) -> void {
     idx, builder.positions().subspan(p.position.start, p.position.size),
     builder.normals().subspan(p.normal.start, p.normal.size), p.aabb);
 }
-void Primitive::buildAS(uint32_t idx) {
-  auto &frame = frames[idx];
-  auto scratchBuffer = allocBuildScratchBuffer(scene.device, *frame.blas.as);
-  auto scratchBufferInfo = scratchBuffer->bufferInfo();
-  vk::AccelerationStructureInfoNV info{
-    frame.blas.type, frame.blas.flags, 0, 1, &frame.blas.geometry};
+void Primitive::updateFrame(uint32_t frameIdx, vk::CommandBuffer commandBuffer) {
+  if(!isRayTraced_) return;
+  auto &frame = frames[frameIdx];
 
-  //  vk::QueryPoolCreateInfo qpci{};
-  //  qpci.queryCount = 1;
-  //  qpci.queryType = vk::QueryType::eAccelerationStructureCompactedSizeNV;
-  //  auto vkDevice = scene.device.vkDevice();
-  //  auto queryPool = vkDevice.createQueryPoolUnique(qpci);
-  scene.device.execSync(
-    [&](vk::CommandBuffer cb) {
-      cb.buildAccelerationStructureNV(
-        info, nullptr, 0, false, *frame.blas.as, nullptr, scratchBufferInfo.buffer,
-        scratchBufferInfo.offset);
-      //      cb.writeAccelerationStructuresPropertiesNV(
-      //        *frame.blas.as, vk::QueryType::eAccelerationStructureCompactedSizeNV, *queryPool,
-      //        0);
-    },
-    idx);
-  //  // Get the size result back
-  //  vk::DeviceSize compactSize{0};
-  //  vkDevice.getQueryPoolResults<vk::DeviceSize>(
-  //    *queryPool, 0, 1, compactSize, sizeof(vk::DeviceSize),
-  //    vk::QueryResultFlagBits::eWait);
-  //
-  //  if(compactSize > 0) {
-  //    auto originalASDesc = std::move(frame.blas);
-  //    auto originalSize = static_cast<uint32_t>(originalASDesc.buffer->size());
-  //    debugLog("compact from ", originalSize, " to ", compactSize);
-  //    //do compaction
-  //    scene.device.execSync(
-  //      [&](vk::CommandBuffer cb) {
-  //        // Compacting
-  //        allocAS(scene.device, frame.blas, 0, 0, nullptr, compactSize);
-  //        cb.copyAccelerationStructureNV(
-  //          *frame.blas.as, *originalASDesc.as,
-  //          vk::CopyAccelerationStructureModeNV::eCompact);
-  //      },
-  //      idx);
-  //  }
+  auto posBufInfo = scene.Dev.positions->bufferInfo();
+  auto indexBufInfo = scene.Dev.indices->bufferInfo();
+
+  frame.blas.type = vk::AccelerationStructureTypeNV::eBottomLevel;
+  frame.blas.flags = vk::BuildAccelerationStructureFlagBitsNV::ePreferFastTrace |
+                     vk::BuildAccelerationStructureFlagBitsNV::eAllowCompaction |
+                     vk::BuildAccelerationStructureFlagBitsNV::eAllowUpdate;
+  vk::GeometryNV geometry{
+    vk::GeometryTypeNV::eTriangles,
+    vk::GeometryDataNV{vk::GeometryTrianglesNV{
+      posBufInfo.buffer,
+      posBufInfo.offset + frame.position_.start * sizeof(Vertex::Position),
+      frame.position_.size, sizeof(Vertex::Position), vk::Format::eR32G32B32Sfloat,
+      indexBufInfo.buffer, indexBufInfo.offset + frame.index_.start * sizeof(uint32_t),
+      frame.index_.size, vk::IndexType::eUint32}},
+    vk::GeometryFlagBitsNV::eOpaque};
+  if(!frame.blas.as) {
+    allocAS(scene.device, frame.blas, 0, 1, &geometry);
+    frame.desc.ptr->handle = frame.blas.handle;
+    auto scratchBuffer = allocBuildScratchBuffer(scene.device, *frame.blas.as);
+    auto scratchBufferInfo = scratchBuffer->bufferInfo();
+    vk::AccelerationStructureInfoNV info{
+      frame.blas.type, frame.blas.flags, 0, 1, &geometry};
+
+    scene.device.execSync(
+      [&](vk::CommandBuffer cb) {
+        cb.buildAccelerationStructureNV(
+          info, nullptr, 0, false, *frame.blas.as, nullptr, scratchBufferInfo.buffer,
+          scratchBufferInfo.offset);
+      },
+      frameIdx);
+  } else {
+    if(
+      !frame.blas.scratchBuffer || updateScratchBufferSize(scene.device, *frame.blas.as) >
+                                     frame.blas.scratchBuffer->bufferInfo().size)
+      frame.blas.scratchBuffer = allocUpdateScratchBuffer(scene.device, *frame.blas.as);
+    auto scratchBufferInfo = frame.blas.scratchBuffer->bufferInfo();
+    vk::AccelerationStructureInfoNV info{
+      frame.blas.type, frame.blas.flags, 0, 1, &geometry};
+
+    scene.device.execSync(
+      [&](vk::CommandBuffer cb) {
+        scene.device.begin(cb, "build blas");
+        cb.buildAccelerationStructureNV(
+          info, nullptr, 0, true, *frame.blas.as, *frame.blas.as,
+          scratchBufferInfo.buffer, scratchBufferInfo.offset);
+        scene.device.end(cb);
+      },
+      frameIdx);
+  }
 }
 }

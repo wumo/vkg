@@ -40,7 +40,7 @@ public:
   auto setCustomMaterial(uint32_t materialId) -> void;
 
 protected:
-  void updateDesc(uint32_t frameIdx) override;
+  void updateFrame(uint32_t frameIdx, vk::CommandBuffer commandBuffer) override;
 
 protected:
   Scene &scene;

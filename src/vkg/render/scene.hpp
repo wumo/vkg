@@ -33,7 +33,7 @@ struct ScenePassOut {
 };
 
 struct Update {
-  enum class Type { Material, Light, InstanceTransf };
+  enum class Type { Primitive, Material, Light, Instance };
   Type type;
   uint32_t id;
   uint32_t frames;

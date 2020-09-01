@@ -49,7 +49,7 @@ public:
   auto setRange(float range) -> void;
 
 protected:
-  void updateDesc(uint32_t frameIdx) override;
+  void updateFrame(uint32_t frameIdx, vk::CommandBuffer commandBuffer) override;
 
 private:
   Scene &scene;

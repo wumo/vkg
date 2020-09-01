@@ -8,7 +8,7 @@ Material::Material(Scene &scene, uint32_t id, MaterialType type, uint32_t count)
   descs.resize(count);
   for(auto i = 0u; i < count; ++i) {
     descs[i] = scene.allocateMaterialDesc();
-    Material::updateDesc(i);
+    Material::updateFrame(i, vk::CommandBuffer());
   }
 }
 auto Material::id() const -> uint32_t { return id_; }
@@ -83,7 +83,7 @@ auto Material::setHeightTex(uint32_t heightTex) -> Material & {
   scene.scheduleFrameUpdate(Update::Type::Material, id_, count_, ticket);
   return *this;
 }
-void Material::updateDesc(uint32_t frameIdx) {
+void Material::updateFrame(uint32_t frameIdx, vk::CommandBuffer cb) {
   *descs[std::clamp(frameIdx, 0u, count_ - 1)].ptr = {
     colorFactor_,  pbrFactor_,   emissiveFactor_, occlusionStrength_,
     alphaCutoff_,  colorTex_,    pbrTex_,         normalTex_,

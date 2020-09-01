@@ -65,7 +65,7 @@ public:
   auto descOffset() const -> uint32_t;
 
 protected:
-  void updateDesc(uint32_t frameIdx) override;
+  void updateFrame(uint32_t frameIdx, vk::CommandBuffer cb) override;
 
 protected:
   Scene &scene;

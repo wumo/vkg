@@ -49,7 +49,7 @@ auto ModelInstance::setVisible(bool visible) -> void {
 }
 auto ModelInstance::setTransform(const Transform &transform) -> void {
   transform_ = transform;
-  scene.scheduleFrameUpdate(Update::Type::InstanceTransf, id_, count_, ticket);
+  scene.scheduleFrameUpdate(Update::Type::Instance, id_, count_, ticket);
 }
 auto ModelInstance::changeModel(uint32_t model) -> void {
   model_ = model;
@@ -96,7 +96,7 @@ auto ModelInstance::setCustomMaterial(uint32_t materialId) -> void {
   }
   customMatId = materialId;
 }
-void ModelInstance::updateDesc(uint32_t frameIdx) {
+void ModelInstance::updateFrame(uint32_t frameIdx, vk::CommandBuffer commandBuffer) {
   *transfs[std::clamp(frameIdx, 0u, count_ - 1)].ptr = transform_;
 }
 

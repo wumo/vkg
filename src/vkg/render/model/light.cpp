@@ -48,7 +48,7 @@ auto Light::setRange(float range) -> void {
   range_ = range;
   scene.scheduleFrameUpdate(Update::Type::Light, id_, count_, ticket);
 }
-void Light::updateDesc(uint32_t frameIdx) {
+void Light::updateFrame(uint32_t frameIdx, vk::CommandBuffer commandBuffer) {
   *descs[std::clamp(frameIdx, 0u, count_ - 1)].ptr = {
     color_, intensity_, location_, range_};
 }

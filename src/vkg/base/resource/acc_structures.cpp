@@ -13,16 +13,17 @@ void allocAS(
     vk::AccelerationStructureMemoryRequirementsTypeNV::eObject, *asDesc.as};
   auto memReq = dev.getAccelerationStructureMemoryRequirementsNV(memReqInfo);
 
-  asDesc.buffer = buffer::devRayTracingBuffer(
+  asDesc.asBuffer = buffer::devRayTracingBuffer(
     device, memReq.memoryRequirements.size, memReq.memoryRequirements.memoryTypeBits,
     vk::to_string(asDesc.type));
-  auto [mem, offset] = asDesc.buffer->devMem();
+  auto [mem, offset] = asDesc.asBuffer->devMem();
   vk::BindAccelerationStructureMemoryInfoNV bindInfo{*asDesc.as, mem, offset};
   dev.bindAccelerationStructureMemoryNV(bindInfo);
 
   dev.getAccelerationStructureHandleNV<uint64_t>(*asDesc.as, asDesc.handle);
 }
-auto allocBuildScratchBuffer(Device &device, vk::AccelerationStructureNV as)
+auto allocBuildScratchBuffer(
+  Device &device, vk::AccelerationStructureNV as, const std::string &name)
   -> std::unique_ptr<Buffer> {
   vk::AccelerationStructureMemoryRequirementsInfoNV memReqInfo{
     vk::AccelerationStructureMemoryRequirementsTypeNV::eBuildScratch, as};
@@ -30,7 +31,14 @@ auto allocBuildScratchBuffer(Device &device, vk::AccelerationStructureNV as)
     device.vkDevice().getAccelerationStructureMemoryRequirementsNV(memReqInfo);
   return buffer::devRayTracingBuffer(
     device, memReq.memoryRequirements.size, memReq.memoryRequirements.memoryTypeBits,
-    "buildScratch");
+    name);
+}
+auto buildScratchBufferSize(Device &device, vk::AccelerationStructureNV as) -> uint32_t {
+  vk::AccelerationStructureMemoryRequirementsInfoNV memReqInfo{
+    vk::AccelerationStructureMemoryRequirementsTypeNV::eBuildScratch, as};
+  auto memReq =
+    device.vkDevice().getAccelerationStructureMemoryRequirementsNV(memReqInfo);
+  return memReq.memoryRequirements.size;
 }
 auto allocUpdateScratchBuffer(Device &device, vk::AccelerationStructureNV as)
   -> std::unique_ptr<Buffer> {
@@ -41,5 +49,12 @@ auto allocUpdateScratchBuffer(Device &device, vk::AccelerationStructureNV as)
   return buffer::devRayTracingBuffer(
     device, memReq.memoryRequirements.size, memReq.memoryRequirements.memoryTypeBits,
     "updateScratch");
+}
+auto updateScratchBufferSize(Device &device, vk::AccelerationStructureNV as) -> uint32_t {
+  vk::AccelerationStructureMemoryRequirementsInfoNV memReqInfo{
+    vk::AccelerationStructureMemoryRequirementsTypeNV::eUpdateScratch, as};
+  auto memReq =
+    device.vkDevice().getAccelerationStructureMemoryRequirementsNV(memReqInfo);
+  return memReq.memoryRequirements.size;
 }
 }

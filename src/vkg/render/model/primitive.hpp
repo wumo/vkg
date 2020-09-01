@@ -5,6 +5,7 @@
 #include "vkg/render/allocation.hpp"
 #include "vkg/render/model/vertex.hpp"
 #include "vkg/base/resource/acc_structures.hpp"
+#include "frame_updatable.hpp"
 #include <span>
 
 namespace vkg {
@@ -17,7 +18,7 @@ enum class PrimitiveTopology : uint32_t {
 
 class Scene;
 class PrimitiveBuilder;
-class Primitive {
+class Primitive: public FrameUpdatable {
 public:
   struct Desc {
     UIntRange index, position, normal, uv;
@@ -39,16 +40,15 @@ public:
   auto aabb(uint32_t idx) const -> AABB;
   void setAABB(uint32_t idx, const AABB &aabb);
   auto descOffset() const -> uint32_t;
-  auto isRayTraced() const -> bool;
-
   auto update(
     uint32_t idx, std::span<Vertex::Position> positions,
     std::span<Vertex::Normal> normals, const AABB &aabb) -> void;
   auto update(uint32_t idx, PrimitiveBuilder &builder) -> void;
 
 protected:
-  void buildAS(uint32_t idx);
+  void updateFrame(uint32_t frameIdx, vk::CommandBuffer commandBuffer) override;
 
+protected:
   Scene &scene;
   const uint32_t id_;
   const uint32_t count_;
