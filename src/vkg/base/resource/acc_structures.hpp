@@ -21,7 +21,8 @@ auto allocBuildScratchBuffer(
   Device &device, vk::AccelerationStructureNV as,
   const std::string &name = "BuildScratchBuffer") -> std::unique_ptr<Buffer>;
 auto buildScratchBufferSize(Device &device, vk::AccelerationStructureNV as) -> uint32_t;
-auto allocUpdateScratchBuffer(Device &device, vk::AccelerationStructureNV as)
-  -> std::unique_ptr<Buffer>;
+auto allocUpdateScratchBuffer(
+  Device &device, vk::AccelerationStructureNV as,
+  const std::string &name = "UpdateScratchBuffer") -> std::unique_ptr<Buffer>;
 auto updateScratchBufferSize(Device &device, vk::AccelerationStructureNV as) -> uint32_t;
 }

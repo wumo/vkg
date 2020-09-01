@@ -40,7 +40,8 @@ auto buildScratchBufferSize(Device &device, vk::AccelerationStructureNV as) -> u
     device.vkDevice().getAccelerationStructureMemoryRequirementsNV(memReqInfo);
   return memReq.memoryRequirements.size;
 }
-auto allocUpdateScratchBuffer(Device &device, vk::AccelerationStructureNV as)
+auto allocUpdateScratchBuffer(
+  Device &device, vk::AccelerationStructureNV as, const std::string &name)
   -> std::unique_ptr<Buffer> {
   vk::AccelerationStructureMemoryRequirementsInfoNV memReqInfo{
     vk::AccelerationStructureMemoryRequirementsTypeNV::eUpdateScratch, as};
@@ -48,7 +49,7 @@ auto allocUpdateScratchBuffer(Device &device, vk::AccelerationStructureNV as)
     device.vkDevice().getAccelerationStructureMemoryRequirementsNV(memReqInfo);
   return buffer::devRayTracingBuffer(
     device, memReq.memoryRequirements.size, memReq.memoryRequirements.memoryTypeBits,
-    "updateScratch");
+    name);
 }
 auto updateScratchBufferSize(Device &device, vk::AccelerationStructureNV as) -> uint32_t {
   vk::AccelerationStructureMemoryRequirementsInfoNV memReqInfo{

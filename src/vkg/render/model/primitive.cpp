@@ -106,7 +106,8 @@ void Primitive::updateFrame(uint32_t frameIdx, vk::CommandBuffer commandBuffer) 
     if(
       !frame.blas.scratchBuffer || updateScratchBufferSize(scene.device, *frame.blas.as) >
                                      frame.blas.scratchBuffer->bufferInfo().size)
-      frame.blas.scratchBuffer = allocUpdateScratchBuffer(scene.device, *frame.blas.as);
+      frame.blas.scratchBuffer =
+        allocUpdateScratchBuffer(scene.device, *frame.blas.as, "blasUpdateScratchBuffer");
     auto scratchBufferInfo = frame.blas.scratchBuffer->bufferInfo();
     vk::AccelerationStructureInfoNV info{
       frame.blas.type, frame.blas.flags, 0, 1, &geometry};
