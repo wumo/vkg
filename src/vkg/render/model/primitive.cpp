@@ -20,11 +20,10 @@ Primitive::Primitive(
           auto posBufInfo = scene.Dev.positions->bufferInfo();
           auto indexBufInfo = scene.Dev.indices->bufferInfo();
 
-          frames[i].blas.type = vk::AccelerationStructureTypeNV::eBottomLevel;
-          frames[i].blas.flags =
-            vk::BuildAccelerationStructureFlagBitsNV::ePreferFastTrace |
-            vk::BuildAccelerationStructureFlagBitsNV::eAllowCompaction;
-          frames[i].blas.geometry = {
+          frame.blas.type = vk::AccelerationStructureTypeNV::eBottomLevel;
+          frame.blas.flags = vk::BuildAccelerationStructureFlagBitsNV::ePreferFastTrace |
+                             vk::BuildAccelerationStructureFlagBitsNV::eAllowCompaction;
+          frame.blas.geometry = {
             vk::GeometryTypeNV::eTriangles,
             vk::GeometryDataNV{vk::GeometryTrianglesNV{
               posBufInfo.buffer,
@@ -34,7 +33,7 @@ Primitive::Primitive(
               indexBufInfo.offset + index[i].start * sizeof(uint32_t), index[i].size,
               vk::IndexType::eUint32}},
             vk::GeometryFlagBitsNV::eOpaque};
-          allocAS(scene.device, frames[i].blas, 0, 1, &frames[i].blas.geometry);
+          allocAS(scene.device, frame.blas, 0, 1, &frame.blas.geometry);
           buildAS(i);
         } break;
         default: break;

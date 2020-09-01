@@ -40,7 +40,9 @@ void Buffer::barrier(
   cb.pipelineBarrier(
     srcStageMask, dstStageMask, dependencyFlags, nullptr, barrier, nullptr);
 }
-auto Buffer::bufferInfo() const -> BufferInfo { return {vmaBuffer->buffer}; }
+auto Buffer::bufferInfo() const -> BufferInfo {
+  return {vmaBuffer->buffer, 0, info.size};
+}
 auto Buffer::device() const -> Device & { return vmaBuffer->vkezDevice; }
 auto Buffer::devMem() const -> std::pair<vk::DeviceMemory, vk::DeviceSize> {
   return {alloc.deviceMemory, alloc.offset};
