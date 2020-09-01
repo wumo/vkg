@@ -7,7 +7,11 @@ void setLayout(
   vk::PipelineStageFlags srcStageMask, vk::PipelineStageFlags dstStageMask,
   uint32_t baseMipLevel, uint32_t levelCount, uint32_t baseArrayLayer,
   uint32_t layerCount) {
-  if(oldLayout == newLayout) return;
+  // Not just layout transition, but also sync barrier. so not optimize out.
+  //  if(
+  //    oldLayout == newLayout && srcStageMask == dstStageMask &&
+  //    srcAccessMask == dstAccessMask)
+  //    return;
 
   auto aspectMask = newLayout == vk::ImageLayout::eDepthStencilAttachmentOptimal ?
                       vk::ImageAspectFlagBits::eDepth |

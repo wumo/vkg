@@ -41,25 +41,26 @@ float evaluateFresnelDielectric(float et, vec3 N, vec3 rayDir) {
 }
 
 void main() {
-  prd.radiance = vec3(1, 0, 0);
-  prd.attenuation = vec3(1);
+
+  MeshInstanceUBO ins = meshInstances[gl_InstanceCustomIndexNV];
+
+  PrimitiveUBO primitive =
+    primitives[ins.primitive + clamp(frame, 0, ins.primitiveCount - 1)];
+  MaterialUBO material = materials[ins.material + clamp(frame, 0, ins.materialCount - 1)];
+
+  VertexState state;
+  MaterialInfo materialInfo;
+  getShadingState(primitive, material, state, materialInfo);
+
+  if(material.type == MaterialType_None) {
+    prd.radiance = materialInfo.diffuseColor;
+    prd.done = 1;
+    return;
+  }
+
+  prd.radiance = materialInfo.diffuseColor;
   prd.done = 1;
-
-  //   MeshInstanceUBO ins = meshInstances[gl_InstanceCustomIndexNV];
-
-  //   PrimitiveUBO primitive =
-  //     primitives[ins.primitive + clamp(frame, 0, ins.primitiveCount - 1)];
-  //   MaterialUBO material = materials[ins.material + clamp(frame, 0, ins.materialCount - 1)];
-
-  //   VertexState state;
-  //   MaterialInfo materialInfo;
-  //   getShadingState(primitive, material, state, materialInfo);
-
-  //   if(material.type == MaterialType_None) {
-  //     prd.color = materialInfo.diffuseColor;
-  //     prd.hitT = gl_HitTNV;
-  //     return;
-  //   }
+  return;
 
   //   vec3 color = vec3(0.0, 0.0, 0.0);
   //   vec3 viewDir = normalize(gl_WorldRayOriginNV - state.pos);

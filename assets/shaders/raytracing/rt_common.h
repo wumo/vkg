@@ -27,7 +27,6 @@ struct RayPayload {
   vec3 origin;
   vec3 direction;
   uint seed;
-  int depth;
   int done;
 };
 

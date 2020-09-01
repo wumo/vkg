@@ -85,7 +85,8 @@ private:
   } pushConstant{};
   struct RTPipeDef: PipelineLayoutDef {
     __push_constant__(
-      constant, vkStage::eRaygenNV | vkStage::eClosestHitNV, PushConstant);
+      constant, vkStage::eRaygenNV | vkStage::eClosestHitNV | vkStage::eMissNV,
+      PushConstant);
     __set__(rt, RTSetDef);
     __set__(atmosphere, AtmosphereSetDef);
   } pipeDef;

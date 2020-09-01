@@ -226,6 +226,12 @@ void RayTracingPass::execute(RenderContext &ctx, Resources &resources) {
     .nbSamples = 1,
     .frame = ctx.frameIndex,
   };
+  cb.pushConstants<PushConstant>(
+    pipeDef.layout(),
+    vk::ShaderStageFlagBits::eRaygenNV | vk::ShaderStageFlagBits::eClosestHitNV |
+      vk::ShaderStageFlagBits::eMissNV,
+    0, pushConstant);
+
   auto sbtBuffer = sbt.shaderBindingTable->bufferInfo().buffer;
   cb.traceRaysNV(
     sbtBuffer, sbt.rayGenOffset, sbtBuffer, sbt.missGroupOffset, sbt.missGroupStride,

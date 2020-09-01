@@ -37,20 +37,18 @@ void main() {
     prd.done = 0;
     prd.seed =
       tea(gl_LaunchIDNV.y * gl_LaunchSizeNV.x + gl_LaunchIDNV.x, cam.frame + smpl);
-    prd.depth = 0;
     ray.origin = cam.eye.xyz;
     ray.direction = d(
       gl_LaunchIDNV.x, gl_LaunchIDNV.y, r, u, v, smpl == 0 ? vec2(0.5) : rnd2(prd.seed));
 
-    for(;;) {
+    for(int depth = 0; depth < maxDepth; ++depth) {
       trace(tlas, ray, 0);
 
       prd.result += prd.radiance * prd.attenuation;
 
-      if(prd.depth == 0) {}
+      if(depth == 0) {}
 
-      prd.depth++;
-      if(prd.done == 1 || prd.depth >= maxDepth) break;
+      if(prd.done == 1) break;
       ray.origin = prd.origin;
       ray.direction = prd.direction;
     }
@@ -58,6 +56,5 @@ void main() {
   }
 
   vec3 hitColor = hitValue / nbSamples;
-  hitColor = vec3(1);
   imageStore(colorImg, ivec2(gl_LaunchIDNV.xy), vec4(hitColor, 1.f));
 }

@@ -15,9 +15,8 @@ class CompScreenPass: public Pass<CompScreenPassIn, CompScreenPassOut> {
 public:
   explicit CompScreenPass(const std::span<const uint32_t> &opcodes): opcodes(opcodes) {}
   void setup(PassBuilder &builder) override {
-    builder.read(passIn.img);
     passOut = {
-      .img = builder.create<Texture *>(""),
+      .img = builder.write(passIn.img),
     };
   }
   void compile(RenderContext &ctx, Resources &resources) override {

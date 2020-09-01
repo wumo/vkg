@@ -14,7 +14,7 @@ layout(push_constant) uniform PushConstant {
 };
 
 layout(set = 0, binding = 0) uniform accelerationStructureNV tlas;
-layout(set = 0, binding = 1, rgba8) uniform image2D colorImg;
+layout(set = 0, binding = 1, rgba16f) uniform image2D colorImg;
 layout(set = 0, binding = 2, r32f) uniform image2D depthImg;
 
 layout(set = 0, binding = 3, scalar) readonly buffer Camera { CameraUBO cam; };
@@ -41,7 +41,7 @@ layout(set = 0, binding = 13, std430) readonly buffer LightsBuffer {
 };
 
 #ifdef USE_ATMOSPHERE
-  #define ATMOSPHERE_SET 2
+  #define ATMOSPHERE_SET 1
   #include "../atmosphere/resources.h"
 #endif
 
