@@ -73,6 +73,8 @@ void main() {
   MaterialInfo materialInfo;
   getShadingState(primitive, material, state, materialInfo);
 
+  prd.origin = state.pos;
+
 #ifdef SHADING_UNLIT
   prd.radiance = prd.attenuation * materialInfo.diffuseColor;
   prd.done = 1;
@@ -119,7 +121,6 @@ void main() {
 
 #ifdef SHADING_REFLECTIVE
   prd.direction = reflect(gl_WorldRayDirectionNV, state.normal);
-  // prd.origin = state.pos;
   prd.origin = offsetRayUE5(state.pos, state.geom_normal, prd.direction);
   prd.attenuation *= materialInfo.specularColor; //TODO may not be right
   prd.done = 0;

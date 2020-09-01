@@ -11,5 +11,5 @@ layout(location = 0) rayPayloadInNV RayPayload prd;
 void main() {
   const vec3 backgroundColor = skyBackground(gl_WorldRayOriginNV, gl_WorldRayDirectionNV);
   prd.radiance = backgroundColor;
-  prd.done = 1;
+  prd.done = 2;
 }

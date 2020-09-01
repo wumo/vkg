@@ -39,6 +39,7 @@ void main() {
     prd.seed =
       tea(gl_LaunchIDNV.y * gl_LaunchSizeNV.x + gl_LaunchIDNV.x, cam.frame + smpl);
 
+    ray.cullMask = 0xFF;
     ray.origin = cam.eye.xyz;
     ray.direction = d(
       gl_LaunchIDNV.x, gl_LaunchIDNV.y, r, u, v, smpl == 0 ? vec2(0.5) : rnd2(prd.seed));
@@ -49,11 +50,18 @@ void main() {
       result += prd.radiance;
 
       if(depth == 0) {
-      } else {
-        ray.cullMask = opaqueMask;
+        float z;
+        if(prd.done == 2) { //miss
+          z = 1;
+        } else {
+          vec4 pos = cam.projView * vec4(prd.origin, 1);
+          z = pos.z / pos.w;
+        }
+        imageStore(depthImg, ivec2(gl_LaunchIDNV.xy), vec4(z, 0, 0, 0.0f));
       }
+      ray.cullMask = opaqueMask;
 
-      if(prd.done == 1) break;
+      if(prd.done != 0) break;
       ray.origin = prd.origin;
       ray.direction = prd.direction;
     }
