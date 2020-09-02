@@ -109,44 +109,42 @@ void RayTracingPass::compile(RenderContext &ctx, Resources &resources) {
     pipeDef.init(ctx.device);
 
     {
+      using namespace shader::raytracing;
       {
         RayTracingPipelineMaker maker{ctx.device};
         maker.maxRecursionDepth(2)
-          .rayGenGroup(
-            Shader{shader::raytracing::ray_rgen_span, sceneConfig.maxNumTextures})
-          .missGroup(
-            Shader{shader::raytracing::ray_rmiss_span, sceneConfig.maxNumTextures})
-          .missGroup(
-            Shader{shader::raytracing::shadow_ray_rmiss_span, sceneConfig.maxNumTextures})
-          .hitGroup({Shader{
-            shader::raytracing::hit::unlit_rchit_span, sceneConfig.maxNumTextures}})
-          .hitGroup({Shader{
-            shader::raytracing::hit::brdf_rchit_span, sceneConfig.maxNumTextures}})
-          .hitGroup({Shader{
-            shader::raytracing::hit::reflective_rchit_span, sceneConfig.maxNumTextures}})
-          .hitGroup({Shader{
-            shader::raytracing::hit::refractive_rchit_span, sceneConfig.maxNumTextures}});
+          .rayGenGroup(Shader{ray_rgen_span, sceneConfig.maxNumTextures})
+          .missGroup(Shader{ray_rmiss_span, sceneConfig.maxNumTextures})
+          .missGroup(Shader{shadow_ray_rmiss_span, sceneConfig.maxNumTextures})
+          .hitGroup(
+            {.closestHit = Shader{hit::unlit_rchit_span, sceneConfig.maxNumTextures}})
+          .hitGroup(
+            {.closestHit = Shader{hit::brdf_rchit_span, sceneConfig.maxNumTextures}})
+          .hitGroup(
+            {.closestHit =
+               Shader{hit::reflective_rchit_span, sceneConfig.maxNumTextures}})
+          .hitGroup(
+            {.closestHit =
+               Shader{hit::refractive_rchit_span, sceneConfig.maxNumTextures}});
         std::tie(pipe, sbt) = maker.createUnique(pipeDef.layout(), nullptr);
       }
       {
         RayTracingPipelineMaker maker{ctx.device};
         maker.maxRecursionDepth(2)
-          .rayGenGroup(
-            Shader{shader::raytracing::ray_rgen_span, sceneConfig.maxNumTextures})
-          .missGroup(
-            Shader{shader::raytracing::ray_atmos_rmiss_span, sceneConfig.maxNumTextures})
-          .missGroup(
-            Shader{shader::raytracing::shadow_ray_rmiss_span, sceneConfig.maxNumTextures})
-          .hitGroup({Shader{
-            shader::raytracing::hit::unlit_rchit_span, sceneConfig.maxNumTextures}})
-          .hitGroup({Shader{
-            shader::raytracing::hit::brdf_atmos_rchit_span, sceneConfig.maxNumTextures}})
-          .hitGroup({Shader{
-            shader::raytracing::hit::reflective_atmos_rchit_span,
-            sceneConfig.maxNumTextures}})
-          .hitGroup({Shader{
-            shader::raytracing::hit::refractive_atmos_rchit_span,
-            sceneConfig.maxNumTextures}});
+          .rayGenGroup(Shader{ray_rgen_span, sceneConfig.maxNumTextures})
+          .missGroup(Shader{ray_atmos_rmiss_span, sceneConfig.maxNumTextures})
+          .missGroup(Shader{shadow_ray_rmiss_span, sceneConfig.maxNumTextures})
+          .hitGroup(
+            {.closestHit = Shader{hit::unlit_rchit_span, sceneConfig.maxNumTextures}})
+          .hitGroup(
+            {.closestHit =
+               Shader{hit::brdf_atmos_rchit_span, sceneConfig.maxNumTextures}})
+          .hitGroup(
+            {.closestHit =
+               Shader{hit::reflective_atmos_rchit_span, sceneConfig.maxNumTextures}})
+          .hitGroup(
+            {.closestHit =
+               Shader{hit::refractive_atmos_rchit_span, sceneConfig.maxNumTextures}});
         std::tie(atmosPipe, atmosSbt) = maker.createUnique(pipeDef.layout(), nullptr);
       }
     }
