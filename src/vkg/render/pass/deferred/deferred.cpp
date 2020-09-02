@@ -2,64 +2,6 @@
 
 namespace vkg {
 
-struct CamFrustumPassIn {
-  FrameGraphResource<Camera *> camera;
-};
-struct CamFrustumPassOut {
-  FrameGraphResource<std::span<Frustum>> camFrustum;
-  FrameGraphResource<BufferInfo> camBuffer;
-};
-
-class CamFrustumPass: public Pass<CamFrustumPassIn, CamFrustumPassOut> {
-public:
-  void setup(PassBuilder &builder) override {
-    builder.read(passIn.camera);
-    passOut = {
-      .camFrustum = builder.create<std::span<Frustum>>("camFrustum"),
-      .camBuffer = builder.create<BufferInfo>("camBuffer"),
-    };
-
-    frustums.resize(1);
-  }
-  void compile(RenderContext &ctx, Resources &resources) override {
-    if(!init) {
-      init = true;
-      camBuffers.resize(ctx.numFrames);
-      for(int i = 0; i < ctx.numFrames; ++i) {
-        camBuffers[i] = buffer::devStorageBuffer(
-          resources.device, sizeof(Camera::Desc) * ctx.numFrames,
-          toString("camBuffer_", i));
-      }
-    }
-    auto *camera = resources.get(passIn.camera);
-    frustums[0] = Frustum{camera->proj() * camera->view()};
-
-    resources.set(passOut.camFrustum, {frustums});
-    resources.set(passOut.camBuffer, camBuffers[ctx.frameIndex]->bufferInfo());
-  }
-
-  void execute(RenderContext &ctx, Resources &resources) override {
-    auto *camera = resources.get(passIn.camera);
-    auto desc = camera->desc();
-    desc.frame = ctx.frameIndex;
-    auto bufInfo = camBuffers[ctx.frameIndex]->bufferInfo();
-    auto cb = ctx.cb;
-    ctx.device.begin(cb, "update camera");
-    cb.updateBuffer(bufInfo.buffer, bufInfo.offset, sizeof(desc), &desc);
-    cb.pipelineBarrier(
-      vk::PipelineStageFlagBits::eTransfer, vk::PipelineStageFlagBits::eAllCommands, {},
-      vk::MemoryBarrier{
-        vk::AccessFlagBits::eTransferWrite, vk::AccessFlagBits::eShaderRead},
-      nullptr, nullptr);
-    ctx.device.end(cb);
-  }
-
-private:
-  std::vector<Frustum> frustums;
-  std::vector<std::unique_ptr<Buffer>> camBuffers;
-  bool init{false};
-};
-
 void DeferredPass::setup(PassBuilder &builder) {
   auto &cam = builder.newPass<CamFrustumPass>("CamFrustum", {passIn.camera});
   camBuffer = cam.out().camBuffer;

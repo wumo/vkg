@@ -6,6 +6,7 @@
 #include "vkg/render/pass/cull/compute_cull_drawcmd.hpp"
 #include "vkg/render/model/vertex.hpp"
 #include "vkg/render/draw_group.hpp"
+#include "vkg/render/pass/common/cam_frustum_pass.hpp"
 #include "vkg/render/pass/atmosphere/atmosphere_pass.hpp"
 #include "vkg/render/pass/shadowmap/shadow_map_pass.hpp"
 

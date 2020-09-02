@@ -104,7 +104,9 @@ set(sources
   src/vkg/render/pass/atmosphere/compute_transmittance.cpp
   src/vkg/render/pass/shadowmap/shadow_map_pass.cpp
   src/vkg/render/pass/raytracing/raytracing_pass.cpp
-  src/vkg/render/pass/raytracing/comp_tlas_pass.cpp)
+  src/vkg/render/pass/raytracing/comp_tlas_pass.cpp
+  src/vkg/render/pass/raytracing/forward_pass.cpp
+  src/vkg/render/pass/common/cam_frustum_pass.cpp)
 
 set(definitions "")
 #list(APPEND definitions "VK_ENABLE_BETA_EXTENSIONS")
