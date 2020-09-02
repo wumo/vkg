@@ -28,7 +28,7 @@ void main() {
   ray.tmin = 0;
   ray.tmax = cam.zFar;
   ray.sbtRecordOffset = 0;
-  ray.sbtRecordStride = 0;
+  ray.sbtRecordStride = 0; //currently we won't have more than one geometry in each blas
   ray.missIndex = 0;
 
   for(int smpl = 0; smpl < nbSamples; ++smpl) {

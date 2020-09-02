@@ -13,15 +13,6 @@ struct VertexState {
   vec3 bitangent;
 };
 
-//vec3 getVertex(uint index) {
-//  return vec3(
-//    positions[3 * index + 0], positions[3 * index + 1], positions[3 * index + 2]);
-//}
-//
-//vec3 getNormal(uint index) {
-//  return vec3(normals[3 * index + 0], normals[3 * index + 1], normals[3 * index + 2]);
-//}
-
 void getVertexState(
   in PrimitiveUBO primitive, in MaterialUBO material, inout VertexState state) {
   const vec3 barycentrics = vec3(1.0f - hit.x - hit.y, hit.x, hit.y);

@@ -13,7 +13,7 @@
 #endif
 
 layout(location = 0) rayPayloadInNV RayPayload prd;
-layout(location = 1) rayPayloadInNV ShadowRayPayload prdShadow;
+layout(location = 1) rayPayloadNV ShadowRayPayload prdShadow;
 
 #include "../trace.h"
 
@@ -54,7 +54,7 @@ bool shadowTrace(vec3 origin, vec3 lightDir, float maxDistance) {
   ray.rayFlags = gl_RayFlagsTerminateOnFirstHitNV | gl_RayFlagsOpaqueNV |
                  gl_RayFlagsSkipClosestHitShaderNV;
   ray.cullMask = opaqueMask;
-  ray.sbtRecordOffset = 1;
+  ray.sbtRecordOffset = 0; //because we don't have to execute any shaders
   ray.sbtRecordStride = 0;
   ray.missIndex = 1;
   prdShadow.shadowed = true;

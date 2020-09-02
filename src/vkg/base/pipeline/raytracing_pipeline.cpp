@@ -81,13 +81,15 @@ auto RayTracingPipelineMaker::createUnique(
 
   vk::UniquePipeline pipeline =
     device.vkDevice().createRayTracingPipelineNVUnique(pipelineCache, info);
+
   auto shaderGroupHandleSize = device.rayTracingProperties().shaderGroupHandleSize;
   auto shaderGroupBaseAlignment = device.rayTracingProperties().shaderGroupBaseAlignment;
   auto sbtSize = shaderGroupBaseAlignment * groups.size();
-  auto sbtBuffer = buffer::hostRayTracingBuffer(device, sbtSize);
   std::vector<std::byte> shaderHandleStorage(sbtSize);
   device.vkDevice().getRayTracingShaderGroupHandlesNV(
     *pipeline, 0, uint32_t(groups.size()), sbtSize, shaderHandleStorage.data());
+
+  auto sbtBuffer = buffer::hostRayTracingBuffer(device, sbtSize);
   auto *pData = sbtBuffer->ptr<std::byte>();
   for(uint32_t g = 0; g < groups.size(); ++g) {
     memcpy(
@@ -96,12 +98,12 @@ auto RayTracingPipelineMaker::createUnique(
     pData += shaderGroupBaseAlignment;
   }
   ShaderBindingTable sbt{
-    std::move(sbtBuffer),
-    0,
-    1 * shaderGroupBaseAlignment,
-    shaderGroupBaseAlignment,
-    (1 + numMissGroups) * shaderGroupBaseAlignment,
-    shaderGroupBaseAlignment};
+    .shaderBindingTable = std::move(sbtBuffer),
+    .rayGenOffset = 0,
+    .missGroupOffset = 1 * shaderGroupBaseAlignment,
+    .missGroupStride = 1 * shaderGroupBaseAlignment,
+    .hitGroupOffset = (1 + numMissGroups) * shaderGroupBaseAlignment,
+    .hitGroupStride = shaderGroupBaseAlignment};
   return std::make_tuple(std::move(pipeline), std::move(sbt));
 }
 

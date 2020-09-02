@@ -4,6 +4,13 @@
 #include "../tonemap.h"
 #include "../math.h"
 
+/* hitGroupIdx = hitShaderBindingOffset + hitShaderBindingStride × (
+ *  instanceShaderBindingTableRecordOffset + geometryIndex × sbtRecordStride + sbtRecordOffset )
+ *
+ * missGroupIdx = missShaderBindingOffset + missShaderBindingStride × missIndex
+ *
+ * callGroupIdx = callableShaderBindingOffset + callableShaderBindingStride × sbtRecordIndex
+*/
 struct RayDesc {
   vec3 origin;
   vec3 direction;
