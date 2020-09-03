@@ -67,7 +67,7 @@ auto Primitive::update(uint32_t idx, PrimitiveBuilder &builder) -> void {
     idx, builder.positions().subspan(p.position.start, p.position.size),
     builder.normals().subspan(p.normal.start, p.normal.size), p.aabb);
 }
-void Primitive::updateFrame(uint32_t frameIdx, vk::CommandBuffer commandBuffer) {
+void Primitive::updateFrame(uint32_t frameIdx, vk::CommandBuffer cb) {
   if(!isRayTraced_) return;
   auto &frame = frames[frameIdx];
 
@@ -95,13 +95,16 @@ void Primitive::updateFrame(uint32_t frameIdx, vk::CommandBuffer commandBuffer) 
     vk::AccelerationStructureInfoNV info{
       frame.blas.type, frame.blas.flags, 0, 1, &geometry};
 
-    scene.device.execSync(
-      [&](vk::CommandBuffer cb) {
-        cb.buildAccelerationStructureNV(
-          info, nullptr, 0, false, *frame.blas.as, nullptr, scratchBufferInfo.buffer,
-          scratchBufferInfo.offset);
-      },
-      frameIdx);
+    cb.buildAccelerationStructureNV(
+      info, nullptr, 0, false, *frame.blas.as, nullptr, scratchBufferInfo.buffer,
+      scratchBufferInfo.offset);
+    cb.pipelineBarrier(
+      vk::PipelineStageFlagBits::eAccelerationStructureBuildNV,
+      vk::PipelineStageFlagBits::eRayTracingShaderNV, {},
+      vk::MemoryBarrier{
+        vk::AccessFlagBits::eAccelerationStructureWriteNV,
+        vk::AccessFlagBits::eAccelerationStructureReadNV},
+      nullptr, nullptr);
   } else {
     if(
       !frame.blas.scratchBuffer || updateScratchBufferSize(scene.device, *frame.blas.as) >
@@ -112,15 +115,16 @@ void Primitive::updateFrame(uint32_t frameIdx, vk::CommandBuffer commandBuffer) 
     vk::AccelerationStructureInfoNV info{
       frame.blas.type, frame.blas.flags, 0, 1, &geometry};
 
-    scene.device.execSync(
-      [&](vk::CommandBuffer cb) {
-        scene.device.begin(cb, "build blas");
-        cb.buildAccelerationStructureNV(
-          info, nullptr, 0, true, *frame.blas.as, *frame.blas.as,
-          scratchBufferInfo.buffer, scratchBufferInfo.offset);
-        scene.device.end(cb);
-      },
-      frameIdx);
+    cb.buildAccelerationStructureNV(
+      info, nullptr, 0, true, *frame.blas.as, *frame.blas.as, scratchBufferInfo.buffer,
+      scratchBufferInfo.offset);
+    cb.pipelineBarrier(
+      vk::PipelineStageFlagBits::eAccelerationStructureBuildNV,
+      vk::PipelineStageFlagBits::eRayTracingShaderNV, {},
+      vk::MemoryBarrier{
+        vk::AccessFlagBits::eAccelerationStructureWriteNV,
+        vk::AccessFlagBits::eAccelerationStructureReadNV},
+      nullptr, nullptr);
   }
 }
 }

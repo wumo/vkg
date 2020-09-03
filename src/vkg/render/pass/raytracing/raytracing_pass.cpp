@@ -47,10 +47,19 @@ void RayTracingPass::setup(PassBuilder &builder) {
                        })
                      .out();
 
-  //  auto forward = builder.newPass<ForwardPass>("ForwardShading", {}).out();
+  auto forward = builder
+                   .newPass<ForwardPass>(
+                     "ForwardShading",
+                     {
+                       traceRays,
+                       cam,
+                       passIn.sceneConfig,
+                       passIn.meshInstances,
+                     })
+                   .out();
 
   passOut = {
-    .backImg = traceRays.backImg,
+    .backImg = forward.hdrImg,
   };
 }
 }

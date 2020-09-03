@@ -127,6 +127,7 @@ public:
         return updatable;
       };
 
+      ctx.device.begin(ctx.cb, "scene update");
       auto &updates = scene.Host.updates;
       uint32_t i = 0;
       while(i < updates.size()) {
@@ -148,6 +149,7 @@ public:
         updatable->updateFrame(ctx.frameIndex, ctx.cb);
         i++;
       }
+      ctx.device.end(ctx.cb);
     }
 
     resources.set(passOut.meshInstancesCount, scene.Dev.meshInstances->count());

@@ -6,16 +6,19 @@
 #include "vkg/render/model/vertex.hpp"
 #include "vkg/render/draw_group.hpp"
 #include "vkg/render/pass/cull/compute_cull_drawcmd.hpp"
+#include "trace_rays_pass.hpp"
 
 namespace vkg {
 struct ForwardPassIn {
-  FrameGraphResource<Texture *> hdrImg;
-  FrameGraphResource<Texture *> depthImg;
+  TraceRaysPassOut traceRays;
+  CamFrustumPassOut camFrustum;
 
-  FrameGraphResource<BufferInfo> camBuffer;
   FrameGraphResource<SceneConfig> sceneConfig;
   FrameGraphResource<BufferInfo> meshInstances;
   FrameGraphResource<uint32_t> meshInstancesCount;
+  FrameGraphResource<BufferInfo> primitives;
+  FrameGraphResource<BufferInfo> matrices;
+  FrameGraphResource<std::span<uint32_t>> countPerDrawGroup;
 };
 struct ForwardPassOut {
   FrameGraphResource<Texture *> hdrImg;

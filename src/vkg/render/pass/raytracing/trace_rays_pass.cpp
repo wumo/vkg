@@ -16,6 +16,7 @@ void TraceRaysPass::setup(PassBuilder &builder) {
   builder.read(passIn);
   passOut = {
     .backImg = builder.write(passIn.backImg),
+    .depthImg = builder.create<Texture *>("depthImg"),
   };
 }
 void TraceRaysPass::compile(RenderContext &ctx, Resources &resources) {
@@ -100,6 +101,7 @@ void TraceRaysPass::compile(RenderContext &ctx, Resources &resources) {
       vk::Format::eR32Sfloat);
 
     frame.depthImg->setSampler({});
+    resources.set(passOut.depthImg, frame.depthImg.get());
   }
 
   if(numValidSampler > frame.lastNumValidSampler) {

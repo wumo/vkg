@@ -46,7 +46,7 @@ public:
   auto update(uint32_t idx, PrimitiveBuilder &builder) -> void;
 
 protected:
-  void updateFrame(uint32_t frameIdx, vk::CommandBuffer commandBuffer) override;
+  void updateFrame(uint32_t frameIdx, vk::CommandBuffer cb) override;
 
 protected:
   Scene &scene;

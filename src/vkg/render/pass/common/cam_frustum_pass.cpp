@@ -7,12 +7,11 @@ void CamFrustumPass::setup(PassBuilder &builder) {
     .camFrustum = builder.create<std::span<Frustum>>("camFrustum"),
     .camBuffer = builder.create<BufferInfo>("camBuffer"),
   };
-  
-  frustums.resize(1);
 }
 void CamFrustumPass::compile(RenderContext &ctx, Resources &resources) {
   if(!init) {
     init = true;
+    frustums.resize(1);
     camBuffers.resize(ctx.numFrames);
     for(int i = 0; i < ctx.numFrames; ++i) {
       camBuffers[i] = buffer::devStorageBuffer(
@@ -22,7 +21,7 @@ void CamFrustumPass::compile(RenderContext &ctx, Resources &resources) {
   }
   auto *camera = resources.get(passIn.camera);
   frustums[0] = Frustum{camera->proj() * camera->view()};
-  
+
   resources.set(passOut.camFrustum, {frustums});
   resources.set(passOut.camBuffer, camBuffers[ctx.frameIndex]->bufferInfo());
 }

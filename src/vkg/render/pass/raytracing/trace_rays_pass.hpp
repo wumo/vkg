@@ -13,7 +13,7 @@ struct TraceRaysPassIn {
   FrameGraphResource<Texture *> backImg;
   FrameGraphResource<BufferInfo> camBuffer;
   CompTLASPassOut compTlasPassOut;
-  
+
   FrameGraphResource<SceneConfig> sceneConfig;
   FrameGraphResource<BufferInfo> meshInstances;
   FrameGraphResource<BufferInfo> positions;
@@ -32,6 +32,7 @@ struct TraceRaysPassIn {
 };
 struct TraceRaysPassOut {
   FrameGraphResource<Texture *> backImg;
+  FrameGraphResource<Texture *> depthImg;
 };
 
 class TraceRaysPass: public Pass<TraceRaysPassIn, TraceRaysPassOut> {
@@ -105,7 +106,6 @@ private:
   vk::UniqueDescriptorPool descriptorPool;
   vk::UniquePipeline pipe, atmosPipe;
   ShaderBindingTable sbt, atmosSbt;
-
 
   bool init{false};
 };
