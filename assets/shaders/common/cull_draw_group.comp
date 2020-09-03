@@ -32,6 +32,7 @@ layout(set = 0, binding = 5, scalar) readonly buffer DrawGroupOffsetBuffer {
   uint cmdOffsetPerGroup[];
 };
 layout(set = 0, binding = 6, scalar) buffer DrawCountBuffer { uint drawCMDCount[]; };
+layout(set = 0, binding = 7, scalar) buffer AllowedGroupBuf { bool allowedGroup[]; };
 
 void main() {
   uint NX = gl_NumWorkGroups.x * gl_WorkGroupSize.x;
@@ -45,7 +46,10 @@ void main() {
 
   MeshInstanceDesc mesh = meshInstances[id];
 
-  if(!mesh.visible || mesh.drawGroupID == DrawGroupUnknown) return;
+  if(
+    !mesh.visible || mesh.drawGroupID == DrawGroupUnknown ||
+    !allowedGroup[mesh.drawGroupID])
+    return;
 
   uint primitiveOffset = clamp(frame, 0, mesh.primitiveCount - 1);
   PrimitiveDesc prim = primitives[mesh.primitive + primitiveOffset];

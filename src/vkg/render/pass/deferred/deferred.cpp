@@ -3,35 +3,7 @@
 namespace vkg {
 
 void DeferredPass::setup(PassBuilder &builder) {
-  auto &cam = builder.newPass<CamFrustumPass>("CamFrustum", {passIn.camera});
-  camBuffer = cam.out().camBuffer;
-
-  auto &cull = builder.newPass<ComputeCullDrawCMD>(
-    "Cull",
-    {cam.out().camFrustum, passIn.meshInstances, passIn.meshInstancesCount,
-     passIn.sceneConfig, passIn.primitives, passIn.matrices, passIn.drawGroupCount});
-  cullPassOut = cull.out();
-
-  builder.read(passIn.sceneConfig);
-  builder.read(cam.out().camBuffer);
-  builder.read(passIn.meshInstances);
-  builder.read(passIn.primitives);
-  builder.read(passIn.positions);
-  builder.read(passIn.normals);
-  builder.read(passIn.uvs);
-  builder.read(passIn.indices);
-  builder.read(passIn.matrices);
-  builder.read(passIn.materials);
-  builder.read(passIn.samplers);
-  builder.read(passIn.numValidSampler);
-  builder.read(passIn.lighting);
-  builder.read(passIn.lights);
-  builder.read(passIn.drawGroupCount);
-  builder.read(cull.out());
-  builder.read(passIn.atmosSetting);
-  builder.read(passIn.atmosphere);
-  builder.read(passIn.shadowMapSetting);
-  builder.read(passIn.shadowmap);
+  builder.read(passIn);
   passOut.backImg = builder.write(passIn.backImg);
 }
 void DeferredPass::compile(RenderContext &ctx, Resources &resources) {
@@ -89,9 +61,8 @@ void DeferredPass::compile(RenderContext &ctx, Resources &resources) {
       samplers.data() + frame.lastNumValidSampler);
     frame.lastNumValidSampler = numValidSampler;
   }
-  sceneSetDef.camera(resources.get(camBuffer));
+  sceneSetDef.camera(resources.get(passIn.camBuffer));
   sceneSetDef.meshInstances(resources.get(passIn.meshInstances));
-  sceneSetDef.primitives(resources.get(passIn.primitives));
   sceneSetDef.matrices(resources.get(passIn.matrices));
   sceneSetDef.materials(resources.get(passIn.materials));
   sceneSetDef.lighting(resources.get(passIn.lighting));

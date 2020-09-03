@@ -158,13 +158,19 @@ void ShadowMapPass::setup(PassBuilder &builder) {
     "CSMFrustumPass", {passIn.atmosSetting, passIn.shadowMapSetting, passIn.camera});
 
   auto &cull = builder.newPass<ComputeCullDrawCMD>(
-    "ShadowMapCull", {.frustums = frustum.out().frustums,
-                      .meshInstances = passIn.meshInstances,
-                      .meshInstancesCount = passIn.meshInstancesCount,
-                      .sceneConfig = passIn.sceneConfig,
-                      .primitives = passIn.primitives,
-                      .matrices = passIn.matrices,
-                      .maxPerGroup = passIn.maxPerGroup});
+    "ShadowMapCull",
+    {.frustums = frustum.out().frustums,
+     .meshInstances = passIn.meshInstances,
+     .meshInstancesCount = passIn.meshInstancesCount,
+     .sceneConfig = passIn.sceneConfig,
+     .primitives = passIn.primitives,
+     .matrices = passIn.matrices,
+     .maxPerGroup = passIn.maxPerGroup},
+    std::set{
+      DrawGroup::BRDF,
+      DrawGroup::Reflective,
+      DrawGroup::Refractive,
+    });
 
   cullPassOut = cull.out();
   cascades = frustum.out().cascades;

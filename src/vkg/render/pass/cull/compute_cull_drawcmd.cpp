@@ -1,8 +1,11 @@
 #include "compute_cull_drawcmd.hpp"
+
+#include <utility>
 #include "common/cull_draw_group_comp.hpp"
 
 namespace vkg {
-
+ComputeCullDrawCMD::ComputeCullDrawCMD(std::set<DrawGroup> allowedGroup)
+  : allowedGroup(std::move(allowedGroup)) {}
 void ComputeCullDrawCMD::setup(PassBuilder &builder) {
   builder.read(passIn);
   passOut = {
@@ -36,6 +39,17 @@ void ComputeCullDrawCMD::compile(RenderContext &ctx, Resources &resources) {
 
     cmdOffsetOfGroupInFrustum.resize(numDrawGroups);
 
+    {
+      std::vector<VkBool32> allowedGroup_(numDrawGroups);
+      for(auto g = 0u; g < numDrawGroups; ++g)
+        allowedGroup_[g] = allowedGroup.contains(static_cast<DrawGroup>(g));
+
+      allowedGroupBuf = buffer::devStorageBuffer(
+        resources.device, allowedGroup_.size() * sizeof(VkBool32),
+        toString(name, "_allowedGroup"));
+      buffer::uploadVec(ctx.frameIndex, *allowedGroupBuf, allowedGroup_);
+    }
+
     for(int i = 0; i < ctx.numFrames; ++i) {
       auto &frame = frames[i];
       frame.set = setDef.createSet(*descriptorPool);
@@ -66,6 +80,7 @@ void ComputeCullDrawCMD::compile(RenderContext &ctx, Resources &resources) {
   setDef.drawCMD(frame.drawCMD->bufferInfo());
   setDef.cmdOffsetPerGroup(frame.cmdOffsetPerGroupBuffer->bufferInfo());
   setDef.drawCMDCount(frame.countOfGroupBuffer->bufferInfo());
+  setDef.allowedGroup(allowedGroupBuf->bufferInfo());
   setDef.update(frame.set);
 
   {
@@ -118,12 +133,6 @@ void ComputeCullDrawCMD::execute(RenderContext &ctx, Resources &resources) {
     bufInfo.buffer, bufInfo.offset, sizeof(uint32_t) * cmdOffsetOfGroupInFrustum.size(),
     cmdOffsetOfGroupInFrustum.data());
 
-  /**
-       * TODO It seems that we have to use cb.fillBuffer to initialize Dev.drawCMDCount instead
-       * of memset the host persistent mapped buffer pointer, otherwise atomicAdd operation in
-       * shader will not work as expected. Need to fully inspect the real reason of this. And
-       * this may invalidate other host coherent memories that will be accessed by compute shader.
-       */
   bufInfo = frame.countOfGroupBuffer->bufferInfo();
   cb.fillBuffer(
     bufInfo.buffer, bufInfo.offset, sizeof(uint32_t) * numFrustums * numDrawGroups, 0u);

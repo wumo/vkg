@@ -1,6 +1,6 @@
 #include "scene.hpp"
 #include "vkg/render/pass/transf/compute_transf.hpp"
-#include "vkg/render/pass/deferred/deferred.hpp"
+#include "vkg/render/pass/deferred/deferred_setup.hpp"
 #include "vkg/render/pass/atmosphere/atmosphere_pass.hpp"
 #include "vkg/render/pass/shadowmap/shadow_map_pass.hpp"
 #include "vkg/render/pass/raytracing/raytracing_pass.hpp"
@@ -222,7 +222,7 @@ void Scene::setup(PassBuilder &builder) {
                    });
     shadowMap.enableIf([&]() { return Host.shadowMap.isEnabled(); });
 
-    auto &deferred = builder.newPass<DeferredPass>(
+    auto &deferred = builder.newPass<DeferredSetupPass>(
       "Deferred", {sceneSetupOut.backImg,
                    sceneSetupOut.camera,
                    sceneSetupOut.sceneConfig,

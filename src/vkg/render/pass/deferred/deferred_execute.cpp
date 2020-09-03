@@ -2,7 +2,7 @@
 
 namespace vkg {
 void DeferredPass::execute(RenderContext &ctx, Resources &resources) {
-  auto drawInfos = resources.get(cullPassOut.drawInfos);
+  auto drawInfos = resources.get(passIn.cullCMD.drawInfos);
   auto atmosSetting = resources.get(passIn.atmosSetting);
   auto shadowMapSetting = resources.get(passIn.shadowMapSetting);
 

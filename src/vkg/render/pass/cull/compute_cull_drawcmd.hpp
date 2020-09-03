@@ -3,6 +3,8 @@
 #include "vkg/render/graph/frame_graph.hpp"
 #include "vkg/render/scene_config.hpp"
 #include "vkg/math/frustum.hpp"
+#include "vkg/render/draw_group.hpp"
+#include <set>
 
 namespace vkg {
 struct DrawInfo {
@@ -28,6 +30,7 @@ struct ComputeCullDrawCMDPassOut {
 class ComputeCullDrawCMD
   : public Pass<ComputeCullDrawCMDPassIn, ComputeCullDrawCMDPassOut> {
 public:
+  explicit ComputeCullDrawCMD(std::set<DrawGroup> allowedGroup);
   void setup(PassBuilder &builder) override;
   void compile(RenderContext &ctx, Resources &resources) override;
   void execute(RenderContext &ctx, Resources &resources) override;
@@ -41,6 +44,7 @@ private:
     __buffer__(drawCMD, vk::ShaderStageFlagBits::eCompute);
     __buffer__(cmdOffsetPerGroup, vk::ShaderStageFlagBits::eCompute);
     __buffer__(drawCMDCount, vk::ShaderStageFlagBits::eCompute);
+    __buffer__(allowedGroup, vk::ShaderStageFlagBits::eCompute);
   } setDef;
   struct PushConstant {
     uint32_t totalFrustums;
@@ -48,7 +52,7 @@ private:
     uint32_t cmdFrustumStride;
     uint32_t groupStride;
     uint32_t frame;
-  } pushConstant;
+  } pushConstant{};
   struct ComputeTransfPipeDef: PipelineLayoutDef {
     __push_constant__(pushConst, vk::ShaderStageFlagBits::eCompute, PushConstant);
     __set__(transf, ComputeTransfSetDef);
@@ -58,6 +62,9 @@ private:
   const uint32_t local_size = 64;
 
   vk::UniqueDescriptorPool descriptorPool;
+
+  std::set<DrawGroup> allowedGroup;
+  std::unique_ptr<Buffer> allowedGroupBuf;
 
   struct FrameResource {
     vk::DescriptorSet set;
@@ -73,8 +80,8 @@ private:
   std::vector<uint32_t> cmdOffsetOfGroupInFrustum;
 
   uint32_t numFrustums{0};
-  uint32_t numDrawCMDsPerFrustum;
-  uint32_t numDrawGroups;
+  uint32_t numDrawCMDsPerFrustum{};
+  uint32_t numDrawGroups{};
 
   bool init{false};
 };

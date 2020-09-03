@@ -13,15 +13,14 @@
 namespace vkg {
 struct DeferredPassIn {
   FrameGraphResource<Texture *> backImg;
-  FrameGraphResource<Camera *> camera;
+  FrameGraphResource<BufferInfo> camBuffer;
+  ComputeCullDrawCMDPassOut cullCMD;
   FrameGraphResource<SceneConfig> sceneConfig;
   FrameGraphResource<BufferInfo> meshInstances;
-  FrameGraphResource<uint32_t> meshInstancesCount;
   FrameGraphResource<BufferInfo> positions;
   FrameGraphResource<BufferInfo> normals;
   FrameGraphResource<BufferInfo> uvs;
   FrameGraphResource<BufferInfo> indices;
-  FrameGraphResource<BufferInfo> primitives;
   FrameGraphResource<BufferInfo> matrices;
   FrameGraphResource<BufferInfo> materials;
   FrameGraphResource<std::span<vk::DescriptorImageInfo>> samplers;
@@ -55,13 +54,9 @@ private:
   auto createUnlitPass(Device &device, SceneConfig sceneConfig) -> void;
   auto createTransparentPass(Device &device, SceneConfig sceneConfig) -> void;
 
-  ComputeCullDrawCMDPassOut cullPassOut;
-  FrameGraphResource<BufferInfo> camBuffer;
-
   struct SceneSetDef: DescriptorSetDef {
     __buffer__(camera, vkStage::eVertex | vkStage::eFragment);
     __buffer__(meshInstances, vkStage::eVertex);
-    __buffer__(primitives, vkStage::eVertex);
     __buffer__(matrices, vkStage::eVertex);
     __buffer__(materials, vkStage::eFragment);
     __sampler2D__(textures, vkStage::eFragment);
@@ -117,6 +112,7 @@ private:
 
   vk::UniqueDescriptorPool descriptorPool;
 
+  std::vector<bool> groupCounted;
   struct FrameResource {
     Texture *backImg;
     std::unique_ptr<Texture> depthAtt, normalAtt, diffuseAtt, specularAtt, emissiveAtt;

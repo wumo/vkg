@@ -7,7 +7,6 @@
 
 namespace vkg {
 void ForwardPass::setup(vkg::PassBuilder &builder) {
-  //TODO optimize to only count lines and transparent.
   cullPassOut = builder
                   .newPass<ComputeCullDrawCMD>(
                     "CullDrawCMD",
@@ -19,6 +18,11 @@ void ForwardPass::setup(vkg::PassBuilder &builder) {
                       passIn.primitives,
                       passIn.matrices,
                       passIn.countPerDrawGroup,
+                    },
+                    std::set{
+                      DrawGroup::Transparent,
+                      DrawGroup::TransparentLines,
+                      DrawGroup::OpaqueLines,
                     })
                   .out();
 
