@@ -38,7 +38,7 @@ auto buildScratchBufferSize(Device &device, vk::AccelerationStructureNV as) -> u
     vk::AccelerationStructureMemoryRequirementsTypeNV::eBuildScratch, as};
   auto memReq =
     device.vkDevice().getAccelerationStructureMemoryRequirementsNV(memReqInfo);
-  return memReq.memoryRequirements.size;
+  return uint32_t(memReq.memoryRequirements.size);
 }
 auto allocUpdateScratchBuffer(
   Device &device, vk::AccelerationStructureNV as, const std::string &name)
@@ -56,6 +56,6 @@ auto updateScratchBufferSize(Device &device, vk::AccelerationStructureNV as) -> 
     vk::AccelerationStructureMemoryRequirementsTypeNV::eUpdateScratch, as};
   auto memReq =
     device.vkDevice().getAccelerationStructureMemoryRequirementsNV(memReqInfo);
-  return memReq.memoryRequirements.size;
+  return uint32_t(memReq.memoryRequirements.size);
 }
 }

@@ -55,6 +55,17 @@ void RayTracingPass::setup(PassBuilder &builder) {
                        cam,
                        passIn.sceneConfig,
                        passIn.meshInstances,
+                       passIn.meshInstancesCount,
+                       passIn.primitives,
+                       passIn.positions,
+                       passIn.normals,
+                       passIn.uvs,
+                       passIn.indices,
+                       passIn.matrices,
+                       passIn.materials,
+                       passIn.samplers,
+                       passIn.numValidSampler,
+                       passIn.countPerDrawGroup,
                      })
                    .out();
 

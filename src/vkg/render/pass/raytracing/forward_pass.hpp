@@ -17,7 +17,14 @@ struct ForwardPassIn {
   FrameGraphResource<BufferInfo> meshInstances;
   FrameGraphResource<uint32_t> meshInstancesCount;
   FrameGraphResource<BufferInfo> primitives;
+  FrameGraphResource<BufferInfo> positions;
+  FrameGraphResource<BufferInfo> normals;
+  FrameGraphResource<BufferInfo> uvs;
+  FrameGraphResource<BufferInfo> indices;
   FrameGraphResource<BufferInfo> matrices;
+  FrameGraphResource<BufferInfo> materials;
+  FrameGraphResource<std::span<vk::DescriptorImageInfo>> samplers;
+  FrameGraphResource<uint32_t> numValidSampler;
   FrameGraphResource<std::span<uint32_t>> countPerDrawGroup;
 };
 struct ForwardPassOut {
@@ -30,8 +37,12 @@ public:
   void execute(RenderContext &ctx, Resources &resources) override;
 
 private:
+  void createRenderPass(Device &device, vk::Format format);
+  void createCopyDepthPass(Device &device, SceneConfig &sceneConfig);
+  void createOpaquePass(Device &device, SceneConfig &sceneConfig);
+  void createTransparentPass(Device &device, SceneConfig &sceneConfig);
+  
   ComputeCullDrawCMDPassOut cullPassOut;
-  FrameGraphResource<BufferInfo> camBuffer;
 
   struct SceneSetDef: DescriptorSetDef {
     __sampler2D__(depth, vkStage::eFragment);
@@ -58,7 +69,8 @@ private:
 
   uint32_t copyDepthPass{}, opaquePass, transparentPass{};
   vk::UniqueRenderPass renderPass;
-  vk::UniquePipeline copyDepthPipe, opaquePipe, transparentPipe;
+  vk::UniquePipeline copyDepthPipe, opaqueLinesPipe, transparentPipe,
+    transparentLinesPipe;
 
   vk::UniqueDescriptorPool descriptorPool;
   struct FrameResource {
