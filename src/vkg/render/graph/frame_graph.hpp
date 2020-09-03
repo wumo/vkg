@@ -39,7 +39,7 @@ struct FrameGraphResource: FrameGraphBaseResource {
 
 struct FrameGraphResourcePass {
   uint32_t writerPass;
-  std::vector<uint32_t> readerPasses;
+  std::set<uint32_t> readerPasses;
 };
 
 struct FrameGraphResources {
@@ -50,6 +50,7 @@ struct FrameGraphResources {
 
 class BasePass {
   friend class PassBuilder;
+  friend class Resources;
   friend class FrameGraph;
 
 public:
@@ -67,8 +68,8 @@ protected:
 private:
   uint32_t id;
   uint32_t order;
-  std::vector<FrameGraphBaseResource> inputs_;
-  std::vector<FrameGraphBaseResource> outputs_;
+  std::map<uint32_t, FrameGraphBaseResource> inputs_;
+  std::map<uint32_t, FrameGraphBaseResource> outputs_;
   uint32_t parent{~0u};
 
   PassCondition passCondition_{[]() { return true; }};
@@ -182,29 +183,43 @@ private:
   FrameGraph &frameGraph;
   const uint32_t id;
   BasePass &pass_;
-  std::vector<FrameGraphBaseResource> inputs_;
-  std::set<uint32_t> uniqueInputs;
-  std::vector<FrameGraphBaseResource> outputs_;
+  std::map<uint32_t, FrameGraphBaseResource> inputs_;
+  std::map<uint32_t, FrameGraphBaseResource> outputs_;
 };
 
 class Resources {
+  friend class FrameGraph;
+
 public:
-  explicit Resources(Device &device, uint32_t numResources);
+  explicit Resources(Device &device, std::vector<FrameGraphResources> &resRevisions);
 
   template<typename T>
   auto set(FrameGraphResource<T> &resource, T res) -> Resources & {
+    auto out = pass->outputs_.find(resource.id);
+    errorIf(
+      out == pass->outputs_.end() || out->second.revision != resource.revision,
+      "resource (", resRevisions[resource.id].name, "$", resource.id, ":",
+      resource.revision, ") cannot be written by pass [", pass->name, "$", pass->id, ":",
+      pass->order, "]");
     physicalResources.at(resource.id) = res;
     return *this;
   }
 
   template<typename T>
   auto get(FrameGraphResource<T> &resource) -> T {
+    auto in = pass->inputs_.find(resource.id);
+    errorIf(
+      in == pass->inputs_.end() || in->second.revision != resource.revision, "resource (",
+      resRevisions[resource.id].name, "$", resource.id, ":", resource.revision,
+      ") cannot be read by pass [", pass->name, "$", pass->id, ":", pass->order, "]");
     return std::any_cast<T>(physicalResources.at(resource.id));
   }
 
   Device &device;
 
 private:
+  BasePass *pass{nullptr};
+  std::vector<FrameGraphResources> &resRevisions;
   std::vector<std::any> physicalResources;
 };
 
@@ -279,7 +294,7 @@ private:
       input.revision != revisions.size() - 1,
       "write to resource should be the latest, latest revision:", revisions.size() - 1,
       ", this revision:", input.revision);
-    revisions[input.revision].readerPasses.push_back(passId);
+    revisions[input.revision].readerPasses.insert(passId);
     revisions.push_back({passId});
     return {input.id, uint32_t(revisions.size() - 1)};
   }
@@ -302,40 +317,41 @@ private:
 template<typename T>
 auto PassBuilder::create(const std::string &name) -> FrameGraphResource<T> {
   auto output = frameGraph.create<T>(id, name);
-  outputs_.push_back(output);
+  outputs_[output.id] = output;
   return output;
 }
 
 template<DerivedResource T>
 auto PassBuilder::read(T &input) -> void {
+  auto in = inputs_.find(input.id);
+  if(in != inputs_.end()) {
+    errorIf(
+      in->second.revision != input.revision,
+      "cannot read different revision of the same resource in a pass");
+    return;
+  }
   frameGraph.read(input, id);
-  errorIf(
-    uniqueInputs.contains(input.id), "[", pass_.name, "$", pass_.id,
-    "] already read resource (", frameGraph.resRevisions[input.id].name, "$", input.id,
-    ":", input.revision, ")");
-  uniqueInputs.insert(input.id);
-  inputs_.push_back(input);
+  inputs_[input.id] = input;
 }
 
 template<typename T>
 auto PassBuilder::read(T &input) -> void {
   boost::pfr::for_each_field(input, [&](auto &res) {
     using U = std::remove_const_t<std::remove_reference_t<decltype(res)>>;
-    static_assert(DerivedResource<U>);
+    static_assert(!std::is_fundamental_v<U>, "field should be Resource");
     read(res);
   });
 }
 
 template<typename T>
 auto PassBuilder::write(const FrameGraphResource<T> &input) -> FrameGraphResource<T> {
+  auto out = outputs_.find(input.id);
+  if(out != outputs_.end()) {
+    error("cannot write to the same resource twice in a pass");
+  }
   auto output = frameGraph.write(input, id);
-  errorIf(
-    uniqueInputs.contains(input.id), "[", pass_.name, "$", pass_.id,
-    "] already write resource (", frameGraph.resRevisions[input.id].name, "$", input.id,
-    ":", input.revision, ")");
-  uniqueInputs.insert(input.id);
-  inputs_.push_back(input);
-  outputs_.push_back(output);
+  inputs_[input.id] = input;
+  outputs_[output.id] = output;
   return output;
 }
 

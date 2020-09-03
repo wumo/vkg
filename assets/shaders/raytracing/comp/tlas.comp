@@ -13,6 +13,7 @@ layout(push_constant) uniform PushConstant {
   uint totalMeshInstances;
   uint frame;
 };
+
 layout(set = 0, binding = 0, scalar) buffer MeshesBuffer {
   MeshInstanceUBO meshInstances[];
 };
@@ -20,7 +21,9 @@ layout(set = 0, binding = 1, scalar) readonly buffer PrimitiveBuffer {
   PrimitiveUBO primitives[];
 };
 layout(set = 0, binding = 2, std430) readonly buffer TransformBuffer { mat4 matrices[]; };
-layout(set = 0, binding = 3, scalar) buffer CountBuffer { uint tlasInstanceCount; };
+
+//TLAS instances
+layout(set = 0, binding = 3, scalar) buffer TLASCountBuffer { uint tlasInstanceCount; };
 layout(set = 0, binding = 4, scalar) buffer RTGeometryInstances {
   RTGeometryInstance tlasInstances[];
 };

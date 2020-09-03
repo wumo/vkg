@@ -17,10 +17,6 @@ struct SceneConfig {
   /**max number of mesh instances*/
   uint32_t maxNumPrimitives{100'0000};
   uint32_t maxNumMeshInstances{100'0000};
-  uint32_t maxNumOpaqueTriangles{100'0000};
-  uint32_t maxNumOpaqueLines{1000};
-  uint32_t maxNumTransparentTriangles{1000};
-  uint32_t maxNumTransparentLines{1000};
   /**max number of texture including 2d and cube map.*/
   uint32_t maxNumTextures{1000};
   /**max number of lights*/

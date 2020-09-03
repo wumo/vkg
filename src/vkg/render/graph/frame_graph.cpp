@@ -9,8 +9,9 @@ auto PassBuilder::scopedName(std::string name) -> std::string {
   return pass_.name + "/" + name;
 }
 
-Resources::Resources(Device &device, uint32_t numResources): device{device} {
-  physicalResources.resize(numResources);
+Resources::Resources(Device &device, std::vector<FrameGraphResources> &resRevisions)
+  : device{device}, resRevisions{resRevisions} {
+  physicalResources.resize(resRevisions.size());
 }
 
 FrameGraph::FrameGraph(Device &device): device_(device) {}
@@ -24,7 +25,7 @@ auto FrameGraph::check(const FrameGraphBaseResource &resource) -> void {
 auto FrameGraph::read(const FrameGraphBaseResource &input, uint32_t passId) -> void {
   check(input);
   auto &revision = resRevisions[input.id].revisions[input.revision];
-  revision.readerPasses.push_back(passId);
+  revision.readerPasses.insert(passId);
 }
 
 auto FrameGraph::build() -> void {
@@ -44,12 +45,12 @@ auto FrameGraph::build() -> void {
   std::function<void(uint32_t)> dfs;
   dfs = [&](uint32_t u) {
     visited[u] = State::eBeginVisit;
-    for(auto &output: passes[u]->outputs_) {
+    for(auto &[_, output]: passes[u]->outputs_) {
       auto &revision = resRevisions[output.id].revisions[output.revision];
       errorIf(
         revision.writerPass != u,
         "resource revision's writer pass is not consistent with pass's output");
-      for(auto &v: revision.readerPasses)
+      for(const auto &v: revision.readerPasses)
         switch(visited[v]) {
           case State::eUnVisited: dfs(v); break;
           case State::eBeginVisit: error("cycles in frame graph");
@@ -73,8 +74,8 @@ auto FrameGraph::build() -> void {
     auto passId = sortedPassIds[i];
     auto &pass = passes[passId];
     std::map<uint32_t, std::vector<FrameGraphBaseResource>> nextPasses;
-    for(auto &output: pass->outputs_)
-      for(auto &p: resRevisions[output.id].revisions[output.revision].readerPasses)
+    for(auto &[_, output]: pass->outputs_)
+      for(const auto &p: resRevisions[output.id].revisions[output.revision].readerPasses)
         nextPasses[p].push_back(output);
 
     for(auto &[nextPassId, res]: nextPasses) {
@@ -86,7 +87,7 @@ auto FrameGraph::build() -> void {
     }
   }
 
-  resources = std::make_unique<Resources>(device_, uint32_t(resRevisions.size()));
+  resources = std::make_unique<Resources>(device_, resRevisions);
   enabled.resize(passes.size());
 }
 
@@ -95,9 +96,13 @@ auto FrameGraph::onFrame(RenderContext &renderContext) -> void {
   for(auto &pass: passes)
     enabled[pass->id] =
       ((pass->parent == ~0u || enabled[pass->parent]) && pass->passCondition_());
-  for(auto &id: sortedPassIds)
+  for(auto &id: sortedPassIds) {
+    resources->pass = passes[id];
     if(enabled[id]) passes[id]->compile(renderContext, *resources);
-  for(auto &id: sortedPassIds)
+  }
+  for(auto &id: sortedPassIds) {
+    resources->pass = passes[id];
     if(enabled[id]) passes[id]->execute(renderContext, *resources);
+  }
 }
 }

@@ -3,15 +3,15 @@
 #include "vkg/render/scene_config.hpp"
 #include "vkg/render/graph/frame_graph.hpp"
 #include "vkg/render/model/camera.hpp"
-#include "vkg/render/pass/cull/compute_cull_drawcmd.hpp"
 #include "vkg/render/model/vertex.hpp"
 #include "vkg/render/draw_group.hpp"
+#include "vkg/render/pass/cull/compute_cull_drawcmd.hpp"
 
 namespace vkg {
 struct ForwardPassIn {
   FrameGraphResource<Texture *> hdrImg;
   FrameGraphResource<Texture *> depthImg;
-  
+
   FrameGraphResource<BufferInfo> camBuffer;
   FrameGraphResource<SceneConfig> sceneConfig;
   FrameGraphResource<BufferInfo> meshInstances;

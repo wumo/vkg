@@ -162,93 +162,96 @@ private:
 };
 
 void Scene::setup(PassBuilder &builder) {
-  auto &sceneSetup = builder.newPass<SceneSetupPass>(
-    "SceneSetup",
-    {passIn.swapchainExtent, passIn.swapchainFormat, passIn.swapchainVersion}, *this);
+  auto sceneSetupOut =
+    builder
+      .newPass<SceneSetupPass>(
+        "SceneSetup",
+        {passIn.swapchainExtent, passIn.swapchainFormat, passIn.swapchainVersion}, *this)
+      .out();
 
   auto &transf = builder.newPass<ComputeTransf>(
-    "Transf", {sceneSetup.out().transforms, sceneSetup.out().meshInstances,
-               sceneSetup.out().meshInstancesCount, sceneSetup.out().sceneConfig});
+    "Transf", {sceneSetupOut.transforms, sceneSetupOut.meshInstances,
+               sceneSetupOut.meshInstancesCount, sceneSetupOut.sceneConfig});
 
   auto &atmosphere =
-    builder.newPass<AtmospherePass>("Atmosphere", {sceneSetup.out().atmosphereSetting});
+    builder.newPass<AtmospherePass>("Atmosphere", {sceneSetupOut.atmosphereSetting});
 
   FrameGraphResource<Texture *> backImg;
   if(featureConfig.rayTrace) {
     auto &rayTracing = builder.newPass<RayTracingPass>(
       "RayTracing", {
-                      sceneSetup.out().backImg,
-                      sceneSetup.out().camera,
-                      sceneSetup.out().sceneConfig,
-                      sceneSetup.out().meshInstances,
-                      sceneSetup.out().meshInstancesCount,
-                      sceneSetup.out().positions,
-                      sceneSetup.out().normals,
-                      sceneSetup.out().uvs,
-                      sceneSetup.out().indices,
-                      sceneSetup.out().primitives,
+                      sceneSetupOut.backImg,
+                      sceneSetupOut.camera,
+                      sceneSetupOut.sceneConfig,
+                      sceneSetupOut.meshInstances,
+                      sceneSetupOut.meshInstancesCount,
+                      sceneSetupOut.positions,
+                      sceneSetupOut.normals,
+                      sceneSetupOut.uvs,
+                      sceneSetupOut.indices,
+                      sceneSetupOut.primitives,
                       transf.out().matrices,
-                      sceneSetup.out().materials,
-                      sceneSetup.out().samplers,
-                      sceneSetup.out().numValidSampler,
-                      sceneSetup.out().lighting,
-                      sceneSetup.out().lights,
-                      sceneSetup.out().maxPerGroup,
-                      sceneSetup.out().atmosphereSetting,
+                      sceneSetupOut.materials,
+                      sceneSetupOut.samplers,
+                      sceneSetupOut.numValidSampler,
+                      sceneSetupOut.lighting,
+                      sceneSetupOut.lights,
+                      sceneSetupOut.maxPerGroup,
+                      sceneSetupOut.atmosphereSetting,
                       atmosphere.out(),
                     });
     backImg = rayTracing.out().backImg;
   } else {
     auto &shadowMap = builder.newPass<ShadowMapPass>(
       "ShadowMap", {
-                     sceneSetup.out().atmosphereSetting,
-                     sceneSetup.out().shadowMapSetting,
-                     sceneSetup.out().camera,
-                     sceneSetup.out().sceneConfig,
-                     sceneSetup.out().meshInstances,
-                     sceneSetup.out().meshInstancesCount,
-                     sceneSetup.out().positions,
-                     sceneSetup.out().normals,
-                     sceneSetup.out().uvs,
-                     sceneSetup.out().indices,
-                     sceneSetup.out().primitives,
+                     sceneSetupOut.atmosphereSetting,
+                     sceneSetupOut.shadowMapSetting,
+                     sceneSetupOut.camera,
+                     sceneSetupOut.sceneConfig,
+                     sceneSetupOut.meshInstances,
+                     sceneSetupOut.meshInstancesCount,
+                     sceneSetupOut.positions,
+                     sceneSetupOut.normals,
+                     sceneSetupOut.uvs,
+                     sceneSetupOut.indices,
+                     sceneSetupOut.primitives,
                      transf.out().matrices,
-                     sceneSetup.out().maxPerGroup,
+                     sceneSetupOut.maxPerGroup,
                    });
     shadowMap.enableIf([&]() { return Host.shadowMap.isEnabled(); });
 
     auto &deferred = builder.newPass<DeferredPass>(
-      "Deferred", {sceneSetup.out().backImg,
-                   sceneSetup.out().camera,
-                   sceneSetup.out().sceneConfig,
-                   sceneSetup.out().meshInstances,
-                   sceneSetup.out().meshInstancesCount,
-                   sceneSetup.out().positions,
-                   sceneSetup.out().normals,
-                   sceneSetup.out().uvs,
-                   sceneSetup.out().indices,
-                   sceneSetup.out().primitives,
+      "Deferred", {sceneSetupOut.backImg,
+                   sceneSetupOut.camera,
+                   sceneSetupOut.sceneConfig,
+                   sceneSetupOut.meshInstances,
+                   sceneSetupOut.meshInstancesCount,
+                   sceneSetupOut.positions,
+                   sceneSetupOut.normals,
+                   sceneSetupOut.uvs,
+                   sceneSetupOut.indices,
+                   sceneSetupOut.primitives,
                    transf.out().matrices,
-                   sceneSetup.out().materials,
-                   sceneSetup.out().samplers,
-                   sceneSetup.out().numValidSampler,
-                   sceneSetup.out().lighting,
-                   sceneSetup.out().lights,
-                   sceneSetup.out().maxPerGroup,
-                   sceneSetup.out().atmosphereSetting,
+                   sceneSetupOut.materials,
+                   sceneSetupOut.samplers,
+                   sceneSetupOut.numValidSampler,
+                   sceneSetupOut.lighting,
+                   sceneSetupOut.lights,
+                   sceneSetupOut.maxPerGroup,
+                   sceneSetupOut.atmosphereSetting,
                    atmosphere.out(),
-                   sceneSetup.out().shadowMapSetting,
+                   sceneSetupOut.shadowMapSetting,
                    shadowMap.out()});
 
     backImg = deferred.out().backImg;
   }
-  auto &tonemap = builder.newPass<ToneMapPass>("ToneMap", {backImg});
-  auto &fxaa = builder.newPass<FxaaPass>("FXAA", {tonemap.out().img});
+  auto tonemap = builder.newPass<ToneMapPass>("ToneMap", {backImg}).out();
+  auto fxaa = builder.newPass<FxaaPass>("FXAA", {tonemap.img}).out();
   auto &last = fxaa;
 
   builder.read(passIn.swapchainExtent);
   passOut = {
-    .backImg = last.out().img,
+    .backImg = last.img,
     .renderArea = builder.create<vk::Rect2D>("renderArea"),
   };
 }

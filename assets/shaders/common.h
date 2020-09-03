@@ -128,4 +128,40 @@ struct VkDrawIndexedIndirectCommand {
 struct Frustum {
   vec4 planes[6];
 };
+
+bool isInFrustum(Frustum frustum, vec4 p, float radius) {
+  p /= p.w;
+  for(int i = 0; i < 6; ++i)
+    if(dot(frustum.planes[i], p) + radius < 0) return false;
+  return true;
+}
+
+bool frustumIntersectAABB(AABB aabb) { return false; }
+
+void transformAABB(inout AABB aabb, mat4 m) {
+  vec3 _min = vec3(m[3]);
+  vec3 _max = _min;
+
+  vec3 p = vec3(m[0]);
+  vec3 v0 = p * aabb.min.x;
+  vec3 v1 = p * aabb.max.x;
+  _min += min(v0, v1);
+  _max += max(v0, v1);
+
+  p = vec3(m[1]);
+  v0 = p * aabb.min.y;
+  v1 = p * aabb.max.y;
+  _min += min(v0, v1);
+  _max += max(v0, v1);
+
+  p = vec3(m[2]);
+  v0 = p * aabb.min.z;
+  v1 = p * aabb.max.z;
+  _min += min(v0, v1);
+  _max += max(v0, v1);
+
+  aabb.min = _min;
+  aabb.max = _max;
+}
+
 #endif //VKG_COMMON_H
