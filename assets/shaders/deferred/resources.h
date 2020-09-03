@@ -6,23 +6,21 @@
 #include "deferred_common.h"
 layout(constant_id = 0) const uint maxNumTextures = 1;
 
-layout(set = 0, binding = 0, scalar) readonly buffer Camera { CameraUBO camera; };
-layout(set = 0, binding = 1, scalar) readonly buffer MeshesBuffer {
-  MeshInstanceUBO meshInstances[];
+layout(set = 0, binding = 0, scalar) readonly buffer Camera { CameraDesc camera; };
+layout(set = 0, binding = 1, scalar) readonly buffer MeshesBuf {
+  MeshInstanceDesc meshInstances[];
 };
-layout(set = 0, binding = 2, scalar) readonly buffer PrimitiveBuffer {
-  PrimitiveUBO primitives[];
+layout(set = 0, binding = 2, scalar) readonly buffer PrimitiveBuf {
+  PrimitiveDesc primitives[];
 };
-layout(set = 0, binding = 3, std430) readonly buffer TransformBuffer { mat4 matrices[]; };
-layout(set = 0, binding = 4, scalar) readonly buffer MaterialBuffer {
-  MaterialUBO materials[];
+layout(set = 0, binding = 3, std430) readonly buffer TransformBuf { mat4 matrices[]; };
+layout(set = 0, binding = 4, scalar) readonly buffer MaterialBuf {
+  MaterialDesc materials[];
 };
 layout(set = 0, binding = 5) uniform sampler2D textures[maxNumTextures];
 
-layout(set = 0, binding = 6) uniform LightingUBO { LightUBO lighting; };
-layout(set = 0, binding = 7, std430) readonly buffer LightsBuffer {
-  LightInstanceUBO lights[];
-};
+layout(set = 0, binding = 6) uniform LightingUBO { LightingDesc lighting; };
+layout(set = 0, binding = 7, std430) readonly buffer LightsBuffer { LightDesc lights[]; };
 
 #ifdef SUBPASS
   #ifdef MULTISAMPLE

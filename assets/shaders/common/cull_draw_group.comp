@@ -18,11 +18,11 @@ layout(push_constant) uniform PushConstant {
 };
 
 layout(set = 0, binding = 0, scalar) buffer Frustums { Frustum frustums[]; };
-layout(set = 0, binding = 1, scalar) readonly buffer MeshesBuffer {
-  MeshInstanceUBO meshInstances[];
+layout(set = 0, binding = 1, scalar) readonly buffer MeshesBuf {
+  MeshInstanceDesc meshInstances[];
 };
-layout(set = 0, binding = 2, scalar) readonly buffer PrimitiveBuffer {
-  PrimitiveUBO primitives[];
+layout(set = 0, binding = 2, scalar) readonly buffer PrimitiveBuf {
+  PrimitiveDesc primitives[];
 };
 layout(set = 0, binding = 3, std430) readonly buffer TransformBuffer { mat4 matrices[]; };
 layout(set = 0, binding = 4, scalar) buffer DrawIndirectCMDBuffer {
@@ -43,12 +43,12 @@ void main() {
   if(frustumIdx >= totalFrustums) return;
   Frustum frustum = frustums[frustumIdx];
 
-  MeshInstanceUBO mesh = meshInstances[id];
+  MeshInstanceDesc mesh = meshInstances[id];
 
   if(!mesh.visible || mesh.drawGroupID == DrawGroupUnknown) return;
 
   uint primitiveOffset = clamp(frame, 0, mesh.primitiveCount - 1);
-  PrimitiveUBO prim = primitives[mesh.primitive + primitiveOffset];
+  PrimitiveDesc prim = primitives[mesh.primitive + primitiveOffset];
   AABB aabb = prim.aabb;
   mat4 model = matrices[id];
   transformAABB(aabb, model);

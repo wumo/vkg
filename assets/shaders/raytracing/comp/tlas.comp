@@ -15,10 +15,10 @@ layout(push_constant) uniform PushConstant {
 };
 
 layout(set = 0, binding = 0, scalar) buffer MeshesBuffer {
-  MeshInstanceUBO meshInstances[];
+  MeshInstanceDesc meshInstances[];
 };
 layout(set = 0, binding = 1, scalar) readonly buffer PrimitiveBuffer {
-  PrimitiveUBO primitives[];
+  PrimitiveDesc primitives[];
 };
 layout(set = 0, binding = 2, std430) readonly buffer TransformBuffer { mat4 matrices[]; };
 
@@ -36,7 +36,7 @@ void main() {
 
   if(id >= totalMeshInstances) return;
 
-  MeshInstanceUBO mesh = meshInstances[id];
+  MeshInstanceDesc mesh = meshInstances[id];
 
   if(!mesh.visible) return;
 
@@ -78,7 +78,7 @@ void main() {
   ins.shader_flag = shader_flag;
 
   uint primitiveOffset = clamp(frame, 0, mesh.primitiveCount - 1);
-  PrimitiveUBO prim = primitives[mesh.primitive + primitiveOffset];
+  PrimitiveDesc prim = primitives[mesh.primitive + primitiveOffset];
   ins.handle = prim.handle;
 
   uint tlasIdx = atomicAdd(tlasInstanceCount, 1);

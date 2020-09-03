@@ -12,7 +12,7 @@ float getRangeAttenuation(float range, float distance) {
   return max(min(1.0 - pow(distance / range, 4.0), 1.0), 0.0) / pow(distance, 2.0);
 }
 
-vec3 pointLightRadiance(LightInstanceUBO light, vec3 worldPos, vec3 worldNormal) {
+vec3 pointLightRadiance(LightDesc light, vec3 worldPos, vec3 worldNormal) {
   vec3 pointToLight = light.location - worldPos;
   float distance = length(pointToLight);
   float attenuation = light.range == 0 ? 1 : getRangeAttenuation(light.range, distance);

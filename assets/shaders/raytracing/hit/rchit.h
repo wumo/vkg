@@ -63,11 +63,12 @@ bool shadowTrace(vec3 origin, vec3 lightDir, float maxDistance) {
 }
 
 void main() {
-  MeshInstanceUBO ins = meshInstances[gl_InstanceCustomIndexNV];
+  MeshInstanceDesc ins = meshInstances[gl_InstanceCustomIndexNV];
 
-  PrimitiveUBO primitive =
+  PrimitiveDesc primitive =
     primitives[ins.primitive + clamp(frame, 0, ins.primitiveCount - 1)];
-  MaterialUBO material = materials[ins.material + clamp(frame, 0, ins.materialCount - 1)];
+  MaterialDesc material =
+    materials[ins.material + clamp(frame, 0, ins.materialCount - 1)];
 
   VertexState state;
   MaterialInfo materialInfo;
@@ -84,7 +85,7 @@ void main() {
   vec3 color = vec3(0.0, 0.0, 0.0);
   vec3 viewDir = normalize(gl_WorldRayOriginNV - state.pos);
   for(int i = 0; i < lighting.numLights; ++i) {
-    LightInstanceUBO light = lights[i];
+    LightDesc light = lights[i];
     const float maxDis = length(light.location - state.pos);
     vec3 rayDir = normalize(light.location - state.pos);
     vec3 origin = offsetRayUE5(state.pos, state.geom_normal, rayDir);

@@ -29,7 +29,7 @@ struct PointInfo {
   bool useSky;
 };
 
-vec3 view_ray(CameraUBO cam) {
+vec3 view_ray(CameraDesc cam) {
   vec3 origin = vec3(cam.eye);
   float a = cam.w / cam.h;
   float f = tan(cam.fov / 2);
@@ -41,7 +41,7 @@ vec3 view_ray(CameraUBO cam) {
   return normalize(v + c.x * r + c.y * u);
 }
 
-vec3 shadeBackground(CameraUBO cam) {
+vec3 shadeBackground(CameraDesc cam) {
 #ifdef USE_ATMOSPHERE
   vec3 view_direction = view_ray(cam);
   return skyBackground(cam.eye.xyz, view_direction);
@@ -102,7 +102,7 @@ void main() {
 
     vec3 F = vec3(0);
     for(int i = 0; i < lighting.numLights; ++i) {
-      LightInstanceUBO light = lights[i];
+      LightDesc light = lights[i];
       vec3 rayDir = normalize(light.location - p.position);
       color += brdf(rayDir, materialInfo, p.normal, view, F) *
                pointLightRadiance(light, p.position, p.normal);

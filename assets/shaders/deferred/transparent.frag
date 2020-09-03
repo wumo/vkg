@@ -12,7 +12,7 @@ layout(location = 3) in flat uint inMaterialID;
 layout(location = 0) out vec4 outColor;
 
 void main() {
-  MaterialUBO material = materials[inMaterialID];
+  MaterialDesc material = materials[inMaterialID];
   vec4 albedo = material.colorTex != nullIdx ?
                   SRGBtoLINEAR4(texture(textures[material.colorTex], inUV0)) :
                   vec4(1, 1, 1, 1);

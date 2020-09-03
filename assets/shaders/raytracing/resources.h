@@ -17,13 +17,13 @@ layout(set = 0, binding = 0) uniform accelerationStructureNV tlas;
 layout(set = 0, binding = 1, rgba16f) uniform image2D colorImg;
 layout(set = 0, binding = 2, r32f) uniform image2D depthImg;
 
-layout(set = 0, binding = 3, scalar) readonly buffer Camera { CameraUBO cam; };
+layout(set = 0, binding = 3, scalar) readonly buffer Camera { CameraDesc cam; };
 layout(set = 0, binding = 4, scalar) readonly buffer MeshesBuffer {
-  MeshInstanceUBO meshInstances[];
+  MeshInstanceDesc meshInstances[];
 };
 
 layout(set = 0, binding = 5, scalar) readonly buffer PrimitiveBuffer {
-  PrimitiveUBO primitives[];
+  PrimitiveDesc primitives[];
 };
 layout(set = 0, binding = 6, scalar) readonly buffer PositionBuffer { vec3 positions[]; };
 layout(set = 0, binding = 7, scalar) readonly buffer NormalBuffer { vec3 normals[]; };
@@ -31,13 +31,13 @@ layout(set = 0, binding = 8, std430) readonly buffer UVBuffer { vec2 uvs[]; };
 layout(set = 0, binding = 9, std430) readonly buffer IndexBuffer { uint indices[]; };
 
 layout(set = 0, binding = 10, scalar) readonly buffer MaterialBuffer {
-  MaterialUBO materials[];
+  MaterialDesc materials[];
 };
 layout(set = 0, binding = 11) uniform sampler2D textures[maxNumTextures];
 
-layout(set = 0, binding = 12) uniform LightingUBO { LightUBO lighting; };
+layout(set = 0, binding = 12) uniform LightingUBO { LightingDesc lighting; };
 layout(set = 0, binding = 13, std430) readonly buffer LightsBuffer {
-  LightInstanceUBO lights[];
+  LightDesc lights[];
 };
 
 #ifdef USE_ATMOSPHERE

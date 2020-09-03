@@ -13,7 +13,7 @@ const uint MaterialType_None = 0x10u;
 const uint MaterialType_Transparent = 0x20u;
 const uint MaterialType_Terrain = 0x40u;
 
-struct MaterialUBO {
+struct MaterialDesc {
   vec4 baseColorFactor; // a: refractive,
   vec4 pbrFactor;       //  g: roughness, b: metallic, a: ?
   vec4 emissiveFactor;
@@ -33,7 +33,7 @@ const uint DrawGroupTerrain = 5u;
 const uint DrawGroupTransparentLines = 6u;
 const uint DrawGroupOpaqueLines = 7u;
 
-struct MeshInstanceUBO {
+struct MeshInstanceDesc {
   uint material;
   uint materialCount;
   uint primitive;
@@ -54,7 +54,7 @@ struct UIntRange {
   uint size;
 };
 
-struct PrimitiveUBO {
+struct PrimitiveDesc {
   UIntRange index, position, normal, uv;
   AABB aabb;
   uint64_t handle;
@@ -66,19 +66,19 @@ struct Vertex {
   vec2 uv;
 };
 
-struct LightUBO {
+struct LightingDesc {
   uint numLights;
   float exposure, gamma;
 };
 
-struct LightInstanceUBO {
+struct LightDesc {
   vec3 color;
   float intensity;
   vec3 location;
   float range;
 };
 
-struct CameraUBO {
+struct CameraDesc {
   mat4 view;
   mat4 proj;
   mat4 projView;

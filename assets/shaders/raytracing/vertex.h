@@ -14,7 +14,7 @@ struct VertexState {
 };
 
 void getVertexState(
-  in PrimitiveUBO primitive, in MaterialUBO material, inout VertexState state) {
+  in PrimitiveDesc primitive, in MaterialDesc material, inout VertexState state) {
   const vec3 barycentrics = vec3(1.0f - hit.x - hit.y, hit.x, hit.y);
 
   const uint faceIndex = gl_PrimitiveID;
@@ -67,7 +67,7 @@ void getVertexState(
 }
 
 void getMaterialInfo(
-  in MaterialUBO material, in vec2 texcoord0, inout MaterialInfo materialInfo) {
+  in MaterialDesc material, in vec2 texcoord0, inout MaterialInfo materialInfo) {
   vec4 baseColor = material.colorTex != nullIdx ?
                      SRGBtoLINEAR4(texture(textures[material.colorTex], texcoord0)) :
                      vec4(1, 1, 1, 1);
@@ -140,7 +140,7 @@ void getMaterialInfo(
 }
 
 void getShadingState(
-  in PrimitiveUBO primitive, in MaterialUBO material, out VertexState vertexState,
+  in PrimitiveDesc primitive, in MaterialDesc material, out VertexState vertexState,
   out MaterialInfo materialInfo) {
   getVertexState(primitive, material, vertexState);
   getMaterialInfo(material, vertexState.texcoord0, materialInfo);

@@ -16,9 +16,14 @@ void DeferredPass::setup(PassBuilder &builder) {
   builder.read(cam.out().camBuffer);
   builder.read(passIn.meshInstances);
   builder.read(passIn.primitives);
+  builder.read(passIn.positions);
+  builder.read(passIn.normals);
+  builder.read(passIn.uvs);
+  builder.read(passIn.indices);
   builder.read(passIn.matrices);
   builder.read(passIn.materials);
   builder.read(passIn.samplers);
+  builder.read(passIn.numValidSampler);
   builder.read(passIn.lighting);
   builder.read(passIn.lights);
   builder.read(passIn.drawGroupCount);

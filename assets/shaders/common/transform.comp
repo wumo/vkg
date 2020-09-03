@@ -15,7 +15,7 @@ layout(push_constant) uniform PushConstant {
 };
 
 layout(set = 0, binding = 0, scalar) buffer MeshesBuffer {
-  MeshInstanceUBO meshInstances[];
+  MeshInstanceDesc meshInstances[];
 };
 layout(set = 0, binding = 1, scalar) buffer TransformBuffer { Transform transforms[]; };
 layout(set = 0, binding = 2, std430) buffer TransformMatrixBuffer { mat4 matrices[]; };
@@ -28,7 +28,7 @@ void main() {
 
   if(id >= totalMeshInstances) return;
 
-  MeshInstanceUBO mesh = meshInstances[id];
+  MeshInstanceDesc mesh = meshInstances[id];
   uint instTransOffset = clamp(frame, 0, mesh.instanceCount - 1);
   mat4 t = toMatrix(transforms[mesh.instance + instTransOffset]) *
            toMatrix(transforms[mesh.node]);

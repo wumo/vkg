@@ -14,7 +14,7 @@ layout(location = 3) out flat uint outMaterialID;
 layout(push_constant) uniform PushConstant { uint frame; };
 
 void main() {
-  MeshInstanceUBO mesh = meshInstances[gl_InstanceIndex];
+  MeshInstanceDesc mesh = meshInstances[gl_InstanceIndex];
   mat4 model = matrices[gl_InstanceIndex];
   vec4 pos = model * vec4(inPos, 1.0);
   pos = pos / pos.w;

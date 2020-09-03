@@ -27,7 +27,7 @@ vec3 computeNormal(vec3 sampledNormal) {
 }
 
 void main() {
-  MaterialUBO material = materials[inMaterialID];
+  MaterialDesc material = materials[inMaterialID];
   vec3 albedo = material.colorTex != nullIdx ?
                   SRGBtoLINEAR(texture(textures[material.colorTex], inUV0).rgb) :
                   vec3(1, 1, 1);

@@ -170,6 +170,11 @@ void ShadowMapPass::setup(PassBuilder &builder) {
   cascades = frustum.out().cascades;
 
   builder.read(passIn.shadowMapSetting);
+  builder.read(passIn.positions);
+  builder.read(passIn.normals);
+  builder.read(passIn.uvs);
+  builder.read(passIn.indices);
+  builder.read(passIn.matrices);
   builder.read(cascades);
   builder.read(cullPassOut);
   passOut = {

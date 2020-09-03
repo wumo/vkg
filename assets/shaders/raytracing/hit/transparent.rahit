@@ -10,11 +10,11 @@ hitAttributeNV vec2 hit;
 #include "../vertex.h"
 
 void main() {
-  MeshInstanceUBO ins = meshInstances[gl_InstanceCustomIndexNV];
+  MeshInstanceDesc ins = meshInstances[gl_InstanceCustomIndexNV];
 
-  PrimitiveUBO primitive =
+  PrimitiveDesc primitive =
     primitives[ins.primitive + clamp(frame, 0, ins.primitiveCount - 1)];
-  MaterialUBO material = materials[ins.material + clamp(frame, 0, ins.materialCount - 1)];
+  MaterialDesc material = materials[ins.material + clamp(frame, 0, ins.materialCount - 1)];
 
   VertexState state;
   MaterialInfo materialInfo;

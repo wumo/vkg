@@ -34,6 +34,7 @@ private:
   FrameGraphResource<BufferInfo> camBuffer;
 
   struct SceneSetDef: DescriptorSetDef {
+    __sampler2D__(depth, vkStage::eFragment);
     __buffer__(camera, vkStage::eVertex | vkStage::eFragment);
     __buffer__(meshInstances, vkStage::eVertex);
     __buffer__(primitives, vkStage::eVertex);
