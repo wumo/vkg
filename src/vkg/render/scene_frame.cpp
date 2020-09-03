@@ -3,7 +3,7 @@
 #include "vkg/render/pass/deferred/deferred_setup.hpp"
 #include "vkg/render/pass/atmosphere/atmosphere_pass.hpp"
 #include "vkg/render/pass/shadowmap/shadow_map_pass.hpp"
-#include "vkg/render/pass/raytracing/raytracing_pass.hpp"
+#include "vkg/render/pass/raytracing/raytracing_setup.hpp"
 #include "vkg/render/pass/postprocess/tonemap_pass.hpp"
 #include "vkg/render/pass/postprocess/fxaa_pass.hpp"
 
@@ -180,7 +180,7 @@ void Scene::setup(PassBuilder &builder) {
 
   FrameGraphResource<Texture *> backImg;
   if(featureConfig.rayTrace) {
-    auto &rayTracing = builder.newPass<RayTracingPass>(
+    auto &rayTracing = builder.newPass<RayTracingSetupPass>(
       "RayTracing", {
                       sceneSetupOut.backImg,
                       sceneSetupOut.camera,

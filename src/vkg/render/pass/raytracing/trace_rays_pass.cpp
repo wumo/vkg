@@ -12,14 +12,14 @@
 #include "raytracing/ray_atmos_rmiss.hpp"
 
 namespace vkg {
-void TraceRaysPass::setup(PassBuilder &builder) {
+void RayTracingPass::setup(PassBuilder &builder) {
   builder.read(passIn);
   passOut = {
     .backImg = builder.write(passIn.backImg),
     .depthImg = builder.create<Texture *>("depthImg"),
   };
 }
-void TraceRaysPass::compile(RenderContext &ctx, Resources &resources) {
+void RayTracingPass::compile(RenderContext &ctx, Resources &resources) {
   auto *backImg = resources.get(passIn.backImg);
   auto samplers = resources.get(passIn.samplers);
   auto numValidSampler = resources.get(passIn.numValidSampler);
@@ -143,7 +143,7 @@ void TraceRaysPass::compile(RenderContext &ctx, Resources &resources) {
   }
 }
 
-void TraceRaysPass::execute(RenderContext &ctx, Resources &resources) {
+void RayTracingPass::execute(RenderContext &ctx, Resources &resources) {
   auto tlasCount = resources.get(passIn.compTlasPassOut.tlasCount);
   auto tlasInstances = resources.get(passIn.compTlasPassOut.tlas);
   auto atmosSetting = resources.get(passIn.atmosSetting);

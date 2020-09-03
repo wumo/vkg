@@ -10,7 +10,7 @@
 
 namespace vkg {
 struct ForwardPassIn {
-  TraceRaysPassOut traceRays;
+  RayTracingPassOut traceRays;
   CamFrustumPassOut camFrustum;
 
   FrameGraphResource<SceneConfig> sceneConfig;

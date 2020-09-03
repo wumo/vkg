@@ -1,7 +1,7 @@
-#include "raytracing_pass.hpp"
+#include "raytracing_setup.hpp"
 
 namespace vkg {
-void RayTracingPass::setup(PassBuilder &builder) {
+void RayTracingSetupPass::setup(PassBuilder &builder) {
   auto cam = builder
                .newPass<CamFrustumPass>(
                  "CamFrustumPass",
@@ -24,7 +24,7 @@ void RayTracingPass::setup(PassBuilder &builder) {
                     .out();
 
   auto traceRays = builder
-                     .newPass<TraceRaysPass>(
+                     .newPass<RayTracingPass>(
                        "TraceRays",
                        {
                          passIn.backImg,

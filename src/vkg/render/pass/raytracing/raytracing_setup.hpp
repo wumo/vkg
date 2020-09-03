@@ -10,7 +10,7 @@
 #include "forward_pass.hpp"
 
 namespace vkg {
-struct RayTracingPassIn {
+struct RayTracingSetupPassIn {
   FrameGraphResource<Texture *> backImg;
   FrameGraphResource<Camera *> camera;
   FrameGraphResource<SceneConfig> sceneConfig;
@@ -33,10 +33,10 @@ struct RayTracingPassIn {
   FrameGraphResource<AtmosphereSetting> atmosSetting;
   AtmospherePassOut atmosphere;
 };
-struct RayTracingPassOut {
+struct RayTracingSetupPassOut {
   FrameGraphResource<Texture *> backImg;
 };
-class RayTracingPass: public Pass<RayTracingPassIn, RayTracingPassOut> {
+class RayTracingSetupPass: public Pass<RayTracingSetupPassIn, RayTracingSetupPassOut> {
 public:
   void setup(PassBuilder &builder) override;
 };

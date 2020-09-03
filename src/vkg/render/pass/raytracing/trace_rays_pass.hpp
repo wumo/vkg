@@ -9,7 +9,7 @@
 #include "comp_tlas_pass.hpp"
 
 namespace vkg {
-struct TraceRaysPassIn {
+struct RayTracingPassIn {
   FrameGraphResource<Texture *> backImg;
   FrameGraphResource<BufferInfo> camBuffer;
   CompTLASPassOut compTlasPassOut;
@@ -30,12 +30,12 @@ struct TraceRaysPassIn {
   FrameGraphResource<AtmosphereSetting> atmosSetting;
   AtmospherePassOut atmosphere;
 };
-struct TraceRaysPassOut {
+struct RayTracingPassOut {
   FrameGraphResource<Texture *> backImg;
   FrameGraphResource<Texture *> depthImg;
 };
 
-class TraceRaysPass: public Pass<TraceRaysPassIn, TraceRaysPassOut> {
+class RayTracingPass: public Pass<RayTracingPassIn, RayTracingPassOut> {
 public:
   void setup(PassBuilder &builder) override;
   void compile(RenderContext &ctx, Resources &resources) override;
