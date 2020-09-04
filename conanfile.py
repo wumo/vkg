@@ -35,6 +35,7 @@ class vkgConan(ConanFile):
         cmake = CMake(self)
         cmake.definitions["BUILD_TEST"] = False
         cmake.definitions["BUILD_SHARED"] = self.options.shared
+        cmake.definitions["ENABLE_VALIDATION_LAYER"] = False
         cmake.configure(source_folder=self.name)
         return cmake
 
