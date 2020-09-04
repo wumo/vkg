@@ -1,17 +1,29 @@
 # vkg
 
-# Prerequisite
+Graphics Engine on Vulkan written in C/C++ 20
 
-install `python3`,`git`,`gcc`,`cmake`,`make`,`conan`.
+## Build
 
-## Ubuntu
+### Prerequisite
+
+Requirements:
+* `python3` >= 3.7
+* `git` >= 2.0.0
+* `gcc` >= 10.0; `Visual Studio 2019`; `clang` >= 10.0
+* `cmake` >= 3.12
+* `conan` >= 1.28
+* Graphics driver that supports `Vulkan 1.2.0`
+* `RayTracing Feature` requires RTX 20 series graphics card.
+
+
+**Ubuntu**:
 ```
-$ sudo apt install -y git gcc cmake make
+$ sudo apt install -y git gcc-10 cmake make
 # install conan
 $ pip install conan
 ```
 
-## Windows
+**Windows**:
 Using [scoop](https://scoop.sh/) to install dependencies:
 ```
 # install scoop
@@ -23,21 +35,17 @@ $ scoop install python git gcc cmake
 $ pip install conan
 ```
 
-# Additional conan remotes
+
+Add aditional conan repo:
 ```
-$ conan remote add bincrafters https://api.bintray.com/conan/bincrafters/public-conan
+conan remote add bincrafters https://api.bintray.com/conan/bincrafters/public-conan
+conan remote add wumo https://api.bintray.com/conan/wumo/public
 
-``` 
+```
 
-# Build
+Build with cmake:
 ```
 mkdir build && cd build
-
-# (win)
-$ cmake .. -G "Visual Studio 15 Win64"
-$ cmake --build . --config Release
-
-# (linux, mac)
-$ cmake .. -G "Unix Makefiles" -DCMAKE_BUILD_TYPE=Release
-$ cmake --build .
+cmake .. -DCMAKE_BUILD_TYPE=Release
+cmake --build . --config Release
 ```
