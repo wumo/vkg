@@ -109,7 +109,25 @@ set(sources
   src/vkg/render/pass/common/cam_frustum_pass.cpp
   src/vkg/render/pass/raytracing/trace_rays_pass.cpp
   src/vkg/render/pass/deferred/deferred_setup.cpp
-  src/vkg/render/pass/deferred/deferred_setup.hpp)
+  src/vkg/render/pass/deferred/deferred_setup.hpp
+  
+  src/vkg/c/c_atmosphere.cpp
+  src/vkg/c/c_camera.cpp
+  src/vkg/c/c_light.cpp
+  src/vkg/c/c_material.cpp
+  src/vkg/c/c_mesh.cpp
+  src/vkg/c/c_model.cpp
+  src/vkg/c/c_model_instance.cpp
+  src/vkg/c/c_node.cpp
+  src/vkg/c/c_panning_camera.cpp
+  src/vkg/c/c_primitive.cpp
+  src/vkg/c/c_primitive_builder.cpp
+  src/vkg/c/c_renderer.cpp
+  src/vkg/c/c_scene.cpp
+  src/vkg/c/c_shadowmap.cpp
+  src/vkg/c/c_vec.cpp
+  src/vkg/c/c_window.cpp
+  )
 
 set(definitions "")
 #list(APPEND definitions "VK_ENABLE_BETA_EXTENSIONS")

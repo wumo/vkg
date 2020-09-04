@@ -10,7 +10,7 @@ struct SceneConfig {
 
   /**max number of vertices and indices*/
   uint32_t maxNumVertices{1000'0000}, maxNumIndices{1000'0000};
-  /**max number of model instances*/
+  /**max number of node and instance transforms*/
   uint32_t maxNumTransforms{10'0000};
   /**max number of materials*/
   uint32_t maxNumMaterials{1'0000};

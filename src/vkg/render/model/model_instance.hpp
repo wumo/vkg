@@ -42,7 +42,6 @@ public:
 protected:
   void updateFrame(uint32_t frameIdx, vk::CommandBuffer commandBuffer) override;
 
-protected:
   Scene &scene;
   const uint32_t id_;
   const uint32_t count_;
