@@ -8,7 +8,7 @@ extern "C" {
 
 struct CScene;
 
-float LightGetCount(CScene *scene, uint32_t id);
+uint32_t LightGetCount(CScene *scene, uint32_t id);
 void LightGetColor(CScene *scene, uint32_t id, cvec3 *color, uint32_t offset_float);
 void LightSetColor(CScene *scene, uint32_t id, cvec3 *color, uint32_t offset_float);
 void LightGetLocation(CScene *scene, uint32_t id, cvec3 *location, uint32_t offset_float);

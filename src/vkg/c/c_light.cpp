@@ -2,7 +2,7 @@
 #include "vkg/render/scene.hpp"
 using namespace vkg;
 
-float LightGetCount(CScene *scene, uint32_t id) {
+uint32_t LightGetCount(CScene *scene, uint32_t id) {
   auto *scene_ = reinterpret_cast<Scene *>(scene);
   auto &light = scene_->light(id);
   return light.count();
