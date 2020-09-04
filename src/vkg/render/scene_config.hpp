@@ -14,8 +14,9 @@ struct SceneConfig {
   uint32_t maxNumTransforms{10'0000};
   /**max number of materials*/
   uint32_t maxNumMaterials{1'0000};
-  /**max number of mesh instances*/
+  /**max number of primitives*/
   uint32_t maxNumPrimitives{100'0000};
+  /**max number of mesh instances*/
   uint32_t maxNumMeshInstances{100'0000};
   /**max number of texture including 2d and cube map.*/
   uint32_t maxNumTextures{1000};

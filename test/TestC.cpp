@@ -21,7 +21,7 @@ auto main() -> int {
     0, 0, 0, 0, 0, 1000'0000, 1000'0000, 100'0000, 1'0000, 100'0000, 100'0000, 1000, 1,
   };
   std::string name{"Scene"};
-  auto *scene = RendererAddScene(app, sceneConfig, name.c_str(), name.size());
+  auto *scene = RendererAddScene(app, sceneConfig, (char *)(name.c_str()), name.size());
 
   auto kPi = glm::pi<float>();
   float seasonAngle = kPi / 4;
@@ -68,7 +68,7 @@ auto main() -> int {
   color = {Blue, 1.f};
   MaterialSetColorFactor(scene, blueMat, (cvec4 *)&color, 0);
   std::string path{"./assets/TextureCoordinateTemplate.png"};
-  auto colorTex = SceneNewTexture(scene, path.c_str(), path.size(), true);
+  auto colorTex = SceneNewTexture(scene, (char *)(path.c_str()), path.size(), true);
   auto texMat = SceneNewMaterial(scene, CMaterialBRDF, false);
   MaterialSetColorTex(scene, texMat, colorTex);
   color = {0, 0.3, 0.4, 0};
@@ -179,7 +179,7 @@ auto main() -> int {
     DeletePrimitiveBuilder(builder);
 
     path = "./assets/grid.png";
-    auto gridTex = SceneNewTexture(scene, path.c_str(), path.size(), true);
+    auto gridTex = SceneNewTexture(scene, (char *)(path.c_str()), path.size(), true);
     auto pbrMat = SceneNewMaterial(scene, CMaterialBRDF, false);
     MaterialSetColorTex(scene, pbrMat, gridTex);
     color = {0, 1, 0, 0};
@@ -327,7 +327,7 @@ auto main() -> int {
   {
     std::string name = "DamagedHelmet";
     path = "assets/glTF-models/2.0/" + name + "/glTF/" + name + ".gltf";
-    animModel = SceneLoadModel(scene, path.c_str(), path.size(), CMaterialBRDF);
+    animModel = SceneLoadModel(scene, (char *)(path.c_str()), path.size(), CMaterialBRDF);
 
     AABB aabb;
     ModelGetAABB(scene, animModel, (caabb *)&aabb);

@@ -13,7 +13,7 @@ typedef struct CWindow CWindow;
 
 uint32_t WindowGetWidth(CWindow *window);
 uint32_t WindowGetHeight(CWindow *window);
-void WindowSetTitle(CWindow *window, const char *titleBuf, uint32_t size);
+void WindowSetTitle(CWindow *window, char *titleBuf, uint32_t size);
 Input *WindowGetInput(CWindow *window);
 
 int32_t InputMousePosX(Input *input);

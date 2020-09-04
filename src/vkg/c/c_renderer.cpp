@@ -34,7 +34,7 @@ CWindow *RendererGetWindow(CRenderer *renderer) {
 }
 
 CScene *RendererAddScene(
-  CRenderer *renderer, CSceneConfig sceneConfig, const char *nameBuf, uint32_t size) {
+  CRenderer *renderer, CSceneConfig sceneConfig, char *nameBuf, uint32_t size) {
   auto *renderer_ = reinterpret_cast<Renderer *>(renderer);
   auto sceneConfig_ = *(SceneConfig *)&sceneConfig;
   return reinterpret_cast<CScene *>(

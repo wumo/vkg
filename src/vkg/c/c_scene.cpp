@@ -26,8 +26,7 @@ uint32_t SceneNewMaterial(CScene *scene, CMaterialType type, bool perFrame) {
   auto *scene_ = reinterpret_cast<Scene *>(scene);
   return scene_->newMaterial(static_cast<MaterialType>(type), perFrame);
 }
-uint32_t SceneNewTexture(
-  CScene *scene, const char *pathBuf, uint32_t pathSize, bool mipmap) {
+uint32_t SceneNewTexture(CScene *scene, char *pathBuf, uint32_t pathSize, bool mipmap) {
   auto *scene_ = reinterpret_cast<Scene *>(scene);
   return scene_->newTexture(std::string{pathBuf, pathSize}, mipmap);
 }
@@ -58,7 +57,7 @@ uint32_t SceneNewLight(CScene *scene, bool perFrame) {
   return scene_->newLight(perFrame);
 }
 uint32_t SceneLoadModel(
-  CScene *scene, const char *pathBuf, uint32_t pathSize, CMaterialType type) {
+  CScene *scene, char *pathBuf, uint32_t pathSize, CMaterialType type) {
   auto *scene_ = reinterpret_cast<Scene *>(scene);
   return scene_->loadModel(
     std::string(pathBuf, pathSize), static_cast<MaterialType>(type));

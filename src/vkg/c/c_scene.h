@@ -53,7 +53,7 @@ void SceneNewPrimitives(
 
 uint32_t SceneNewMaterial(CScene *scene, CMaterialType type, bool perFrame);
 uint32_t SceneNewTexture(
-  CScene *scene, const char *pathBuf, uint32_t pathSize, bool mipmap);
+  CScene *scene, char *pathBuf, uint32_t pathSize, bool mipmap);
 uint32_t SceneNewTextureFromBytes(
   CScene *scene, const char *bytes, uint32_t numBytes, uint32_t width, uint32_t height,
   bool mipmap);
@@ -61,7 +61,7 @@ uint32_t SceneNewMesh(CScene *scene, uint32_t primitive, uint32_t material);
 uint32_t SceneNewNode(CScene *scene, ctransform *transform);
 uint32_t SceneNewModel(CScene *scene, uint32_t *nodes, uint32_t numNodes);
 uint32_t SceneLoadModel(
-  CScene *scene, const char *pathBuf, uint32_t pathSize, CMaterialType type);
+  CScene *scene, char *pathBuf, uint32_t pathSize, CMaterialType type);
 uint32_t SceneNewModelInstance(
   CScene *scene, uint32_t model, ctransform *transform, bool perFrame);
 uint32_t SceneNewLight(CScene *scene, bool perFrame);
