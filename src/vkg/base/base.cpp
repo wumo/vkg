@@ -104,10 +104,12 @@ void Base::loop(const std::function<void(uint32_t, double)> &updater) {
   onInit();
   auto start = std::chrono::high_resolution_clock::now();
   while(!window_->windowShouldClose()) {
+#ifndef NDEBUG
     window_->setWindowTitle(toString(
-      "FPS: ", fpsMeter.fps(), " Frame Time: ", std::round(fpsMeter.frameTime()), " ms"));
+      "FPS: ", fpsMeter_.fps(), " Frame Time: ", std::round(fpsMeter_.frameTime()),
+      " ms"));
+#endif
     window_->pollEvents();
-
     if(window_->resizeWanted()) {
       resize();
       window_->setResizeWanted(false);
@@ -117,7 +119,7 @@ void Base::loop(const std::function<void(uint32_t, double)> &updater) {
     auto elapsed = std::chrono::duration<double, std::milli>(end - start).count();
     start = end;
 
-    fpsMeter.update(elapsed);
+    fpsMeter_.update(elapsed);
     //    syncSemaphore(elapsed, updater);
     syncTimeline(elapsed, updater);
   }
@@ -256,4 +258,5 @@ auto Base::syncTimeline(
 
   frameIndex = (frameIndex + 1) % featureConfig_.numFrames;
 }
+auto Base::fpsMeter() -> FPSMeter & { return fpsMeter_; }
 }

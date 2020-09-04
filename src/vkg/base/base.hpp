@@ -45,6 +45,8 @@ public:
   auto device() -> Device &;
   auto swapchain() -> Swapchain &;
 
+  auto fpsMeter() -> FPSMeter &;
+
 protected:
   auto syncSemaphore(double elapsed, const std::function<void(uint32_t, double)> &updater)
     -> void;
@@ -88,6 +90,6 @@ protected:
 
   uint32_t frameIndex{0};
 
-  FPSMeter fpsMeter;
+  FPSMeter fpsMeter_;
 };
 }

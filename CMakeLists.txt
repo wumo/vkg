@@ -127,7 +127,7 @@ set(sources
   src/vkg/c/c_shadowmap.cpp
   src/vkg/c/c_vec.cpp
   src/vkg/c/c_window.cpp
-  )
+  src/vkg/c/c_fpsmeter.cpp)
 
 set(definitions "")
 #list(APPEND definitions "VK_ENABLE_BETA_EXTENSIONS")

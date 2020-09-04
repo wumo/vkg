@@ -2,6 +2,7 @@
 #define VKG_C_RENDERER_H
 #include "c_scene.h"
 #include "c_window.h"
+#include "c_fpsmeter.h"
 #include <cstdint>
 #ifdef __cplusplus
 extern "C" {
@@ -38,6 +39,8 @@ CWindow *RendererGetWindow(CRenderer *renderer);
 
 CScene *RendererAddScene(
   CRenderer *renderer, CSceneConfig sceneConfig, char *nameBuf, uint32_t size);
+
+CFPSMeter * RenderGetFPSMeter(CRenderer*renderer);
 
 #ifdef __cplusplus
 }

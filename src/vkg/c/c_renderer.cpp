@@ -40,3 +40,7 @@ CScene *RendererAddScene(
   return reinterpret_cast<CScene *>(
     &renderer_->addScene(sceneConfig_, std::string{nameBuf, size}));
 }
+CFPSMeter *RenderGetFPSMeter(CRenderer *renderer) {
+  auto *renderer_ = reinterpret_cast<Renderer *>(renderer);
+  return reinterpret_cast<CFPSMeter *>(&renderer_->fpsMeter());
+}
