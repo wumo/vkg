@@ -70,6 +70,7 @@ auto FrameGraph::build() -> void {
     pass->order = i;
   }
 
+#ifndef NDEBUG
   for(auto i = 0u; i < n; ++i) {
     auto passId = sortedPassIds[i];
     auto &pass = passes[passId];
@@ -86,6 +87,7 @@ auto FrameGraph::build() -> void {
         println("\t(", resRevisions[r.id].name, "$", r.id, ":", r.revision, ")");
     }
   }
+#endif
 
   resources = std::make_unique<Resources>(device_, resRevisions);
   enabled.resize(passes.size());

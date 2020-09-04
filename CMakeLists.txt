@@ -13,9 +13,9 @@ symlink(assets bin/assets)
 include(${CMAKE_CURRENT_LIST_DIR}/cmake/conan.cmake)
 conan_cmake_run(BASIC_SETUP CONANFILE conanfile.py BUILD missing)
 
-option(BUILD_TEST "Build test" ON)
+option(BUILD_TEST "Build test" OFF)
 option(BUILD_SHARED "Build shared lib" ON)
-option(ENABLE_VALIDATION_LAYER "enable validation layer" ON)
+option(ENABLE_VALIDATION_LAYER "enable validation layer" OFF)
 
 set(sources
   src/vkg/base/impl/vma.cpp
