@@ -28,7 +28,7 @@ class vkgConan(ConanFile):
     }
     default_options = {
         "shared": True,
-        "glfw:shared": True,
+        "glfw:shared": False,
     }
 
     def configure_cmake(self):
