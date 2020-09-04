@@ -10,6 +10,15 @@ uint32_t WindowGetHeight(CWindow *window) {
   auto *win = reinterpret_cast<Window *>(window);
   return win->height();
 }
+uint32_t WindowGetTitleLength(CWindow *window) {
+  auto *win = reinterpret_cast<Window *>(window);
+  return uint32_t(win->windowTitle().size());
+}
+void WindowGetTitle(CWindow *window, char *titleBuf) {
+  auto *win = reinterpret_cast<Window *>(window);
+  auto title = win->windowTitle();
+  memcpy(titleBuf, title.c_str(), title.size());
+}
 void WindowSetTitle(CWindow *window, char *titleBuf, uint32_t size) {
   auto *win = reinterpret_cast<Window *>(window);
   win->setWindowTitle(std::string{titleBuf, size});

@@ -14,6 +14,8 @@ typedef struct CWindow CWindow;
 uint32_t WindowGetWidth(CWindow *window);
 uint32_t WindowGetHeight(CWindow *window);
 void WindowSetTitle(CWindow *window, char *titleBuf, uint32_t size);
+uint32_t WindowGetTitleLength(CWindow *window);
+void WindowGetTitle(CWindow *window, char *titleBuf);
 Input *WindowGetInput(CWindow *window);
 
 int32_t InputMousePosX(Input *input);
