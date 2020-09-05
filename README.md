@@ -10,7 +10,7 @@ Graphics Engine on Vulkan written in C/C++ 20
 
 ![sample](doc/sample.gif)
 
-## Other Language Bindings
+## Other Language Binding
 * Kotlin binding - [vkgKt](https://github.com/wumo/vkgKt)
 
 ## Usage
@@ -56,10 +56,10 @@ auto main() -> int {
   auto primitives =
     scene.newPrimitives(PrimitiveBuilder().sphere({}, 1.f).newPrimitive());
   // material
-  auto &reflectiveMat = scene.material(scene.newMaterial(MaterialType::eBRDF));
-  reflectiveMat.setColorFactor({Green, 1.f}).setPbrFactor({0, 0.3, 0.4, 0});
+  auto &mat = scene.material(scene.newMaterial(MaterialType::eBRDF));
+  mat.setColorFactor({Green, 1.f}).setPbrFactor({0, 0.3, 0.4, 0});
   // primitive + material => mesh
-  auto mesh = scene.newMesh(primitives[0], reflectiveMat.id());
+  auto mesh = scene.newMesh(primitives[0], mat.id());
   // mesh => node
   auto node = scene.newNode(Transform{});
   scene.node(node).addMeshes({mesh});
