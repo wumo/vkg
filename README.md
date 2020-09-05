@@ -10,7 +10,7 @@ Graphics Engine on Vulkan written in C/C++ 20
 
 ![sample](doc/sample.gif)
 
-## Other Language Binding
+## Other Language Bindings
 * Kotlin binding - [vkgKt](https://github.com/wumo/vkgKt)
 
 ## Usage
