@@ -30,7 +30,7 @@ conan remote add wumo https://api.bintray.com/conan/wumo/public
 #include "vkg/render/util/panning_camera.hpp"
 using namespace vkg;
 auto main() -> int {
-  // window and render setting
+  // window and renderer setting
   WindowConfig windowConfig{.title = "Sample", .width = 1080, .height = 720};
   FeatureConfig featureConfig{.numFrames = 2, .rayTrace = true};
   Renderer app{windowConfig, featureConfig};
@@ -63,7 +63,7 @@ auto main() -> int {
   // node => model
   auto model = scene.newModel({node});
   // model => instance
-  auto box = scene.newModelInstance(model);
+  auto sphere = scene.newModelInstance(model);
 
   // scene camera setting
   auto &camera = scene.camera();
@@ -81,7 +81,7 @@ auto main() -> int {
     panningCamera.update(input);
 
     // apply transform per frame
-    auto &ins = scene.modelInstance(box);
+    auto &ins = scene.modelInstance(sphere);
     auto t = ins.transform();
     t.translation.x -= elapsedMs * 0.001;
     ins.setTransform(t);
