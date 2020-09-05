@@ -51,7 +51,8 @@ auto main() -> int {
   scene.material(greenMat).setColorFactor({Green, 1.f});
   auto blueMat = scene.newMaterial();
   scene.material(blueMat).setColorFactor({Blue, 1.f});
-  auto colorTex = scene.newTexture("./assets/TextureCoordinateTemplate.png");
+  auto colorTex = scene.newTexture(
+    "./assets/glTF-models/2.0/TextureCoordinateTest/glTF/TextureCoordinateTemplate.png");
   auto texMat = scene.newMaterial(MaterialType::eBRDF);
   scene.material(texMat).setColorTex(colorTex).setPbrFactor({0, 0.3, 0.4, 0});
 
