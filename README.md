@@ -12,6 +12,13 @@ Graphics Engine on Vulkan written in C/C++ 20
 
 ## Usage
 
+using [conan](https://conan.io/) as package manager. Add aditional conan repo:
+```
+conan remote add wumo https://api.bintray.com/conan/wumo/public
+```
+
+Add build dependency `vkg/0.0.1@wumo/stable`.
+
 Sample code:
 
 ```c++
