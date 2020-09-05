@@ -5,7 +5,7 @@
 Graphics Engine on Vulkan written in C/C++ 20
 
 - Deferred Shading
-- Cascaded Shadow Map
+- Cascaded Shadow Mapping
 - Atmospheric Rendering
 - Ray tracing on NVIDIA RTX graphics card
 - Load glTF models.
