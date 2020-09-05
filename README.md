@@ -2,9 +2,15 @@
 
 Graphics Engine on Vulkan written in C/C++ 20
 
-## Build
+- Deferred Shading
+- Cascaded Shadow Map
+- Atmosphere Rendering
+- Ray tracing on NVIDIA RTX graphics card
+- glTF models.
 
-### Prerequisite
+![sample](doc/sample.gif)
+
+## Build
 
 Requirements:
 * `python3` >= 3.7
