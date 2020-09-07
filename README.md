@@ -147,7 +147,6 @@ Add aditional conan repo:
 ```
 conan remote add bincrafters https://api.bintray.com/conan/bincrafters/public-conan
 conan remote add wumo https://api.bintray.com/conan/wumo/public
-
 ```
 
 **Build with cmake**:
@@ -165,6 +164,7 @@ cmake --build . --config Release
 * [ ] ImGUI integration
 * [ ] Custom ComputeShader/IntersectionShader Primitive
 * [ ] Clear Coat 
+* [ ] FrameGraph
 * [ ] Terrain Rendering
 * [ ] Ocean Rendering
 * [ ] Cloud Rendering
