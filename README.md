@@ -24,19 +24,19 @@ Requirements:
 * `gcc` >= 10.0; `Visual Studio 2019`; `clang` >= 10.0
 * `cmake` >= 3.12
 * `conan` >= 1.28
-* Graphics driver that supports `Vulkan 1.2.0`
+* Graphics driver that supports `Vulkan 1.2.0`(nvidia-450 or above)
 * `RayTracing Feature` requires RTX 20 series graphics card.
 
-* Use [conan](https://conan.io/) as the package manager. Add aditional conan repo:
+1. Use [conan](https://conan.io/) as the package manager. Add aditional conan repo:
 
 ```
 conan remote add bincrafters https://api.bintray.com/conan/bincrafters/public-conan
 conan remote add wumo https://api.bintray.com/conan/wumo/public
 ```
 
-* Add conan dependency `vkg/0.0.1@wumo/stable`.
+2. Add conan dependency `vkg/0.0.1@wumo/stable`.
 
-* That is all! Build with cmake or any tool you like (and the conan supports).
+3. That is all! Build with cmake or any tool you like (and the conan supports).
 
 #### Sample code:
 
@@ -117,15 +117,17 @@ Requirements:
 * `gcc` >= 10.0; `Visual Studio 2019`; `clang` >= 10.0
 * `cmake` >= 3.12
 * `conan` >= 1.28
-* Graphics driver that supports `Vulkan 1.2.0`
+* Graphics driver that supports `Vulkan 1.2.0` (nvidia-450 or above)
 * `RayTracing Feature` requires RTX 20 series graphics card.
 
 
 **Ubuntu**:
+
+Tested on Ubuntu 20.04:
+
 ```
-$ sudo apt install -y git gcc-10 cmake make
-# install conan
-$ pip install conan
+$ sudo apt install -y git gcc-10 cmake ninja-build python3-pip
+$ pip3 install conan
 ```
 
 **Windows**:
@@ -137,13 +139,14 @@ Instal `Visual Studio 2019` or using [scoop](https://scoop.sh/) to install depen
 $ Set-ExecutionPolicy RemoteSigned -scope CurrentUser
 $ iex (new-object net.webclient).downloadstring('https://get.scoop.sh')
 # install dependencies
-$ scoop install python git gcc cmake
+$ scoop install python git gcc cmake ninja
 # install conan
 $ pip install conan
 ```
 
 
-Add aditional conan repo:
+**Add aditional conan repo**:
+
 ```
 conan remote add bincrafters https://api.bintray.com/conan/bincrafters/public-conan
 conan remote add wumo https://api.bintray.com/conan/wumo/public
@@ -151,9 +154,10 @@ conan remote add wumo https://api.bintray.com/conan/wumo/public
 
 **Build with cmake**:
 
+Runs in a proper terminal (Visual Studio Developer Command Prompt on Windows)
 ```
 mkdir build && cd build
-cmake .. -DCMAKE_BUILD_TYPE=Release
+cmake ..  -G Ninja -DCMAKE_BUILD_TYPE=Release
 cmake --build . --config Release
 ```
 
