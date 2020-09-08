@@ -122,10 +122,16 @@ auto Scene::newTexture(
   ensureTextures(1);
   //TODO choose queueIdx
   Dev.textures.push_back(image::load2DFromFile(0, name, device, imagePath, mipmap));
-  Dev.textures.back()->setSampler(sampler);
+  auto &tex = Dev.textures.back();
+  if(mipmap) {
+    sampler.mipmapMode = vk::SamplerMipmapMode::eLinear;
+    sampler.maxLod = static_cast<float>(tex->mipLevels());
+    sampler.anisotropyEnable = device.supported().samplerAnisotropy;
+    sampler.maxAnisotropy = device.limits().maxSamplerAnisotropy;
+  }
+  tex->setSampler(sampler);
   Dev.sampler2Ds[Dev.textures.size() - 1] = {
-    Dev.textures.back()->sampler(), Dev.textures.back()->imageView(),
-    Dev.textures.back()->layout()};
+    tex->sampler(), tex->imageView(), tex->layout()};
   return uint32_t(Dev.textures.size() - 1);
 }
 auto Scene::newTexture(
@@ -135,10 +141,16 @@ auto Scene::newTexture(
   //TODO choose queueIdx
   Dev.textures.push_back(
     image::load2DFromBytes(0, name, device, bytes, width, height, mipmap));
-  Dev.textures.back()->setSampler(sampler);
+  auto &tex = Dev.textures.back();
+  if(mipmap) {
+    sampler.mipmapMode = vk::SamplerMipmapMode::eLinear;
+    sampler.maxLod = static_cast<float>(tex->mipLevels());
+    sampler.anisotropyEnable = device.supported().samplerAnisotropy;
+    sampler.maxAnisotropy = device.limits().maxSamplerAnisotropy;
+  }
+  tex->setSampler(sampler);
   Dev.sampler2Ds[Dev.textures.size() - 1] = {
-    Dev.textures.back()->sampler(), Dev.textures.back()->imageView(),
-    Dev.textures.back()->layout()};
+    tex->sampler(), tex->imageView(), tex->layout()};
   return uint32_t(Dev.textures.size() - 1);
 }
 auto Scene::newMesh(uint32_t primitive, uint32_t material) -> uint32_t {

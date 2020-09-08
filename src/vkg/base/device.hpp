@@ -15,6 +15,7 @@ public:
     bool descriptorIndexing{false};
     bool externalSync{false};
     bool timelineSemaphore{false};
+    bool samplerAnisotropy{false};
   };
 
   Device(Instance &instance, vk::SurfaceKHR surface, const FeatureConfig &featureConfig);
@@ -29,6 +30,7 @@ public:
   operator vk::Device();
   auto vkDevice() -> vk::Device;
   auto allocator() -> VmaAllocator;
+  auto supported() const -> const SupportedExtension &;
   auto rayTracingProperties() -> const vk::PhysicalDeviceRayTracingPropertiesNV &;
   auto multiviewProperties() -> const vk::PhysicalDeviceMultiviewProperties &;
 

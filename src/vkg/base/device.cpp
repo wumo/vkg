@@ -137,6 +137,7 @@ Device::Device(
   errorIf(
     !features12.timelineSemaphore, "required feature timelineSemaphore not supported!");
 
+  supported_.samplerAnisotropy=features2.features.samplerAnisotropy;
 #if defined(USE_DEBUG_PRINTF)
   deviceExtensions.push_back(VK_KHR_SHADER_NON_SEMANTIC_INFO_EXTENSION_NAME);
   errorIf(
@@ -271,5 +272,6 @@ auto Device::multiviewProperties() -> const vk::PhysicalDeviceMultiviewPropertie
 auto Device::queues() -> std::span<vk::Queue> { return queues_; }
 auto Device::cmdPool() -> vk::CommandPool { return *cmdPool_; }
 auto Device::queueFamiliy() const -> uint32_t { return queueFamily_; }
+auto Device::supported() const -> const Device::SupportedExtension & { return supported_; }
 
 }
