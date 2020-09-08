@@ -35,6 +35,23 @@ void rayDiff(
   dt = vec2(du.x * g1.y + dv.x * g2.y, du.y * g1.y + dv.y * g2.y);
 }
 
+vec4 texLod(uint texId, vec2 coord, vec2 ds, vec2 dt) {
+  int levels = textureQueryLevels(textures[texId]);
+  ivec2 size = textureSize(textures[texId], 0);
+  float w = size.x;
+  float h = size.y;
+  
+  //  float p = max(abs(w * ds.x) + abs(w * ds.y), abs(h * dt.x) + abs(h * dt.y));
+  
+  float p = max(
+    sqrt(w * w * ds.x * ds.x + h * h * dt.x * dt.x),
+    sqrt(w * w * ds.y * ds.y + h * h * dt.y * dt.y));
+  
+  float lambda = isZero(p) ? 0 : log2(ceil(p));
+  float lod = clamp(lambda, 0, levels - 1);
+  return textureLod(textures[texId], coord, lod);
+}
+
 void getVertexState(
   in PrimitiveDesc primitive, in MaterialDesc material, inout VertexState state) {
   const vec3 barycentrics = vec3(1.0f - hit.x - hit.y, hit.x, hit.y);
@@ -88,23 +105,6 @@ void getVertexState(
   if(dot(state.normal, state.geom_normal) <= 0) state.normal *= -1.0f;
 
   rayDiff(state.ds, state.dt, pos0, pos1, pos2, uv0, uv1, uv2);
-}
-
-vec4 texLod(uint texId, vec2 coord, vec2 ds, vec2 dt) {
-  int levels = textureQueryLevels(textures[texId]);
-  ivec2 size = textureSize(textures[texId], 0);
-  float w = size.x;
-  float h = size.y;
-
-  //  float p = max(abs(w * ds.x) + abs(w * ds.y), abs(h * dt.x) + abs(h * dt.y));
-
-  float p = max(
-    sqrt(w * w * ds.x * ds.x + h * h * dt.x * dt.x),
-    sqrt(w * w * ds.y * ds.y + h * h * dt.y * dt.y));
-
-  float lambda = isZero(p) ? 0 : log2(ceil(p));
-  float lod = clamp(lambda, 0, levels - 1);
-  return textureLod(textures[texId], coord, lod);
 }
 
 void getMaterialInfo(
