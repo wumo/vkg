@@ -96,7 +96,7 @@ void main() {
     vec3 F = vec3(0);
     directLight = brdf(rayDir, materialInfo, state.normal, viewDir, F) *
                   pointLightRadiance(light, state.pos, state.normal);
-    color += directLight * (shadowed ? 0.1 : 1);
+    color += directLight * (shadowed ? 0.01 : 1);
   }
 
 #ifdef USE_ATMOSPHERE
@@ -110,7 +110,7 @@ void main() {
     vec3 F = vec3(0);
     directLight = brdf(rayDir, materialInfo, state.normal, viewDir, F) *
                   atmosphereLight(state.pos, state.normal, gl_WorldRayOriginNV);
-    color += directLight * (shadowed ? 0.1 : 1);
+    color += directLight * (shadowed ? 0.01 : 1);
   }
 #endif
 

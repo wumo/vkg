@@ -118,7 +118,7 @@ void main() {
   #endif
       vec3 directLight = brdf(rayDir, materialInfo, p.normal, view, F) *
                          atmosphereLight(p.position, p.normal, camera.eye.xyz);
-      color += directLight * (shadowed ? 0.1 : 1);
+      color += directLight * (shadowed ? 0.01 : 1);
     }
 #endif
 

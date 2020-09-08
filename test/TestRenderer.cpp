@@ -5,7 +5,7 @@ using namespace vkg;
 
 auto main() -> int {
   WindowConfig windowConfig{};
-  FeatureConfig featureConfig{.numFrames = 2, .rayTrace = true};
+  FeatureConfig featureConfig{.numFrames = 2, .rayTrace = false};
   Renderer app{windowConfig, featureConfig};
   SceneConfig sceneConfig{
     .maxNumTransforms = 100'0000,
@@ -200,6 +200,22 @@ auto main() -> int {
         insts.push_back(scene.newModelInstance(animModel, t, true));
       }
     }
+  }
+
+  {
+    std::string name = "Sponza";
+    auto modelId =
+      scene.loadModel("assets/glTF-models/2.0/" + name + "/glTF/" + name + ".gltf");
+    auto &model = scene.model(modelId);
+    auto aabb = model.aabb();
+    auto range = aabb.max - aabb.min;
+    auto scale = 200 / std::max(std::max(range.x, range.y), range.z);
+    auto center = aabb.center();
+    auto halfRange = aabb.halfRange();
+    Transform t{
+      {-center * scale + glm::vec3{100, scale * range.y / 2.f, 100}}, glm::vec3{scale}};
+    //  t.translation = -center;
+    scene.newModelInstance(modelId, t, false);
   }
 
   std::vector<uint32_t> balls;

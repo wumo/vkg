@@ -95,7 +95,7 @@ void GLTFLoader::loadTextures(const tinygltf::Model &model) {
 }
 
 void GLTFLoader::loadMaterials(const tinygltf::Model &model) {
-  for(auto &mat: model.materials) {
+  for(const auto &mat: model.materials) {
     MaterialType type{defaultMatType};
     float alphaCutoff{0.f};
     if(mat.additionalValues.contains("alphaMode")) {
@@ -189,7 +189,7 @@ void GLTFLoader::loadMaterials(const tinygltf::Model &model) {
 }
 
 auto GLTFLoader::loadNode(int thisID, const tinygltf::Model &model) -> uint32_t {
-  auto &node = model.nodes[thisID];
+  const auto &node = model.nodes[thisID];
   Transform t;
   if(node.matrix.size() == 16) {
     auto m = make_mat4x4(node.matrix.data());
@@ -205,8 +205,8 @@ auto GLTFLoader::loadNode(int thisID, const tinygltf::Model &model) -> uint32_t 
   _nodes[thisID] = nodeId;
 
   if(node.mesh > -1) {
-    auto &mesh = model.meshes[node.mesh];
-    for(auto &primitive: mesh.primitives)
+    const auto &mesh = model.meshes[node.mesh];
+    for(const auto &primitive: mesh.primitives)
       scene.node(nodeId).addMeshes({loadPrimitive(model, primitive)});
   }
   if(!node.children.empty())
