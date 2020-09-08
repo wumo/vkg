@@ -5,8 +5,8 @@
 Graphics Engine on Vulkan written in C/C++ 20
 
 - Deferred Shading
-- Cascaded Shadow Mapping [[1]][#1][[2]][#2][[3]][#3]
-- Atmospheric Rendering [[4]][4]
+- Cascaded Shadow Mapping [[1]](#1)[[2]](#2)[[3]](#3)
+- Atmospheric Rendering [[4]](#4)
 - Ray tracing on NVIDIA RTX graphics card
 - Load glTF models.
 - Update vertices/transforms/materials/lights per frame.
@@ -177,6 +177,9 @@ cmake --build . --config Release
 ## References
 
 <a id="1">[1]</a>  [Cascaded Shadow Maps by lwjglgamdev](https://ahbejarano.gitbook.io/lwjglgamedev/chapter26)
+
 <a id="2">[2]</a>  [Cascaded Shadow Maps by Microsoft](https://docs.microsoft.com/en-us/windows/win32/dxtecharts/cascaded-shadow-maps)
+
 <a id="3">[3]</a>  [GPU Gems 3](https://developer.nvidia.com/gpugems/gpugems3/part-ii-light-and-shadows/chapter-10-parallel-split-shadow-maps-programmable-gpus)
+
 <a id="4">[4]</a>  [Precomputed Atmospheric Scattering](https://github.com/ebruneton/precomputed_atmospheric_scattering)
