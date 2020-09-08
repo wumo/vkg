@@ -11,7 +11,29 @@ struct VertexState {
   vec2 texcoord0;
   vec3 tangent;
   vec3 bitangent;
+  vec2 ds, dt;
 };
+
+//refer to "Texture Level of Detail Strategies for Real-Time Ray Tracing"
+void rayDiff(
+  inout vec2 ds, inout vec2 dt, vec3 p0, vec3 p1, vec3 p2, vec2 T0, vec2 T1, vec2 T2) {
+  vec3 d = normalize(prd.direction); //TODO the paper may be wrong?
+  float t = gl_HitTNV;
+  vec3 e1 = vec3(gl_ObjectToWorldNV * vec4(p1 - p0, 1.0));
+  vec3 e2 = vec3(gl_ObjectToWorldNV * vec4(p2 - p0, 1.0));
+  vec3 cu = cross(e2, d);
+  vec3 cv = cross(d, e1);
+  vec3 q = prd.rayDiff.dOdx + t * prd.rayDiff.dDdx;
+  vec3 r = prd.rayDiff.dOdy + t * prd.rayDiff.dDdy;
+  float k = dot(cross(e1, e2), d);
+  vec2 du = vec2(dot(cu, q) / k, dot(cu, r) / k);
+  vec2 dv = vec2(dot(cv, q) / k, dot(cv, r) / k);
+
+  vec2 g1 = T1 - T0;
+  vec2 g2 = T2 - T0;
+  ds = vec2(du.x * g1.x + dv.x * g2.x, du.y * g1.x + dv.y * g2.x);
+  dt = vec2(du.x * g1.y + dv.x * g2.y, du.y * g1.y + dv.y * g2.y);
+}
 
 void getVertexState(
   in PrimitiveDesc primitive, in MaterialDesc material, inout VertexState state) {
@@ -64,12 +86,34 @@ void getVertexState(
   }
   // Move normal to same side as geometric normal
   if(dot(state.normal, state.geom_normal) <= 0) state.normal *= -1.0f;
+
+  rayDiff(state.ds, state.dt, pos0, pos1, pos2, uv0, uv1, uv2);
+}
+
+vec4 texLod(uint texId, vec2 coord, vec2 ds, vec2 dt) {
+  int levels = textureQueryLevels(textures[texId]);
+  ivec2 size = textureSize(textures[texId], 0);
+  float w = size.x;
+  float h = size.y;
+
+  //  float p = max(abs(w * ds.x) + abs(w * ds.y), abs(h * dt.x) + abs(h * dt.y));
+
+  float p = max(
+    sqrt(w * w * ds.x * ds.x + h * h * dt.x * dt.x),
+    sqrt(w * w * ds.y * ds.y + h * h * dt.y * dt.y));
+
+  float lambda = isZero(p) ? 0 : log2(ceil(p));
+  float lod = clamp(lambda, 0, levels - 1);
+  return textureLod(textures[texId], coord, lod);
 }
 
 void getMaterialInfo(
-  in MaterialDesc material, in vec2 texcoord0, inout MaterialInfo materialInfo) {
+  in MaterialDesc material, in VertexState vertexState, inout MaterialInfo materialInfo) {
+  vec2 texcoord0 = vertexState.texcoord0;
+  vec2 ds = vertexState.ds;
+  vec2 dt = vertexState.dt;
   vec4 baseColor = material.colorTex != nullIdx ?
-                     SRGBtoLINEAR4(texture(textures[material.colorTex], texcoord0)) :
+                     SRGBtoLINEAR4(texLod(material.colorTex, texcoord0, ds, dt)) :
                      vec4(1, 1, 1, 1);
   baseColor = material.baseColorFactor * baseColor;
 
@@ -143,7 +187,7 @@ void getShadingState(
   in PrimitiveDesc primitive, in MaterialDesc material, out VertexState vertexState,
   out MaterialInfo materialInfo) {
   getVertexState(primitive, material, vertexState);
-  getMaterialInfo(material, vertexState.texcoord0, materialInfo);
+  getMaterialInfo(material, vertexState, materialInfo);
 }
 
 #endif //VKG_RT_VERTEX_H

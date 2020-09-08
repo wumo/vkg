@@ -1,8 +1,6 @@
 #include "scene.hpp"
 #include "vkg/render/pass/transf/compute_transf.hpp"
 #include "vkg/render/pass/deferred/deferred_setup.hpp"
-#include "vkg/render/pass/atmosphere/atmosphere_pass.hpp"
-#include "vkg/render/pass/shadowmap/shadow_map_pass.hpp"
 #include "vkg/render/pass/raytracing/raytracing_setup.hpp"
 #include "vkg/render/pass/postprocess/tonemap_pass.hpp"
 #include "vkg/render/pass/postprocess/fxaa_pass.hpp"

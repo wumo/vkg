@@ -27,11 +27,16 @@ struct RayDesc {
     tlas, ray.rayFlags, ray.cullMask, ray.sbtRecordOffset, ray.sbtRecordStride, \
     ray.missIndex, ray.origin, ray.tmin, ray.direction, ray.tmax, payload);
 
+struct RayDifferential {
+  vec3 dOdx, dOdy, dDdx, dDdy;
+};
+
 struct RayPayload {
   vec3 radiance;
   vec3 attenuation;
   vec3 origin;
   vec3 direction;
+  RayDifferential rayDiff;
   uint seed;
   int done;
 };

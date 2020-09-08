@@ -102,7 +102,7 @@ auto main() -> int {
   { // brdf
     auto primitives =
       scene.newPrimitives(PrimitiveBuilder()
-                            .checkerboard(100, 100, {}, {0, 0, 1}, {1, 0, 0}, 4, 4)
+                            .checkerboard(1000, 1000, {}, {0, 0, 1}, {1, 0, 0}, 4, 4)
                             .newPrimitive()
                             .line({0, 0, 4}, {4, 0, 0})
                             .newPrimitive(PrimitiveTopology::Lines));
