@@ -6,7 +6,7 @@ Graphics Engine on Vulkan written in C/C++ 20
 
 - Deferred Shading
 - Cascaded Shadow Mapping
-- Atmospheric Rendering
+- Atmospheric Rendering [Precomputed Atmospheric Scattering](https://github.com/ebruneton/precomputed_atmospheric_scattering)
 - Ray tracing on NVIDIA RTX graphics card
 - Load glTF models.
 - Update vertices/transforms/materials/lights per frame.
@@ -167,6 +167,7 @@ cmake --build . --config Release
 * [ ] Font Rendering
 * [ ] ImGUI integration
 * [ ] Custom ComputeShader/IntersectionShader Primitive
+* [ ] Occlusion Culling
 * [ ] Clear Coat 
 * [ ] FrameGraph
 * [ ] Terrain Rendering

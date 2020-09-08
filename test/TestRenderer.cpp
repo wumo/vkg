@@ -5,7 +5,7 @@ using namespace vkg;
 
 auto main() -> int {
   WindowConfig windowConfig{};
-  FeatureConfig featureConfig{.numFrames = 2, .rayTrace = false};
+  FeatureConfig featureConfig{.numFrames = 2, .rayTrace = true};
   Renderer app{windowConfig, featureConfig};
   SceneConfig sceneConfig{
     .maxNumTransforms = 100'0000,
@@ -264,7 +264,8 @@ auto main() -> int {
     uint32_t indices[] = {0, 1, 2};
 
     dynamicPrim = scene.newPrimitive(
-      positions, normals, uvs, indices, {{}, {}}, PrimitiveTopology::Triangles, true);
+      positions, normals, uvs, indices, {{0, 0, 0}, {1, 1, 1}},
+      PrimitiveTopology::Triangles, true);
 
     auto tRedMat = scene.newMaterial(MaterialType::eTransparent);
     scene.material(tRedMat).setColorFactor({Red, 0.5f});
@@ -357,7 +358,8 @@ auto main() -> int {
       positions[i] = rot * positions[i];
       normals[i] = rot * normals[i];
     }
-    scene.primitive(dynamicPrim).update(frameIdx, positions, normals, {{}, {}});
+    scene.primitive(dynamicPrim)
+      .update(frameIdx, positions, normals, {{0, 0, 0}, {1, 1, 1}});
 
     {
       static float totalElapsed = 0;
