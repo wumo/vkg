@@ -162,7 +162,7 @@ cmake --build . --config Release
 ```
 
 ## TODO
-
+* [x] Ray Cone texture lod [[5]](#1)
 * [ ] Multiple Scene/View
 * [ ] Font Rendering
 * [ ] ImGUI integration
@@ -183,3 +183,5 @@ cmake --build . --config Release
 <a id="3">[3]</a>  [GPU Gems 3](https://developer.nvidia.com/gpugems/gpugems3/part-ii-light-and-shadows/chapter-10-parallel-split-shadow-maps-programmable-gpus)
 
 <a id="4">[4]</a>  [Precomputed Atmospheric Scattering](https://github.com/ebruneton/precomputed_atmospheric_scattering)
+
+<a id="5">[5]</a>  [Texture Level of Detail Strategies for Real-Time Ray Tracing](https://media.contentapi.ea.com/content/dam/ea/seed/presentations/2019-ray-tracing-gems-chapter-20-akenine-moller-et-al.pdf)
