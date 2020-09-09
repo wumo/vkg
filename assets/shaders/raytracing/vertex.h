@@ -11,44 +11,76 @@ struct VertexState {
   vec2 texcoord0;
   vec3 tangent;
   vec3 bitangent;
-  vec2 ds, dt;
+  //  vec2 ds, dt; //ray diff
+  float lambda; //ray Cone
 };
 
 //refer to "Texture Level of Detail Strategies for Real-Time Ray Tracing"
-void rayDiff(
-  inout vec2 ds, inout vec2 dt, vec3 p0, vec3 p1, vec3 p2, vec2 T0, vec2 T1, vec2 T2) {
-  vec3 d = normalize(prd.direction); //TODO the paper may be wrong?
-  float t = gl_HitTNV;
-  vec3 e1 = vec3(gl_ObjectToWorldNV * vec4(p1 - p0, 1.0));
-  vec3 e2 = vec3(gl_ObjectToWorldNV * vec4(p2 - p0, 1.0));
-  vec3 cu = cross(e2, d);
-  vec3 cv = cross(d, e1);
-  vec3 q = prd.rayDiff.dOdx + t * prd.rayDiff.dDdx;
-  vec3 r = prd.rayDiff.dOdy + t * prd.rayDiff.dDdy;
-  float k = dot(cross(e1, e2), d);
-  vec2 du = vec2(dot(cu, q) / k, dot(cu, r) / k);
-  vec2 dv = vec2(dot(cv, q) / k, dot(cv, r) / k);
+//void rayDiff(
+//  inout vec2 ds, inout vec2 dt, vec3 p0, vec3 p1, vec3 p2, vec2 T0, vec2 T1, vec2 T2) {
+//  vec3 d = normalize(prd.direction); //TODO the paper may be wrong?
+//  float t = gl_HitTNV;
+//  vec3 e1 = vec3(gl_ObjectToWorldNV * vec4(p1 - p0, 1.0));
+//  vec3 e2 = vec3(gl_ObjectToWorldNV * vec4(p2 - p0, 1.0));
+//  vec3 cu = cross(e2, d);
+//  vec3 cv = cross(d, e1);
+//  vec3 q = prd.rayDiff.dOdx + t * prd.rayDiff.dDdx;
+//  vec3 r = prd.rayDiff.dOdy + t * prd.rayDiff.dDdy;
+//  float k = dot(cross(e1, e2), d);
+//  vec2 du = vec2(dot(cu, q) / k, dot(cu, r) / k);
+//  vec2 dv = vec2(dot(cv, q) / k, dot(cv, r) / k);
+//
+//  vec2 g1 = T1 - T0;
+//  vec2 g2 = T2 - T0;
+//  ds = vec2(du.x * g1.x + dv.x * g2.x, du.y * g1.x + dv.y * g2.x);
+//  dt = vec2(du.x * g1.y + dv.x * g2.y, du.y * g1.y + dv.y * g2.y);
+//}
 
-  vec2 g1 = T1 - T0;
-  vec2 g2 = T2 - T0;
-  ds = vec2(du.x * g1.x + dv.x * g2.x, du.y * g1.x + dv.y * g2.x);
-  dt = vec2(du.x * g1.y + dv.x * g2.y, du.y * g1.y + dv.y * g2.y);
+//see "Texture Level of Detail Strategies for Real-Time Ray Tracing"
+float rayCone(vec3 p0, vec3 p1, vec3 p2, vec2 T0, vec2 T1, vec2 T2, vec3 normal) {
+  //propagate
+  prd.rayCone.width = prd.rayCone.spreadAngle * gl_HitTNV + prd.rayCone.width;
+  //prd.rayCone.spreadAngle will not change;
+
+  //base lod
+  float T_a = abs((T1.x - T0.x) * (T2.y - T0.y) - (T2.x - T0.x) * (T1.y - T0.y));
+  //  float P_a = abs((p1.x - p0.x) * (p2.y - p0.y) - (p2.x - p0.x) * (p1.y - p0.y));
+  vec3 e1 = vec3(gl_ObjectToWorldNV * vec4(p1 - p0, 1));
+  vec3 e2 = vec3(gl_ObjectToWorldNV * vec4(p2 - p0, 1));
+  float P_a = length(cross(e1, e2));
+
+  float lambda = 0.5 * log2(T_a / P_a);
+  lambda += log2(abs(prd.rayCone.width));
+  lambda -= log2(abs(dot(gl_WorldRayDirectionNV, normal)));
+  return lambda;
 }
 
-vec4 texLod(uint texId, vec2 coord, vec2 ds, vec2 dt) {
+float texLodRayCone(uint texId, float lambda) {
   int levels = textureQueryLevels(textures[texId]);
   ivec2 size = textureSize(textures[texId], 0);
-  float w = size.x;
-  float h = size.y;
-  
-  //  float p = max(abs(w * ds.x) + abs(w * ds.y), abs(h * dt.x) + abs(h * dt.y));
-  
-  float p = max(
-    sqrt(w * w * ds.x * ds.x + h * h * dt.x * dt.x),
-    sqrt(w * w * ds.y * ds.y + h * h * dt.y * dt.y));
-  
-  float lambda = isZero(p) ? 0 : log2(ceil(p));
-  float lod = clamp(lambda, 0, levels - 1);
+  float lod = lambda + 0.5 * log2(float(size.x * size.y));
+  return clamp(lod, 0, levels - 1.0);
+}
+
+//float texLodRayDiff(uint texId, vec2 ds, vec2 dt) {
+//  int levels = textureQueryLevels(textures[texId]);
+//  ivec2 size = textureSize(textures[texId], 0);
+//  float w = size.x;
+//  float h = size.y;
+//
+//  float p = max(abs(w * ds.x) + abs(w * ds.y), abs(h * dt.x) + abs(h * dt.y));
+//
+//  //  float p = max(
+//  //    sqrt(w * w * ds.x * ds.x + h * h * dt.x * dt.x),
+//  //    sqrt(w * w * ds.y * ds.y + h * h * dt.y * dt.y));
+//
+//  float lambda = isZero(p) ? 0 : log2(ceil(p));
+//  float lod = clamp(lambda * 0.5, 0, levels - 1);
+//  return lod;
+//}
+
+vec4 texLod(uint texId, vec2 coord, float lambda) {
+  float lod = texLodRayCone(texId, lambda);
   return textureLod(textures[texId], coord, lod);
 }
 
@@ -104,18 +136,39 @@ void getVertexState(
   // Move normal to same side as geometric normal
   if(dot(state.normal, state.geom_normal) <= 0) state.normal *= -1.0f;
 
-  rayDiff(state.ds, state.dt, pos0, pos1, pos2, uv0, uv1, uv2);
+  //  rayDiff(state.ds, state.dt, pos0, pos1, pos2, uv0, uv1, uv2);
+  state.lambda = rayCone(pos0, pos1, pos2, uv0, uv1, uv2, state.geom_normal);
 }
 
 void getMaterialInfo(
   in MaterialDesc material, in VertexState vertexState, inout MaterialInfo materialInfo) {
   vec2 texcoord0 = vertexState.texcoord0;
-  vec2 ds = vertexState.ds;
-  vec2 dt = vertexState.dt;
+  float lambda = vertexState.lambda;
+
   vec4 baseColor = material.colorTex != nullIdx ?
-                     SRGBtoLINEAR4(texLod(material.colorTex, texcoord0, ds, dt)) :
+                     SRGBtoLINEAR4(texLod(material.colorTex, texcoord0, lambda)) :
                      vec4(1, 1, 1, 1);
   baseColor = material.baseColorFactor * baseColor;
+
+  //  materialInfo.diffuseColor = baseColor.rgb;
+  //  if(material.colorTex != nullIdx) {
+  //    float lod = texLodRayCone(material.colorTex, lambda);
+  //
+  //    if(lod <= 1) materialInfo.diffuseColor = vec3(1, 0, 0);
+  //    else if(lod < 2)
+  //      materialInfo.diffuseColor = vec3(0, 1, 0);
+  //    else if(lod < 3)
+  //      materialInfo.diffuseColor = vec3(0, 0, 1);
+  //    else if(lod < 4)
+  //      materialInfo.diffuseColor = vec3(1, 1, 0);
+  //    else if(lod < 5)
+  //      materialInfo.diffuseColor = vec3(0, 1, 1);
+  //    else if(lod < 6)
+  //      materialInfo.diffuseColor = vec3(1, 0, 1);
+  //    else
+  //      materialInfo.diffuseColor = vec3(lod / 10.0);
+  //  }
+  //  return;
 
   if(material.type == MaterialType_None) {
     materialInfo.diffuseColor = baseColor.rgb;
@@ -132,7 +185,7 @@ void getMaterialInfo(
 
   if(material.type == MaterialType_BRDFSG) {
     vec4 specular = material.pbrTex != nullIdx ?
-                      SRGBtoLINEAR4(texture(textures[material.pbrTex], texcoord0)) :
+                      SRGBtoLINEAR4(texLod(material.pbrTex, texcoord0, lambda)) :
                       vec4(1, 1, 1, 1);
     vec3 f0 = specular.rgb * material.pbrFactor.rgb;
     specularColor = f0;
@@ -143,7 +196,7 @@ void getMaterialInfo(
     //    float metallic=solveMetallic(diffuseColor,specularColor,oneMinusSpecularStrength);
   } else {
     vec2 pbr = material.pbrTex != nullIdx ?
-                 texture(textures[material.pbrTex], texcoord0).gb :
+                 texLod(material.pbrTex, texcoord0, lambda).gb :
                  vec2(1, 1);
     pbr = material.pbrFactor.gb * pbr;
     perceptualRoughness = pbr.x;
@@ -154,14 +207,13 @@ void getMaterialInfo(
   }
 
   float ao = material.occlusionTex != nullIdx ?
-               texture(textures[material.occlusionTex], texcoord0).r :
+               texLod(material.occlusionTex, texcoord0, lambda).r :
                1;
   ao = mix(1, ao, material.occlusionStrength);
 
-  vec3 emissive =
-    material.emissiveTex != nullIdx ?
-      SRGBtoLINEAR4(texture(textures[material.emissiveTex], texcoord0)).rgb :
-      vec3(0, 0, 0);
+  vec3 emissive = material.emissiveTex != nullIdx ?
+                    SRGBtoLINEAR4(texLod(material.emissiveTex, texcoord0, lambda)).rgb :
+                    vec3(0, 0, 0);
   emissive = material.emissiveFactor.rgb * emissive;
 
   float eta = material.baseColorFactor.a;

@@ -13,19 +13,19 @@ vec3 d(uint x, uint y, vec3 r, vec3 u, vec3 v, vec2 jitter) {
   return v + c.x * r + c.y * u;
 }
 
-void eyeRayDiff(vec3 r, vec3 u, vec3 v, vec2 jitter) {
-  vec2 p = (vec2(gl_LaunchIDNV.xy) + jitter) / gl_LaunchSizeNV.xy;
-  vec2 c = p * 2.0 - 1.0;
-  vec3 d = c.x * r + c.y * u + v;
-  vec3 _r = 2.0 / gl_LaunchSizeNV.x * r;
-  vec3 _u = 2.0 / gl_LaunchSizeNV.y * u;
-  float dd = dot(d, d);
-  float dd_3_2 = pow(dd, 3.0 / 2);
-  prd.rayDiff.dDdx = (dd * _r - dot(d, _r) * d) / dd_3_2;
-  prd.rayDiff.dDdy = (dd * _u - dot(d, _u) * d) / dd_3_2;
-  prd.rayDiff.dOdx = vec3(0);
-  prd.rayDiff.dOdy = vec3(0);
-}
+// void eyeRayDiff(vec3 r, vec3 u, vec3 v, vec2 jitter) {
+//   vec2 p = (vec2(gl_LaunchIDNV.xy) + jitter) / gl_LaunchSizeNV.xy;
+//   vec2 c = p * 2.0 - 1.0;
+//   vec3 d = c.x * r + c.y * u + v;
+//   vec3 _r = 2.0 / gl_LaunchSizeNV.x * r;
+//   vec3 _u = 2.0 / gl_LaunchSizeNV.y * u;
+//   float dd = dot(d, d);
+//   float dd_3_2 = pow(dd, 3.0 / 2);
+//   prd.rayDiff.dDdx = (dd * _r - dot(d, _r) * d) / dd_3_2;
+//   prd.rayDiff.dDdy = (dd * _u - dot(d, _u) * d) / dd_3_2;
+//   prd.rayDiff.dOdx = vec3(0);
+//   prd.rayDiff.dOdy = vec3(0);
+// }
 
 void main() {
   const float a = cam.w / cam.h;
@@ -45,6 +45,9 @@ void main() {
   ray.sbtRecordStride = 0; //currently we won't have more than one geometry in each blas
   ray.missIndex = 0;
 
+  //spread angle will not change,i.e. we assume hitting only planar surfaces.
+  float spreadAngle = atan(2 * f / cam.h);
+
   for(int smpl = 0; smpl < nbSamples; ++smpl) {
     vec3 result = vec3(0.f);
     prd.radiance = vec3(0);
@@ -55,7 +58,11 @@ void main() {
     vec2 jitter = smpl == 0 ? vec2(0.5) : rnd2(prd.seed);
     prd.origin = cam.eye.xyz;
     prd.direction = normalize(d(gl_LaunchIDNV.x, gl_LaunchIDNV.y, r, u, v, jitter));
-    eyeRayDiff(r, u, v, jitter);
+
+    // ray cone init
+    prd.rayCone.width = 0;
+    prd.rayCone.spreadAngle = spreadAngle;
+    // eyeRayDiff(r, u, v, jitter);
 
     ray.cullMask = 0xFF;
     ray.origin = prd.origin;

@@ -74,6 +74,34 @@ void main() {
                     vec3(0, 0, 0);
   emissive = material.emissiveFactor.rgb * emissive;
 
+  // if(material.colorTex != nullIdx) {
+  //   ivec2 size = textureSize(textures[material.colorTex], 0);
+  //   float w = size.x;
+  //   float h = size.y;
+
+  //   vec2 ds = w * vec2(dFdx(inUV0.s), dFdy(inUV0.s));
+  //   vec2 dt = h * vec2(dFdx(inUV0.t), dFdy(inUV0.t));
+
+  //   float lod =
+  //     log2(ceil(max(sqrt(ds.x * ds.x + dt.x * dt.x), sqrt(ds.y * ds.y + dt.y * dt.y))));
+
+  //   // float lod = textureQueryLod(textures[material.colorTex], inUV0).y;
+
+  //   if(lod < 1) diffuseColor = vec3(1, 0, 0);
+  //   else if(lod < 2)
+  //     diffuseColor = vec3(0, 1, 0);
+  //   else if(lod < 3)
+  //     diffuseColor = vec3(0, 0, 1);
+  //   else if(lod < 4)
+  //     diffuseColor = vec3(1, 1, 0);
+  //   else if(lod < 5)
+  //     diffuseColor = vec3(0, 1, 1);
+  //   else if(lod < 6)
+  //     diffuseColor = vec3(1, 0, 1);
+  //   else
+  //     diffuseColor = vec3(lod / 10.0);
+  // }
+
   int applySky = 1;
   if(material.type == MaterialType_None) applySky = 0;
   outNormal = vec4(normal, applySky);

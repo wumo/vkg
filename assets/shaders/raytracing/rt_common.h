@@ -31,12 +31,18 @@ struct RayDifferential {
   vec3 dOdx, dOdy, dDdx, dDdy;
 };
 
+struct RayCone {
+  float width;
+  float spreadAngle;
+};
+
 struct RayPayload {
   vec3 radiance;
   vec3 attenuation;
   vec3 origin;
   vec3 direction;
-  RayDifferential rayDiff;
+  //  RayDifferential rayDiff;
+  RayCone rayCone;
   uint seed;
   int done;
 };

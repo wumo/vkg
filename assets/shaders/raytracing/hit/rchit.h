@@ -75,6 +75,10 @@ void main() {
   getShadingState(primitive, material, state, materialInfo);
 
   prd.origin = state.pos;
+//
+//  prd.radiance = prd.attenuation * materialInfo.diffuseColor;
+//  prd.done = 1;
+//  return;
 
 #ifdef SHADING_UNLIT
   prd.radiance = prd.attenuation * materialInfo.diffuseColor;
