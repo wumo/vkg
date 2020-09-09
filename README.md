@@ -173,6 +173,7 @@ cmake --build . --config Release
 * [ ] Terrain Rendering
 * [ ] Ocean Rendering
 * [ ] Cloud Rendering
+* [ ] Virtual Texture (Sparse Residency)
 
 ## References
 
