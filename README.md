@@ -1,6 +1,6 @@
 # vkg
 
-[![Download](https://api.bintray.com/packages/wumo/public/vkg:wumo/images/download.svg?version=0.0.1:stable) ](https://bintray.com/wumo/public/vkg:wumo/0.0.1:stable/link)
+[![Download](https://api.bintray.com/packages/wumo/public/vkg:wumo/images/download.svg)](https://bintray.com/wumo/public/vkg:wumo/_latestVersion)
 
 Graphics Engine on Vulkan written in C/C++ 20
 
