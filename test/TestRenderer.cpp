@@ -5,7 +5,7 @@ using namespace vkg;
 
 auto main() -> int {
   WindowConfig windowConfig{};
-  FeatureConfig featureConfig{.numFrames = 2, .rayTrace = false};
+  FeatureConfig featureConfig{.numFrames = 2, .rayTrace = true};
   Renderer app{windowConfig, featureConfig};
   SceneConfig sceneConfig{
     .maxNumTransforms = 100'0000,
