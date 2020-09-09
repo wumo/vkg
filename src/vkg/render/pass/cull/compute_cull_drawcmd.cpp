@@ -138,9 +138,9 @@ void ComputeCullDrawCMD::execute(RenderContext &ctx, Resources &resources) {
     bufInfo.buffer, bufInfo.offset, sizeof(uint32_t) * numFrustums * numDrawGroups, 0u);
 
   cb.pipelineBarrier(
-    vk::PipelineStageFlagBits::eTransfer, vk::PipelineStageFlagBits::eAllCommands, {},
+    vk::PipelineStageFlagBits::eTransfer, vk::PipelineStageFlagBits::eComputeShader, {},
     vk::MemoryBarrier{
-      vk::AccessFlagBits::eTransferWrite, vk::AccessFlagBits::eShaderRead},
+      vk::AccessFlagBits::eTransferWrite, vk::AccessFlagBits::eShaderWrite},
     nullptr, nullptr);
   ctx.device.end(cb);
 
