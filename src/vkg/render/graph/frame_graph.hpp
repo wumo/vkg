@@ -192,7 +192,9 @@ class Resources {
 
 public:
   explicit Resources(Device &device, std::vector<FrameGraphResources> &resRevisions);
-
+  
+  //TODO reset per frame resource.
+  
   template<typename T>
   auto set(FrameGraphResource<T> &resource, T res) -> Resources & {
     auto out = pass->outputs_.find(resource.id);

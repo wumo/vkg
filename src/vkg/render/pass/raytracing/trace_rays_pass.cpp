@@ -101,7 +101,6 @@ void RayTracingPass::compile(RenderContext &ctx, Resources &resources) {
       vk::Format::eR32Sfloat);
 
     frame.depthImg->setSampler({});
-    resources.set(passOut.depthImg, frame.depthImg.get());
   }
 
   if(numValidSampler > frame.lastNumValidSampler) {
@@ -141,6 +140,8 @@ void RayTracingPass::compile(RenderContext &ctx, Resources &resources) {
     atmosphereSetDef.irradiance(*resources.get(passIn.atmosphere.irradiance));
     atmosphereSetDef.update(frame.atmosphereSet);
   }
+  
+  resources.set(passOut.depthImg, frame.depthImg.get());//per frame resource must be update
 }
 
 void RayTracingPass::execute(RenderContext &ctx, Resources &resources) {
