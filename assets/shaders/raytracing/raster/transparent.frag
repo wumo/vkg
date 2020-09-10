@@ -8,6 +8,8 @@ layout(location = 1) in flat uint inMaterialID;
 layout(location = 0) out vec4 outColor;
 
 void main() {
+  if(gl_FragDepth > texture(depthImg,inUV0).r)
+    discard;
   MaterialDesc material = materials[inMaterialID];
   vec4 albedo = material.colorTex != nullIdx ?
                   SRGBtoLINEAR4(texture(textures[material.colorTex], inUV0)) :

@@ -116,9 +116,11 @@ void Renderer::onInit() {
 }
 
 void Renderer::onFrame(uint32_t imageIndex, float elapsed) {
+  println("begin frame ");
   RenderContext ctx{
     *device_, imageIndex, frameIndex, uint32_t(device_->queues().size()),
     cmdBuffers[frameIndex]};
   frameGraph->onFrame(ctx);
+  println("end frmae");
 }
 }

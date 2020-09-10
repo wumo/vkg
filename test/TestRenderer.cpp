@@ -5,7 +5,7 @@ using namespace vkg;
 
 auto main() -> int {
   WindowConfig windowConfig{};
-  FeatureConfig featureConfig{.numFrames = 2, .rayTrace = true};
+  FeatureConfig featureConfig{.numFrames = 3, .rayTrace = true};
   Renderer app{windowConfig, featureConfig};
   SceneConfig sceneConfig{
     .maxNumTransforms = 100'0000,
@@ -222,7 +222,7 @@ auto main() -> int {
       for(int b = 0; b < num; ++b) {
         t.translation =
           -center * scale +
-          glm::vec3{-100 + unit * a, scale * range.y / 2.f + 20, unit * b - 100};
+          glm::vec3{-100 + unit * a, scale * range.y / 2.f + 30, unit * b - 100};
         scene.newModelInstance(modelId, t, true);
       }
     }

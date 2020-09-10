@@ -59,7 +59,7 @@ void ForwardPass::compile(vkg::RenderContext &ctx, vkg::Resources &resources) {
 
     {
       createRenderPass(resources.device, backImg->format());
-      createCopyDepthPass(resources.device, sceneConfig);
+//      createCopyDepthPass(resources.device, sceneConfig);
       createOpaquePass(resources.device, sceneConfig);
       createTransparentPass(resources.device, sceneConfig);
     }
@@ -125,8 +125,9 @@ void ForwardPass::createRenderPass(Device &device, vk::Format format) {
                  .initialLayout(vk::ImageLayout::eUndefined)
                  .finalLayout(vk::ImageLayout::eDepthStencilAttachmentOptimal)
                  .index();
-  copyDepthPass =
-    maker.subpass(vk::PipelineBindPoint::eGraphics).depthStencil(depth).index();
+  //TODO It seems that copy from sample2D to depthAttachment is not finished?
+//  copyDepthPass =
+//    maker.subpass(vk::PipelineBindPoint::eGraphics).depthStencil(depth).index();
   opaquePass = maker.subpass(vk::PipelineBindPoint::eGraphics)
                  .color(color)
                  .depthStencil(depth)
@@ -135,20 +136,20 @@ void ForwardPass::createRenderPass(Device &device, vk::Format format) {
                       .color(color)
                       .depthStencil(depth)
                       .index();
-  maker.dependency(VK_SUBPASS_EXTERNAL, copyDepthPass)
+  maker.dependency(VK_SUBPASS_EXTERNAL, opaquePass)
     .srcStage(vk::PipelineStageFlagBits::eBottomOfPipe)
     .dstStage(vk::PipelineStageFlagBits::eColorAttachmentOutput)
     .srcAccess(vk::AccessFlagBits::eMemoryRead)
     .dstAccess(vk::AccessFlagBits::eColorAttachmentWrite)
     .flags(vk::DependencyFlagBits::eByRegion);
-  maker.dependency(copyDepthPass, opaquePass)
-    .srcStage(vk::PipelineStageFlagBits::eColorAttachmentOutput)
-    .dstStage(
-      vk::PipelineStageFlagBits::eEarlyFragmentTests |
-      vk::PipelineStageFlagBits::eLateFragmentTests)
-    .srcAccess(vk::AccessFlagBits::eColorAttachmentWrite)
-    .dstAccess(vk::AccessFlagBits::eDepthStencilAttachmentRead)
-    .flags(vk::DependencyFlagBits::eByRegion);
+//  maker.dependency(copyDepthPass, opaquePass)
+//    .srcStage(vk::PipelineStageFlagBits::eColorAttachmentOutput)
+//    .dstStage(
+//      vk::PipelineStageFlagBits::eEarlyFragmentTests |
+//      vk::PipelineStageFlagBits::eLateFragmentTests)
+//    .srcAccess(vk::AccessFlagBits::eColorAttachmentWrite)
+//    .dstAccess(vk::AccessFlagBits::eDepthStencilAttachmentRead)
+//    .flags(vk::DependencyFlagBits::eByRegion);
   maker.dependency(opaquePass, transparentPass)
     .srcStage(vk::PipelineStageFlagBits::eColorAttachmentOutput)
     .dstStage(
@@ -341,12 +342,12 @@ void ForwardPass::execute(vkg::RenderContext &ctx, vkg::Resources &resources) {
       drawInfo.drawCMDCount.offset, drawInfo.maxCount, drawInfo.stride);
   };
 
-  dev.begin(cb, "Subpass copy depth");
-  cb.bindPipeline(vk::PipelineBindPoint::eGraphics, *copyDepthPipe);
-  cb.draw(3, 1, 0, 0);
-  dev.end(cb);
-
-  cb.nextSubpass(vk::SubpassContents::eInline);
+//  dev.begin(cb, "Subpass copy depth");
+//  cb.bindPipeline(vk::PipelineBindPoint::eGraphics, *copyDepthPipe);
+//  cb.draw(3, 1, 0, 0);
+//  dev.end(cb);
+//
+//  cb.nextSubpass(vk::SubpassContents::eInline);
 
   dev.begin(cb, "Subpass opaque lines");
   cb.bindPipeline(vk::PipelineBindPoint::eGraphics, *opaqueLinesPipe);

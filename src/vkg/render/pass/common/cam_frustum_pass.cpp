@@ -13,11 +13,9 @@ void CamFrustumPass::compile(RenderContext &ctx, Resources &resources) {
     init = true;
     frustums.resize(1);
     camBuffers.resize(ctx.numFrames);
-    for(int i = 0; i < ctx.numFrames; ++i) {
+    for(int i = 0; i < ctx.numFrames; ++i)
       camBuffers[i] = buffer::devStorageBuffer(
-        resources.device, sizeof(Camera::Desc) * ctx.numFrames,
-        toString("camBuffer_", i));
-    }
+        resources.device, sizeof(Camera::Desc), toString("camBuffer_", i));
   }
   auto *camera = resources.get(passIn.camera);
   frustums[0] = Frustum{camera->proj() * camera->view()};
@@ -34,7 +32,10 @@ void CamFrustumPass::execute(RenderContext &ctx, Resources &resources) {
   ctx.device.begin(cb, "update camera");
   cb.updateBuffer(bufInfo.buffer, bufInfo.offset, sizeof(desc), &desc);
   cb.pipelineBarrier(
-    vk::PipelineStageFlagBits::eTransfer, vk::PipelineStageFlagBits::eAllCommands, {},
+    vk::PipelineStageFlagBits::eTransfer,
+    vk::PipelineStageFlagBits::eRayTracingShaderKHR |
+      vk::PipelineStageFlagBits::eDrawIndirect,
+    {},
     vk::MemoryBarrier{
       vk::AccessFlagBits::eTransferWrite, vk::AccessFlagBits::eShaderRead},
     nullptr, nullptr);
