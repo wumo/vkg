@@ -203,20 +203,46 @@ auto main() -> int {
   }
 
   {
-    std::string name = "Sponza";
-    auto modelId =
-      scene.loadModel("assets/glTF-models/2.0/" + name + "/glTF/" + name + ".gltf");
+    std::string name = "BoomBox";
+    auto modelId = scene.loadModel(
+      "assets/glTF-models/2.0/" + name + "/glTF/" + name + ".gltf", MaterialType::eNone);
+
     auto &model = scene.model(modelId);
     auto aabb = model.aabb();
     auto range = aabb.max - aabb.min;
-    auto scale = 200 / std::max(std::max(range.x, range.y), range.z);
+    auto scale = 5 / std::max(std::max(range.x, range.y), range.z);
     auto center = aabb.center();
     auto halfRange = aabb.halfRange();
     Transform t{
-      {-center * scale + glm::vec3{100, scale * range.y / 2.f, 100}}, glm::vec3{scale}};
-    //  t.translation = -center;
-    scene.newModelInstance(modelId, t, false);
+      {-center * scale + glm::vec3{8, scale * range.y / 2.f, 8}}, glm::vec3{scale}};
+
+    uint32_t num = 100;
+    float unit = 5;
+    for(int a = 0; a < num; ++a) {
+      for(int b = 0; b < num; ++b) {
+        t.translation =
+          -center * scale +
+          glm::vec3{-100 + unit * a, scale * range.y / 2.f + 20, unit * b - 100};
+        scene.newModelInstance(modelId, t, true);
+      }
+    }
   }
+
+  //  {
+  //    std::string name = "Sponza";
+  //    auto modelId =
+  //      scene.loadModel("assets/glTF-models/2.0/" + name + "/glTF/" + name + ".gltf");
+  //    auto &model = scene.model(modelId);
+  //    auto aabb = model.aabb();
+  //    auto range = aabb.max - aabb.min;
+  //    auto scale = 200 / std::max(std::max(range.x, range.y), range.z);
+  //    auto center = aabb.center();
+  //    auto halfRange = aabb.halfRange();
+  //    Transform t{
+  //      {-center * scale + glm::vec3{100, scale * range.y / 2.f, 100}}, glm::vec3{scale}};
+  //    //  t.translation = -center;
+  //    scene.newModelInstance(modelId, t, false);
+  //  }
 
   std::vector<uint32_t> balls;
   uint32_t ballModel, boxModel;
