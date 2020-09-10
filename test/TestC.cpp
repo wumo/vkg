@@ -67,7 +67,7 @@ auto main() -> int {
   auto blueMat = SceneNewMaterial(scene, CMaterialNone, false);
   color = {Blue, 1.f};
   MaterialSetColorFactor(scene, blueMat, (cvec4 *)&color, 0);
-  std::string path{"./assets/TextureCoordinateTemplate.png"};
+  std::string path{"./assets/glTF-models/2.0/TextureCoordinateTest/glTF/TextureCoordinateTemplate.png"};
   auto colorTex = SceneNewTexture(scene, (char *)(path.c_str()), path.size(), true);
   auto texMat = SceneNewMaterial(scene, CMaterialBRDF, false);
   MaterialSetColorTex(scene, texMat, colorTex);
