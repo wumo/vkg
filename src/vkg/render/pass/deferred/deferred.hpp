@@ -5,7 +5,7 @@
 #include "vkg/render/model/camera.hpp"
 #include "vkg/render/pass/cull/compute_cull_drawcmd.hpp"
 #include "vkg/render/model/vertex.hpp"
-#include "vkg/render/draw_group.hpp"
+#include "vkg/render/shade_model.hpp"
 #include "vkg/render/pass/common/cam_frustum_pass.hpp"
 #include "vkg/render/pass/atmosphere/atmosphere_pass.hpp"
 #include "vkg/render/pass/shadowmap/shadow_map_pass.hpp"
@@ -28,8 +28,6 @@ struct DeferredPassIn {
   FrameGraphResource<BufferInfo> lighting;
   FrameGraphResource<BufferInfo> lights;
 
-  FrameGraphResource<std::span<uint32_t>> drawGroupCount;
-
   FrameGraphResource<AtmosphereSetting> atmosSetting;
   AtmospherePassOut atmosphere;
 
@@ -44,7 +42,7 @@ class DeferredPass: public Pass<DeferredPassIn, DeferredPassOut> {
 public:
   void setup(PassBuilder &builder) override;
   void compile(RenderContext &ctx, Resources &resources) override;
-  void execute(RenderContext &ctx, Resources &resources) override;
+  void execute(RenderContext &shadeModel, Resources &resources) override;
 
 private:
   auto createAttachments(Device &device, uint32_t frameIdx) -> void;
@@ -112,7 +110,6 @@ private:
 
   vk::UniqueDescriptorPool descriptorPool;
 
-  std::vector<bool> groupCounted;
   struct FrameResource {
     Texture *backImg;
     std::unique_ptr<Texture> depthAtt, normalAtt, diffuseAtt, specularAtt, emissiveAtt;

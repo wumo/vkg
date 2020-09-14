@@ -2,7 +2,7 @@
 
 namespace vkg {
 void DeferredPass::execute(RenderContext &ctx, Resources &resources) {
-  auto drawInfos = resources.get(passIn.cullCMD.drawInfos);
+  auto drawInfos = resources.get(passIn.cullCMD.drawCMDs);
   auto atmosSetting = resources.get(passIn.atmosSetting);
   auto shadowMapSetting = resources.get(passIn.shadowMapSetting);
 
@@ -68,13 +68,13 @@ void DeferredPass::execute(RenderContext &ctx, Resources &resources) {
   cb.pushConstants<PushConstant>(
     pipeDef.layout(), vk::ShaderStageFlagBits::eVertex, 0, pushConstant);
 
-  auto draw = [&](DrawGroup drawGroup) {
-    auto drawGroupIdx = value(drawGroup);
-    auto drawInfo = drawInfos.drawInfo[0][drawGroupIdx];
+  auto draw = [&](ShadeModel shadeModel) {
+    auto shadeModelIdx = value(shadeModel);
+    auto drawInfo = drawInfos.cmdsPerShadeModel[0][shadeModelIdx];
     if(drawInfo.maxCount == 0) return;
     cb.drawIndexedIndirectCount(
-      drawInfo.drawCMD.buffer, drawInfo.drawCMD.offset, drawInfo.drawCMDCount.buffer,
-      drawInfo.drawCMDCount.offset, drawInfo.maxCount, drawInfo.stride);
+      drawInfo.cmdBuf.buffer, drawInfo.cmdBuf.offset, drawInfo.countBuf.buffer,
+      drawInfo.countBuf.offset, drawInfo.maxCount, drawInfo.stride);
   };
 
   cb.setLineWidth(lineWidth_);
@@ -82,9 +82,9 @@ void DeferredPass::execute(RenderContext &ctx, Resources &resources) {
   if(wireframe_) cb.bindPipeline(vk::PipelineBindPoint::eGraphics, *gbWireFramePipe);
   else
     cb.bindPipeline(vk::PipelineBindPoint::eGraphics, *gbTriPipe);
-  draw(DrawGroup::BRDF);
-  draw(DrawGroup::Reflective);
-  draw(DrawGroup::Refractive);
+  draw(ShadeModel::BRDF);
+  draw(ShadeModel::Reflective);
+  draw(ShadeModel::Refractive);
   dev.end(cb);
 
   cb.nextSubpass(vk::SubpassContents::eInline);
@@ -106,26 +106,26 @@ void DeferredPass::execute(RenderContext &ctx, Resources &resources) {
 
   dev.begin(cb, "Subpass unlit triangles");
   cb.bindPipeline(vk::PipelineBindPoint::eGraphics, *unlitTriPipe);
-  draw(DrawGroup::Unlit);
+  draw(ShadeModel::Unlit);
   dev.end(cb);
 
   dev.begin(cb, "Subpass opaque lines");
   cb.setLineWidth(lineWidth_);
   cb.bindPipeline(vk::PipelineBindPoint::eGraphics, *unlitLinePipe);
-  draw(DrawGroup::OpaqueLines);
+  draw(ShadeModel::OpaqueLines);
   dev.end(cb);
 
   cb.nextSubpass(vk::SubpassContents::eInline);
 
   dev.begin(cb, "Subpass transparent triangles");
   cb.bindPipeline(vk::PipelineBindPoint::eGraphics, *transTriPipe);
-  draw(DrawGroup::Transparent);
+  draw(ShadeModel::Transparent);
   dev.end(cb);
 
   dev.begin(cb, "Subpass transparent lines");
   cb.setLineWidth(lineWidth_);
   cb.bindPipeline(vk::PipelineBindPoint::eGraphics, *transLinePipe);
-  draw(DrawGroup::TransparentLines);
+  draw(ShadeModel::TransparentLines);
   dev.end(cb);
 
   cb.endRenderPass();

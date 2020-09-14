@@ -17,6 +17,6 @@ void main() {
   vec4 pos = model * vec4(inPos, 1.0);
   pos = pos / pos.w;
   outUV0 = inUV0;
-  outMaterialID = mesh.material + clamp(frame, 0, mesh.materialCount - 1);
+  outMaterialID =frameRef(mesh.material, frame);
   gl_Position = camera.projView * pos;
 }

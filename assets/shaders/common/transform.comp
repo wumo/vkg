@@ -29,8 +29,7 @@ void main() {
   if(id >= totalMeshInstances) return;
 
   MeshInstanceDesc mesh = meshInstances[id];
-  uint instTransOffset = clamp(frame, 0, mesh.instanceCount - 1);
-  mat4 t = toMatrix(transforms[mesh.instance + instTransOffset]) *
+  mat4 t = toMatrix(transforms[frameRef(mesh.instance, frame)]) *
            toMatrix(transforms[mesh.node]);
   matrices[id] = t;
 }

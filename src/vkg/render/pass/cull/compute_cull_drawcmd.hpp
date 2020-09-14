@@ -3,17 +3,17 @@
 #include "vkg/render/graph/frame_graph.hpp"
 #include "vkg/render/scene_config.hpp"
 #include "vkg/math/frustum.hpp"
-#include "vkg/render/draw_group.hpp"
+#include "vkg/render/shade_model.hpp"
 #include <set>
 
 namespace vkg {
 struct DrawInfo {
-  BufferInfo drawCMD, drawCMDCount;
+  BufferInfo cmdBuf, countBuf;
   uint32_t maxCount{0};
   uint32_t stride{sizeof(vk::DrawIndexedIndirectCommand)};
 };
 struct DrawInfos {
-  std::vector<std::vector<DrawInfo>> drawInfo;
+  std::vector<std::vector<DrawInfo>> cmdsPerShadeModel;
 };
 struct ComputeCullDrawCMDPassIn {
   FrameGraphResource<std::span<Frustum>> frustums;
@@ -22,15 +22,15 @@ struct ComputeCullDrawCMDPassIn {
   FrameGraphResource<SceneConfig> sceneConfig;
   FrameGraphResource<BufferInfo> primitives;
   FrameGraphResource<BufferInfo> matrices;
-  FrameGraphResource<std::span<uint32_t>> maxPerGroup;
+  FrameGraphResource<std::span<uint32_t>> maxPerShadeModel;
 };
 struct ComputeCullDrawCMDPassOut {
-  FrameGraphResource<DrawInfos> drawInfos;
+  FrameGraphResource<DrawInfos> drawCMDs;
 };
 class ComputeCullDrawCMD
   : public Pass<ComputeCullDrawCMDPassIn, ComputeCullDrawCMDPassOut> {
 public:
-  explicit ComputeCullDrawCMD(std::set<DrawGroup> allowedGroup);
+  explicit ComputeCullDrawCMD(std::set<ShadeModel> allowedShadeModel);
   void setup(PassBuilder &builder) override;
   void compile(RenderContext &ctx, Resources &resources) override;
   void execute(RenderContext &ctx, Resources &resources) override;
@@ -44,7 +44,7 @@ private:
     __buffer__(drawCMD, vk::ShaderStageFlagBits::eCompute);
     __buffer__(cmdOffsetPerGroup, vk::ShaderStageFlagBits::eCompute);
     __buffer__(drawCMDCount, vk::ShaderStageFlagBits::eCompute);
-    __buffer__(allowedGroup, vk::ShaderStageFlagBits::eCompute);
+    __buffer__(allowedShadeModel, vk::ShaderStageFlagBits::eCompute);
   } setDef;
   struct PushConstant {
     uint32_t totalFrustums;
@@ -63,25 +63,25 @@ private:
 
   vk::UniqueDescriptorPool descriptorPool;
 
-  std::set<DrawGroup> allowedGroup;
-  std::unique_ptr<Buffer> allowedGroupBuf;
+  std::set<ShadeModel> allowedShadeModel;
+  std::unique_ptr<Buffer> allowedShadeModelBuf;
 
   struct FrameResource {
     vk::DescriptorSet set;
 
     std::unique_ptr<Buffer> frustumsBuf;
     std::unique_ptr<Buffer> drawCMD;
-    std::unique_ptr<Buffer> cmdOffsetPerGroupBuffer;
-    std::unique_ptr<Buffer> countOfGroupBuffer;
+    std::unique_ptr<Buffer> cmdOffsetPerShadeModelBuffer;
+    std::unique_ptr<Buffer> countOfShadeModelBuffer;
   };
 
   std::vector<FrameResource> frames;
 
-  std::vector<uint32_t> cmdOffsetOfGroupInFrustum;
+  std::vector<uint32_t> cmdOffsetOfShadeModelInFrustum;
 
   uint32_t numFrustums{0};
   uint32_t numDrawCMDsPerFrustum{};
-  uint32_t numDrawGroups{};
+  uint32_t numShadeModels{};
 
   bool init{false};
 };

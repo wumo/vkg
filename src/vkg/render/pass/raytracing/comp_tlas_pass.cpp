@@ -1,6 +1,6 @@
 #include "comp_tlas_pass.hpp"
 #include "raytracing/comp/tlas_comp.hpp"
-#include "vkg/render/draw_group.hpp"
+#include "vkg/render/shade_model.hpp"
 
 namespace vkg {
 void CompTLASPass::setup(PassBuilder &builder) {
@@ -52,10 +52,10 @@ void CompTLASPass::compile(RenderContext &ctx, Resources &resources) {
   setDef.update(frame.set);
 
   auto countPerDrawGroup = resources.get(passIn.countPerDrawGroup);
-  auto tlasCount = countPerDrawGroup[value(DrawGroup::Unlit)] +
-                   countPerDrawGroup[value(DrawGroup::BRDF)] +
-                   countPerDrawGroup[value(DrawGroup::Reflective)] +
-                   countPerDrawGroup[value(DrawGroup::Refractive)];
+  auto tlasCount = countPerDrawGroup[value(ShadeModel::Unlit)] +
+                   countPerDrawGroup[value(ShadeModel::BRDF)] +
+                   countPerDrawGroup[value(ShadeModel::Reflective)] +
+                   countPerDrawGroup[value(ShadeModel::Refractive)];
   resources.set(passOut.tlasCount, tlasCount);
   resources.set(passOut.tlas, frame.tlasInstances->bufferInfo());
 }

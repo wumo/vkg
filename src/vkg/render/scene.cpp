@@ -63,7 +63,7 @@ Scene::Scene(Renderer &renderer, SceneConfig sceneConfig, std::string name)
 
   newMaterial(MaterialType::eNone);
 
-  Host.drawGroupInstCount.resize(value(DrawGroup::Last) + 1);
+  Host.shadeModelCount.resize(value(ShadeModel::Last) + 1);
 }
 
 auto Scene::newPrimitive(
@@ -221,41 +221,41 @@ auto Scene::allocatePrimitiveDesc() const -> Allocation<Primitive::Desc> {
 auto Scene::allocateMeshInstDesc() const -> Allocation<ModelInstance::MeshInstanceDesc> {
   return Dev.meshInstances->allocate();
 }
-auto Scene::addToDrawGroup(uint32_t meshId, DrawGroup oldGroupID) -> DrawGroup {
+auto Scene::addToDrawGroup(uint32_t meshId, ShadeModel oldShadeModelID) -> ShadeModel {
   auto &mesh_ = mesh(meshId);
   auto &primitive_ = primitive(mesh_.primitive());
   auto &material_ = material(mesh_.material());
 
-  DrawGroup gID{};
+  ShadeModel smID{};
   switch(primitive_.topology()) {
     case PrimitiveTopology::Triangles:
       switch(material_.type()) {
-        case MaterialType::eNone: gID = DrawGroup::Unlit; break;
+        case MaterialType::eNone: smID = ShadeModel::Unlit; break;
         case MaterialType::eBRDF:
-        case MaterialType::eBRDFSG: gID = DrawGroup::BRDF; break;
-        case MaterialType::eReflective: gID = DrawGroup::Reflective; break;
-        case MaterialType::eRefractive: gID = DrawGroup::Refractive; break;
-        case MaterialType::eTransparent: gID = DrawGroup::Transparent; break;
-        case MaterialType::eTerrain: gID = DrawGroup::Terrain; break;
+        case MaterialType::eBRDFSG: smID = ShadeModel::BRDF; break;
+        case MaterialType::eReflective: smID = ShadeModel::Reflective; break;
+        case MaterialType::eRefractive: smID = ShadeModel::Refractive; break;
+        case MaterialType::eTransparent: smID = ShadeModel::Transparent; break;
+        case MaterialType::eTerrain: smID = ShadeModel::Terrain; break;
       }
       break;
     case PrimitiveTopology::Lines:
       switch(material_.type()) {
         case MaterialType::eRefractive:
-        case MaterialType::eTransparent: gID = DrawGroup::TransparentLines; break;
-        default: gID = DrawGroup::OpaqueLines;
+        case MaterialType::eTransparent: smID = ShadeModel::TransparentLines; break;
+        default: smID = ShadeModel::OpaqueLines;
       }
       break;
     case PrimitiveTopology::Procedural:
     case PrimitiveTopology::Patches: throw std::runtime_error("Not supported"); break;
   }
-  if(oldGroupID != DrawGroup::Unknown) Host.drawGroupInstCount[value(oldGroupID)]--;
-  Host.drawGroupInstCount[value(gID)]++;
-  return gID;
+  if(oldShadeModelID != ShadeModel::Unknown) Host.shadeModelCount[value(oldShadeModelID)]--;
+  Host.shadeModelCount[value(smID)]++;
+  return smID;
 }
 
-void Scene::setVisible(DrawGroup drawGroup, bool visible) {
-  Host.drawGroupInstCount[value(drawGroup)] += visible ? 1 : -1;
+void Scene::setVisible(ShadeModel shadeModel, bool visible) {
+  Host.shadeModelCount[value(shadeModel)] += visible ? 1 : -1;
 }
 
 void Scene::scheduleFrameUpdate(

@@ -20,7 +20,7 @@ struct DeferredSetupPassIn {
   FrameGraphResource<BufferInfo> lighting;
   FrameGraphResource<BufferInfo> lights;
 
-  FrameGraphResource<std::span<uint32_t>> drawGroupCount;
+  FrameGraphResource<std::span<uint32_t>> shadeModelCount;
 
   FrameGraphResource<AtmosphereSetting> atmosSetting;
   AtmospherePassOut atmosphere;

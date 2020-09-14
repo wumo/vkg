@@ -4,7 +4,7 @@
 #include "vkg/render/graph/frame_graph.hpp"
 #include "vkg/render/model/camera.hpp"
 #include "vkg/render/model/vertex.hpp"
-#include "vkg/render/draw_group.hpp"
+#include "vkg/render/shade_model.hpp"
 #include "vkg/render/pass/cull/compute_cull_drawcmd.hpp"
 #include "trace_rays_pass.hpp"
 
@@ -34,7 +34,7 @@ class ForwardPass: public Pass<ForwardPassIn, ForwardPassOut> {
 public:
   void setup(PassBuilder &builder) override;
   void compile(RenderContext &ctx, Resources &resources) override;
-  void execute(RenderContext &ctx, Resources &resources) override;
+  void execute(RenderContext &shadeModel, Resources &resources) override;
 
 private:
   void createRenderPass(Device &device, vk::Format format);

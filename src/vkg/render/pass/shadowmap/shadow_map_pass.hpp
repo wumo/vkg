@@ -5,7 +5,7 @@
 #include "vkg/math/glm_common.hpp"
 #include "vkg/render/scene_config.hpp"
 #include "vkg/render/model/camera.hpp"
-#include "vkg/render/draw_group.hpp"
+#include "vkg/render/shade_model.hpp"
 #include "vkg/render/pass/cull/compute_cull_drawcmd.hpp"
 #include "vkg/render/pass/atmosphere/atmosphere_pass.hpp"
 
@@ -26,7 +26,7 @@ struct ShadowMapPassIn {
   FrameGraphResource<BufferInfo> indices;
   FrameGraphResource<BufferInfo> primitives;
   FrameGraphResource<BufferInfo> matrices;
-  FrameGraphResource<std::span<uint32_t>> maxPerGroup;
+  FrameGraphResource<std::span<uint32_t>> maxPerShadeModel;
 };
 struct ShadowMapPassOut {
   FrameGraphResource<BufferInfo> settingBuffer;

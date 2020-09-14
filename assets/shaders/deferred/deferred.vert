@@ -21,6 +21,6 @@ void main() {
   outWorldPos = pos.xyz;
   outNormal = normalize(transpose(inverse(mat3(model))) * inNormal);
   outUV0 = inUV0;
-  outMaterialID = mesh.material + clamp(frame, 0, mesh.materialCount - 1);
+  outMaterialID = frameRef(mesh.material, frame);
   gl_Position = camera.projView * pos;
 }

@@ -13,7 +13,7 @@
 #include "buffer_allocation.hpp"
 #include "vkg/render/graph/frame_graph.hpp"
 #include "vkg/math/frustum.hpp"
-#include "draw_group.hpp"
+#include "shade_model.hpp"
 #include "model/atmosphere.hpp"
 #include "model/shadow_map.hpp"
 #include <span>
@@ -100,10 +100,10 @@ public:
   void scheduleFrameUpdate(
     Update::Type type, uint32_t id, uint32_t frames, uint32_t &ticket);
 
-  auto addToDrawGroup(uint32_t meshId, DrawGroup oldGroupID = DrawGroup::Unknown)
-    -> DrawGroup;
+  auto addToDrawGroup(uint32_t meshId, ShadeModel oldShadeModelID = ShadeModel::Unknown)
+    -> ShadeModel;
 
-  void setVisible(DrawGroup drawGroup, bool visible);
+  void setVisible(ShadeModel shadeModel, bool visible);
 
   void setup(PassBuilder &builder) override;
   void compile(RenderContext &ctx, Resources &resources) override;
@@ -145,7 +145,7 @@ private:
     std::vector<Node> nodes;
     std::vector<Model> models;
     std::vector<ModelInstance> modelInstances;
-    std::vector<uint32_t> drawGroupInstCount;
+    std::vector<uint32_t> shadeModelCount;
     std::unique_ptr<Lighting> lighting;
     std::vector<Light> lights;
     std::unique_ptr<Camera> camera_;

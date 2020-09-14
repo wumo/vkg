@@ -3,27 +3,31 @@
 #include "vkg/render/allocation.hpp"
 #include "vkg/render/ranges.hpp"
 #include "vkg/base/vk_headers.hpp"
-#include "vkg/render/draw_group.hpp"
+#include "vkg/render/shade_model.hpp"
 #include "frame_updatable.hpp"
 
 namespace vkg {
 class Scene;
 class ModelInstance: public FrameUpdatable {
 public:
+  struct PerFrameRef {
+    uint32_t idx;
+    uint32_t count;
+  };
   struct MeshInstanceDesc {
     /**material buffer offset*/
-    uint32_t materialDescIdx, materialCount;
+    PerFrameRef materialDesc;
     /**primitive buffer offset */
-    uint32_t primitiveDescIdx, primitiveCount;
+    PerFrameRef primitiveDesc;
     /**node transform offset */
     uint32_t nodeTransfIdx;
     /**modelInstance transform offset*/
-    uint32_t instanceTransf, instanceTransfCount;
+    PerFrameRef instanceTransf;
     /**whether or not this should be drawn*/
     vk::Bool32 visible;
     /**the draw group used to draw this mesh instance. MeshInsts with same draw group will
      * be grouped*/
-    DrawGroup drawGroupID;
+    ShadeModel shadeModel;
   };
   ModelInstance(
     Scene &scene, uint32_t id, const Transform &transform, uint32_t modelId,
@@ -51,7 +55,7 @@ protected:
   uint32_t customMatId{nullIdx};
 
   struct MeshInstInfo {
-    DrawGroup drawGroupID{DrawGroup::Unknown};
+    ShadeModel shadeModel{ShadeModel::Unknown};
     Allocation<MeshInstanceDesc> desc;
   };
   std::vector<MeshInstInfo> meshInstDescs;

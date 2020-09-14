@@ -23,26 +23,32 @@ struct MaterialDesc {
   uint type;
 };
 
-const uint DrawGroupUnknown = ~0u;
-const uint DrawGroupUnlit = 0u;
-const uint DrawGroupBRDF = 1u;
-const uint DrawGroupReflective = 2u;
-const uint DrawGroupRefractive = 3u;
-const uint DrawGroupTransparent = 4u;
-const uint DrawGroupTerrain = 5u;
-const uint DrawGroupTransparentLines = 6u;
-const uint DrawGroupOpaqueLines = 7u;
+const uint ShadingModelUnknown = ~0u;
+const uint ShadingModelUnlit = 0u;
+const uint ShadingModelBRDF = 1u;
+const uint ShadingModelReflective = 2u;
+const uint ShadingModelRefractive = 3u;
+const uint ShadingModelTransparent = 4u;
+const uint ShadingModelTerrain = 5u;
+const uint ShadingModelTransparentLines = 6u;
+const uint ShadingModelOpaqueLines = 7u;
+
+struct PerFrameRef {
+  uint idx;
+  uint count;
+};
+
+uint frameRef(PerFrameRef ref, uint frame) {
+  return ref.idx + clamp(frame, 0, ref.count - 1);
+}
 
 struct MeshInstanceDesc {
-  uint material;
-  uint materialCount;
-  uint primitive;
-  uint primitiveCount;
+  PerFrameRef material;
+  PerFrameRef primitive;
   uint node;
-  uint instance;
-  uint instanceCount;
+  PerFrameRef instance;
   bool visible;
-  uint drawGroupID;
+  uint shadeModel;
 };
 
 struct AABB {

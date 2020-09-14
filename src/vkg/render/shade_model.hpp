@@ -1,7 +1,7 @@
 #pragma once
 
 namespace vkg {
-enum class DrawGroup : uint32_t {
+enum class ShadeModel : uint32_t {
   Unknown = ~0u,
   Unlit = 0u,
   BRDF,

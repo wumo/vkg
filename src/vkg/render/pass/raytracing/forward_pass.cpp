@@ -20,9 +20,9 @@ void ForwardPass::setup(vkg::PassBuilder &builder) {
                       passIn.countPerDrawGroup,
                     },
                     std::set{
-                      DrawGroup::Transparent,
-                      DrawGroup::TransparentLines,
-                      DrawGroup::OpaqueLines,
+                      ShadeModel::Transparent,
+                      ShadeModel::TransparentLines,
+                      ShadeModel::OpaqueLines,
                     })
                   .out();
 
@@ -281,7 +281,7 @@ void ForwardPass::createTransparentPass(Device &device, SceneConfig &sceneConfig
   device.name(*transparentLinesPipe, "transparentLinesPipe");
 }
 void ForwardPass::execute(vkg::RenderContext &ctx, vkg::Resources &resources) {
-  auto drawInfos = resources.get(cullPassOut.drawInfos);
+  auto drawInfos = resources.get(cullPassOut.drawCMDs);
   auto &frame = frames[ctx.frameIndex];
 
   auto cb = ctx.cb;
@@ -333,13 +333,13 @@ void ForwardPass::execute(vkg::RenderContext &ctx, vkg::Resources &resources) {
   cb.pushConstants<PushConstant>(
     pipeDef.layout(), vk::ShaderStageFlagBits::eVertex, 0, pushConstant);
 
-  auto draw = [&](DrawGroup drawGroup) {
-    auto drawGroupIdx = value(drawGroup);
-    auto drawInfo = drawInfos.drawInfo[0][drawGroupIdx];
+  auto draw = [&](ShadeModel shadeModel) {
+    auto shadeModelIdx = value(shadeModel);
+    auto drawInfo = drawInfos.cmdsPerShadeModel[0][shadeModelIdx];
     if(drawInfo.maxCount == 0) return;
     cb.drawIndexedIndirectCount(
-      drawInfo.drawCMD.buffer, drawInfo.drawCMD.offset, drawInfo.drawCMDCount.buffer,
-      drawInfo.drawCMDCount.offset, drawInfo.maxCount, drawInfo.stride);
+      drawInfo.cmdBuf.buffer, drawInfo.cmdBuf.offset, drawInfo.countBuf.buffer,
+      drawInfo.countBuf.offset, drawInfo.maxCount, drawInfo.stride);
   };
 
   dev.begin(cb, "Subpass copy depth");
@@ -352,20 +352,20 @@ void ForwardPass::execute(vkg::RenderContext &ctx, vkg::Resources &resources) {
   dev.begin(cb, "Subpass opaque lines");
   cb.bindPipeline(vk::PipelineBindPoint::eGraphics, *opaqueLinesPipe);
   cb.setLineWidth(lineWidth_);
-  draw(DrawGroup::OpaqueLines);
+  draw(ShadeModel::OpaqueLines);
   dev.end(cb);
 
   cb.nextSubpass(vk::SubpassContents::eInline);
 
   dev.begin(cb, "Subpass transparent triangles");
   cb.bindPipeline(vk::PipelineBindPoint::eGraphics, *transparentPipe);
-  draw(DrawGroup::Transparent);
+  draw(ShadeModel::Transparent);
   dev.end(cb);
 
   dev.begin(cb, "Subpass transparent lines");
   cb.bindPipeline(vk::PipelineBindPoint::eGraphics, *transparentLinesPipe);
   cb.setLineWidth(lineWidth_);
-  draw(DrawGroup::TransparentLines);
+  draw(ShadeModel::TransparentLines);
   dev.end(cb);
 
   cb.endRenderPass();

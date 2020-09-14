@@ -65,20 +65,18 @@ bool shadowTrace(vec3 origin, vec3 lightDir, float maxDistance) {
 void main() {
   MeshInstanceDesc ins = meshInstances[gl_InstanceCustomIndexNV];
 
-  PrimitiveDesc primitive =
-    primitives[ins.primitive + clamp(frame, 0, ins.primitiveCount - 1)];
-  MaterialDesc material =
-    materials[ins.material + clamp(frame, 0, ins.materialCount - 1)];
+  PrimitiveDesc primitive = primitives[frameRef(ins.primitive, frame)];
+  MaterialDesc material = materials[frameRef(ins.material, frame)];
 
   VertexState state;
   MaterialInfo materialInfo;
   getShadingState(primitive, material, state, materialInfo);
 
   prd.origin = state.pos;
-//
-//  prd.radiance = prd.attenuation * materialInfo.diffuseColor;
-//  prd.done = 1;
-//  return;
+  //
+  //  prd.radiance = prd.attenuation * materialInfo.diffuseColor;
+  //  prd.done = 1;
+  //  return;
 
 #ifdef SHADING_UNLIT
   prd.radiance = prd.attenuation * materialInfo.diffuseColor;

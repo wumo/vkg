@@ -42,20 +42,20 @@ void main() {
 
   uint shaderId = nullIdx;
   uint mask = 0;
-  switch(mesh.drawGroupID) {
-    case DrawGroupUnlit:
+  switch(mesh.shadeModel) {
+    case ShadingModelUnlit:
       shaderId = 0;
       mask = unlitMask;
       break;
-    case DrawGroupBRDF:
+    case ShadingModelBRDF:
       shaderId = 1;
       mask = brdfMask;
       break;
-    case DrawGroupReflective:
+    case ShadingModelReflective:
       shaderId = 2;
       mask = reflectiveMask;
       break;
-    case DrawGroupRefractive:
+    case ShadingModelRefractive:
       shaderId = 3;
       mask = refractiveMask;
       break;
@@ -77,8 +77,7 @@ void main() {
   shader_flag = bitfieldInsert(shader_flag, RTTriangleFacingCullDisable, 24, 8);
   ins.shader_flag = shader_flag;
 
-  uint primitiveOffset = clamp(frame, 0, mesh.primitiveCount - 1);
-  PrimitiveDesc prim = primitives[mesh.primitive + primitiveOffset];
+  PrimitiveDesc prim = primitives[frameRef(mesh.primitive, frame)];
   ins.handle = prim.handle;
 
   uint tlasIdx = atomicAdd(tlasInstanceCount, 1);

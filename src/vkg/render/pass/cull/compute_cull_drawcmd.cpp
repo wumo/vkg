@@ -4,18 +4,18 @@
 #include "common/cull_draw_group_comp.hpp"
 
 namespace vkg {
-ComputeCullDrawCMD::ComputeCullDrawCMD(std::set<DrawGroup> allowedGroup)
-  : allowedGroup(std::move(allowedGroup)) {}
+ComputeCullDrawCMD::ComputeCullDrawCMD(std::set<ShadeModel> allowedShadeModel)
+  : allowedShadeModel(std::move(allowedShadeModel)) {}
 void ComputeCullDrawCMD::setup(PassBuilder &builder) {
   builder.read(passIn);
   passOut = {
-    .drawInfos = builder.create<DrawInfos>("drawInfos"),
+    .drawCMDs = builder.create<DrawInfos>("drawCMDs"),
   };
 }
 void ComputeCullDrawCMD::compile(RenderContext &ctx, Resources &resources) {
   auto frustums = resources.get(passIn.frustums);
   auto sceneConfig = resources.get(passIn.sceneConfig);
-  auto maxPerGroup = resources.get(passIn.maxPerGroup);
+  auto maxPerGroup = resources.get(passIn.maxPerShadeModel);
   if(!init) {
     init = true;
 
@@ -35,19 +35,19 @@ void ComputeCullDrawCMD::compile(RenderContext &ctx, Resources &resources) {
 
     numFrustums = uint32_t(frustums.size());
     numDrawCMDsPerFrustum = sceneConfig.maxNumMeshInstances;
-    numDrawGroups = uint32_t(maxPerGroup.size());
+    numShadeModels = uint32_t(maxPerGroup.size());
 
-    cmdOffsetOfGroupInFrustum.resize(numDrawGroups);
+    cmdOffsetOfShadeModelInFrustum.resize(numShadeModels);
 
     {
-      std::vector<VkBool32> allowedGroup_(numDrawGroups);
-      for(auto g = 0u; g < numDrawGroups; ++g)
-        allowedGroup_[g] = allowedGroup.contains(static_cast<DrawGroup>(g));
+      std::vector<VkBool32> allowedGroup_(numShadeModels);
+      for(auto g = 0u; g < numShadeModels; ++g)
+        allowedGroup_[g] = allowedShadeModel.contains(static_cast<ShadeModel>(g));
 
-      allowedGroupBuf = buffer::devStorageBuffer(
+      allowedShadeModelBuf = buffer::devStorageBuffer(
         resources.device, allowedGroup_.size() * sizeof(VkBool32),
         toString(name, "_allowedGroup"));
-      buffer::uploadVec(ctx.frameIndex, *allowedGroupBuf, allowedGroup_);
+      buffer::uploadVec(ctx.frameIndex, *allowedShadeModelBuf, allowedGroup_);
     }
 
     for(int i = 0; i < ctx.numFrames; ++i) {
@@ -60,16 +60,16 @@ void ComputeCullDrawCMD::compile(RenderContext &ctx, Resources &resources) {
         resources.device,
         sizeof(vk::DrawIndexedIndirectCommand) * numDrawCMDsPerFrustum * numFrustums,
         toString(name, "_drawCMD_", i));
-      frame.cmdOffsetPerGroupBuffer = buffer::devStorageBuffer(
-        resources.device, sizeof(uint32_t) * numDrawGroups,
+      frame.cmdOffsetPerShadeModelBuffer = buffer::devStorageBuffer(
+        resources.device, sizeof(uint32_t) * numShadeModels,
         toString(name, "_drawCMDOffset_", i));
-      frame.countOfGroupBuffer = buffer::devIndirectStorageBuffer(
-        resources.device, sizeof(uint32_t) * numDrawGroups * numFrustums,
+      frame.countOfShadeModelBuffer = buffer::devIndirectStorageBuffer(
+        resources.device, sizeof(uint32_t) * numShadeModels * numFrustums,
         toString(name, "_drawGroupCount_", i));
     }
   }
   errorIf(frustums.size() != numFrustums, "number of frustums changed!");
-  errorIf(maxPerGroup.size() != numDrawGroups, "number of draw group changed!");
+  errorIf(maxPerGroup.size() != numShadeModels, "number of draw group changed!");
 
   auto &frame = frames[ctx.frameIndex];
 
@@ -78,41 +78,41 @@ void ComputeCullDrawCMD::compile(RenderContext &ctx, Resources &resources) {
   setDef.primitives(resources.get(passIn.primitives));
   setDef.matrices(resources.get(passIn.matrices));
   setDef.drawCMD(frame.drawCMD->bufferInfo());
-  setDef.cmdOffsetPerGroup(frame.cmdOffsetPerGroupBuffer->bufferInfo());
-  setDef.drawCMDCount(frame.countOfGroupBuffer->bufferInfo());
-  setDef.allowedGroup(allowedGroupBuf->bufferInfo());
+  setDef.cmdOffsetPerGroup(frame.cmdOffsetPerShadeModelBuffer->bufferInfo());
+  setDef.drawCMDCount(frame.countOfShadeModelBuffer->bufferInfo());
+  setDef.allowedShadeModel(allowedShadeModelBuf->bufferInfo());
   setDef.update(frame.set);
 
   {
     uint32_t offset = 0;
-    for(int i = 0; i < numDrawGroups; ++i) {
-      cmdOffsetOfGroupInFrustum[i] = offset;
+    for(int i = 0; i < numShadeModels; ++i) {
+      cmdOffsetOfShadeModelInFrustum[i] = offset;
       offset += maxPerGroup[i];
     }
   }
 
   DrawInfos drawInfos;
-  drawInfos.drawInfo.resize(numFrustums);
+  drawInfos.cmdsPerShadeModel.resize(numFrustums);
 
   auto drawCMDBufInfo = frame.drawCMD->bufferInfo();
-  auto countOfGroupBufInfo = frame.countOfGroupBuffer->bufferInfo();
+  auto countOfGroupBufInfo = frame.countOfShadeModelBuffer->bufferInfo();
   for(int f = 0; f < numFrustums; ++f) {
-    drawInfos.drawInfo[f].resize(numDrawGroups);
+    drawInfos.cmdsPerShadeModel[f].resize(numShadeModels);
     DrawInfo drawInfo;
-    for(int g = 0; g < numDrawGroups; ++g) {
-      drawInfo.drawCMD = {
+    for(int g = 0; g < numShadeModels; ++g) {
+      drawInfo.cmdBuf = {
         drawCMDBufInfo.buffer,
         drawCMDBufInfo.offset +
           sizeof(vk::DrawIndexedIndirectCommand) *
-            (f * numDrawCMDsPerFrustum + cmdOffsetOfGroupInFrustum[g])};
-      drawInfo.drawCMDCount = {
+            (f * numDrawCMDsPerFrustum + cmdOffsetOfShadeModelInFrustum[g])};
+      drawInfo.countBuf = {
         countOfGroupBufInfo.buffer,
-        countOfGroupBufInfo.offset + sizeof(uint32_t) * (f * numDrawGroups + g)};
+        countOfGroupBufInfo.offset + sizeof(uint32_t) * (f * numShadeModels + g)};
       drawInfo.maxCount = maxPerGroup[g];
-      drawInfos.drawInfo[f][g] = drawInfo;
+      drawInfos.cmdsPerShadeModel[f][g] = drawInfo;
     }
   }
-  resources.set(passOut.drawInfos, drawInfos);
+  resources.set(passOut.drawCMDs, drawInfos);
 }
 void ComputeCullDrawCMD::execute(RenderContext &ctx, Resources &resources) {
   auto totalMeshInstances = resources.get(passIn.meshInstancesCount);
@@ -128,14 +128,14 @@ void ComputeCullDrawCMD::execute(RenderContext &ctx, Resources &resources) {
   auto bufInfo = frame.frustumsBuf->bufferInfo();
   cb.updateBuffer(bufInfo.buffer, bufInfo.offset, frustums.size_bytes(), frustums.data());
 
-  bufInfo = frame.cmdOffsetPerGroupBuffer->bufferInfo();
+  bufInfo = frame.cmdOffsetPerShadeModelBuffer->bufferInfo();
   cb.updateBuffer(
-    bufInfo.buffer, bufInfo.offset, sizeof(uint32_t) * cmdOffsetOfGroupInFrustum.size(),
-    cmdOffsetOfGroupInFrustum.data());
+    bufInfo.buffer, bufInfo.offset, sizeof(uint32_t) * cmdOffsetOfShadeModelInFrustum.size(),
+    cmdOffsetOfShadeModelInFrustum.data());
 
-  bufInfo = frame.countOfGroupBuffer->bufferInfo();
+  bufInfo = frame.countOfShadeModelBuffer->bufferInfo();
   cb.fillBuffer(
-    bufInfo.buffer, bufInfo.offset, sizeof(uint32_t) * numFrustums * numDrawGroups, 0u);
+    bufInfo.buffer, bufInfo.offset, sizeof(uint32_t) * numFrustums * numShadeModels, 0u);
 
   cb.pipelineBarrier(
     vk::PipelineStageFlagBits::eTransfer, vk::PipelineStageFlagBits::eComputeShader, {},
@@ -162,7 +162,7 @@ void ComputeCullDrawCMD::execute(RenderContext &ctx, Resources &resources) {
     .totalFrustums = numFrustums,
     .totalMeshInstances = totalMeshInstances,
     .cmdFrustumStride = numDrawCMDsPerFrustum,
-    .groupStride = numDrawGroups,
+    .groupStride = numShadeModels,
     .frame = ctx.frameIndex,
   };
   cb.pushConstants<PushConstant>(

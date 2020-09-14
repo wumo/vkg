@@ -29,7 +29,7 @@ struct SceneSetupPassOut {
   FrameGraphResource<std::span<vk::DescriptorImageInfo>> samplers;
   FrameGraphResource<uint32_t> numValidSampler;
   FrameGraphResource<Camera *> camera;
-  FrameGraphResource<std::span<uint32_t>> maxPerGroup;
+  FrameGraphResource<std::span<uint32_t>> maxPerShadeModel;
   FrameGraphResource<AtmosphereSetting> atmosphereSetting;
   FrameGraphResource<ShadowMapSetting> shadowMapSetting;
 };
@@ -57,7 +57,7 @@ public:
       .samplers = builder.create<std::span<vk::DescriptorImageInfo>>("textures"),
       .numValidSampler = builder.create<uint32_t>("numValidSampler"),
       .camera = builder.create<Camera *>("camera"),
-      .maxPerGroup = builder.create<std::span<uint32_t>>("drawGroupCount"),
+      .maxPerShadeModel = builder.create<std::span<uint32_t>>("drawGroupCount"),
       .atmosphereSetting = builder.create<AtmosphereSetting>("atmosphere"),
       .shadowMapSetting = builder.create<ShadowMapSetting>("shadowMapSetting"),
     };
@@ -151,7 +151,7 @@ public:
     }
 
     resources.set(passOut.meshInstancesCount, scene.Dev.meshInstances->count());
-    resources.set(passOut.maxPerGroup, {scene.Host.drawGroupInstCount});
+    resources.set(passOut.maxPerShadeModel, {scene.Host.shadeModelCount});
     resources.set(passOut.backImg, backImgs[ctx.frameIndex]);
   }
 
@@ -196,7 +196,7 @@ void Scene::setup(PassBuilder &builder) {
                       sceneSetupOut.numValidSampler,
                       sceneSetupOut.lighting,
                       sceneSetupOut.lights,
-                      sceneSetupOut.maxPerGroup,
+                      sceneSetupOut.maxPerShadeModel,
                       sceneSetupOut.atmosphereSetting,
                       atmosphere.out(),
                     });
@@ -216,7 +216,7 @@ void Scene::setup(PassBuilder &builder) {
                      sceneSetupOut.indices,
                      sceneSetupOut.primitives,
                      transf.out().matrices,
-                     sceneSetupOut.maxPerGroup,
+                     sceneSetupOut.maxPerShadeModel,
                    });
     shadowMap.enableIf([&]() { return Host.shadowMap.isEnabled(); });
 
@@ -237,7 +237,7 @@ void Scene::setup(PassBuilder &builder) {
                    sceneSetupOut.numValidSampler,
                    sceneSetupOut.lighting,
                    sceneSetupOut.lights,
-                   sceneSetupOut.maxPerGroup,
+                   sceneSetupOut.maxPerShadeModel,
                    sceneSetupOut.atmosphereSetting,
                    atmosphere.out(),
                    sceneSetupOut.shadowMapSetting,

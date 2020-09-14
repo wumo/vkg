@@ -165,11 +165,11 @@ void ShadowMapPass::setup(PassBuilder &builder) {
      .sceneConfig = passIn.sceneConfig,
      .primitives = passIn.primitives,
      .matrices = passIn.matrices,
-     .maxPerGroup = passIn.maxPerGroup},
+     .maxPerShadeModel = passIn.maxPerShadeModel},
     std::set{
-      DrawGroup::BRDF,
-      DrawGroup::Reflective,
-      DrawGroup::Refractive,
+      ShadeModel::BRDF,
+      ShadeModel::Reflective,
+      ShadeModel::Refractive,
     });
 
   cullPassOut = cull.out();
@@ -333,7 +333,7 @@ auto ShadowMapPass::createPipeline(Device &device, ShadowMapSetting &setting) ->
 void ShadowMapPass::execute(RenderContext &ctx, Resources &resources) {
   auto cb = ctx.cb;
 
-  auto drawInfos = resources.get(cullPassOut.drawInfos);
+  auto drawInfos = resources.get(cullPassOut.drawCMDs);
   auto setting = resources.get(passIn.shadowMapSetting);
 
   auto &frame = frames[ctx.frameIndex];
@@ -368,13 +368,13 @@ void ShadowMapPass::execute(RenderContext &ctx, Resources &resources) {
   bufInfo = resources.get(passIn.indices);
   cb.bindIndexBuffer(bufInfo.buffer, bufInfo.offset, vk::IndexType::eUint32);
 
-  auto draw = [&](uint32_t frustumIdx, DrawGroup drawGroup) {
-    auto drawGroupIdx = value(drawGroup);
-    auto drawInfo = drawInfos.drawInfo[frustumIdx][drawGroupIdx];
+  auto draw = [&](uint32_t frustumIdx, ShadeModel shadeModel) {
+    auto shadeModelIdx = value(shadeModel);
+    auto drawInfo = drawInfos.cmdsPerShadeModel[frustumIdx][shadeModelIdx];
     if(drawInfo.maxCount == 0) return;
     cb.drawIndexedIndirectCount(
-      drawInfo.drawCMD.buffer, drawInfo.drawCMD.offset, drawInfo.drawCMDCount.buffer,
-      drawInfo.drawCMDCount.offset, drawInfo.maxCount, drawInfo.stride);
+      drawInfo.cmdBuf.buffer, drawInfo.cmdBuf.offset, drawInfo.countBuf.buffer,
+      drawInfo.countBuf.offset, drawInfo.maxCount, drawInfo.stride);
   };
   for(auto i = 0u; i < setting.numCascades(); ++i) {
     pushContant.cascadeIndex = i;
@@ -382,9 +382,9 @@ void ShadowMapPass::execute(RenderContext &ctx, Resources &resources) {
       calcPipeDef.layout(), vk::ShaderStageFlagBits::eVertex, 0, pushContant);
 
     cb.bindPipeline(vk::PipelineBindPoint::eGraphics, *pipes[i]);
-    draw(i, DrawGroup::BRDF);
-    draw(i, DrawGroup::Reflective);
-    draw(i, DrawGroup::Refractive);
+    draw(i, ShadeModel::BRDF);
+    draw(i, ShadeModel::Reflective);
+    draw(i, ShadeModel::Refractive);
     if(i + 1 < setting.numCascades()) cb.nextSubpass(vk::SubpassContents::eInline);
   }
   cb.endRenderPass();

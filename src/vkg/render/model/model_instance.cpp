@@ -21,13 +21,10 @@ ModelInstance::ModelInstance(
       auto meshInsDesc = scene.allocateMeshInstDesc();
       auto drawGroup = scene.addToDrawGroup(meshId);
       *meshInsDesc.ptr = {
-        material.descOffset(),
-        material.count(),
-        primitive.descOffset(),
-        primitive.count(),
+        {material.descOffset(), material.count()},
+        {primitive.descOffset(), primitive.count()},
         node.transfOffset(),
-        transfs[0].offset,
-        uint32_t(transfs.size()),
+        {transfs[0].offset, uint32_t(transfs.size())},
         true,
         drawGroup};
       meshInstDescs.push_back({drawGroup, meshInsDesc});
@@ -44,7 +41,7 @@ auto ModelInstance::setVisible(bool visible) -> void {
   visible_ = visible;
   for(auto &inst: meshInstDescs) {
     inst.desc.ptr->visible = visible;
-    scene.setVisible(inst.drawGroupID, visible);
+    scene.setVisible(inst.shadeModel, visible);
   }
 }
 auto ModelInstance::setTransform(const Transform &transform) -> void {
@@ -64,19 +61,19 @@ auto ModelInstance::changeModel(uint32_t model) -> void {
         scene.material(customMatId != nullIdx ? customMatId : mesh.material());
 
       auto meshInsDesc = meshInstDescs.at(meshInsDescIdx++);
-      meshInsDesc.drawGroupID = scene.addToDrawGroup(meshId, meshInsDesc.drawGroupID);
+      meshInsDesc.shadeModel = scene.addToDrawGroup(meshId, meshInsDesc.shadeModel);
       *meshInsDesc.desc.ptr = {material.descOffset(),    material.count(),
                                primitive.descOffset(),   primitive.count(),
                                node.transfOffset(),      transfs[0].offset,
                                uint32_t(transfs.size()), visible_,
-                               meshInsDesc.drawGroupID};
+                               meshInsDesc.shadeModel};
     }
 }
 auto ModelInstance::setCustomMaterial(uint32_t materialId) -> void {
   if(materialId != nullIdx) {
     auto &mat = scene.material(materialId);
     for(auto &inst: meshInstDescs)
-      inst.desc.ptr->materialDescIdx = mat.descOffset();
+      inst.desc.ptr->materialDesc.idx = mat.descOffset();
   } else {
     auto meshInsDescIdx = 0;
     for(auto &m = scene.model(model_); const auto &nodeId: m.nodes())
@@ -88,10 +85,10 @@ auto ModelInstance::setCustomMaterial(uint32_t materialId) -> void {
 
         //TODO check
         auto meshInsDesc = meshInstDescs.at(meshInsDescIdx++);
-        meshInsDesc.drawGroupID = scene.addToDrawGroup(meshId, meshInsDesc.drawGroupID);
-        meshInsDesc.desc.ptr->materialDescIdx = material.descOffset();
-        meshInsDesc.desc.ptr->materialCount = material.count();
-        meshInsDesc.desc.ptr->drawGroupID = meshInsDesc.drawGroupID;
+        meshInsDesc.shadeModel = scene.addToDrawGroup(meshId, meshInsDesc.shadeModel);
+        meshInsDesc.desc.ptr->materialDesc.idx = material.descOffset();
+        meshInsDesc.desc.ptr->materialDesc.count = material.count();
+        meshInsDesc.desc.ptr->shadeModel = meshInsDesc.shadeModel;
       }
   }
   customMatId = materialId;

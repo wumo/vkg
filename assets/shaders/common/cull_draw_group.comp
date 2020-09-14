@@ -47,12 +47,11 @@ void main() {
   MeshInstanceDesc mesh = meshInstances[id];
 
   if(
-    !mesh.visible || mesh.drawGroupID == DrawGroupUnknown ||
-    !allowedGroup[mesh.drawGroupID])
+    !mesh.visible || mesh.shadeModel == ShadingModelUnknown ||
+    !allowedGroup[mesh.shadeModel])
     return;
 
-  uint primitiveOffset = clamp(frame, 0, mesh.primitiveCount - 1);
-  PrimitiveDesc prim = primitives[mesh.primitive + primitiveOffset];
+  PrimitiveDesc prim = primitives[frameRef(mesh.primitive, frame)];
   AABB aabb = prim.aabb;
   mat4 model = matrices[id];
   transformAABB(aabb, model);
@@ -68,10 +67,10 @@ void main() {
     drawCMD.firstInstance = id;
     drawCMD.instanceCount = 1;
 
-    uint groupID = mesh.drawGroupID;
-    uint groupIdx = atomicAdd(drawCMDCount[frustumIdx * groupStride + groupID], 1);
-    uint groupOffset = cmdOffsetPerGroup[groupID];
-    uint cmdIdx = frustumIdx * cmdFrustumStride + groupOffset + groupIdx;
+    uint shadeModelID = mesh.shadeModel;
+    uint shadeModelIdx = atomicAdd(drawCMDCount[frustumIdx * groupStride + shadeModelID], 1);
+    uint shadeModelOffset = cmdOffsetPerGroup[shadeModelID];
+    uint cmdIdx = frustumIdx * cmdFrustumStride + shadeModelOffset + shadeModelIdx;
     drawCMDs[cmdIdx] = drawCMD;
   }
 }
