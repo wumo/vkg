@@ -5,7 +5,7 @@ using namespace vkg;
 
 auto main() -> int {
   WindowConfig windowConfig{};
-  FeatureConfig featureConfig{.numFrames = 2, .rayTrace = false};
+  FeatureConfig featureConfig{.numFrames = 2, .rayTrace = true};
   Renderer app{windowConfig, featureConfig};
   SceneConfig sceneConfig{
     .maxNumTransforms = 100'0000,
@@ -177,7 +177,7 @@ auto main() -> int {
   {
     std::string name = "DamagedHelmet";
     animModel =
-      scene.loadModel("assets/glTF-models/2.0/" + name + "/glTF/" + name + ".gltf");
+      scene.loadModel("assets/glTF-models/2.0/" + name + "/glTF/" + name + ".gltf",MaterialType::eReflective);
 
     auto &model = scene.model(animModel);
     auto aabb = model.aabb();

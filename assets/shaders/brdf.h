@@ -170,6 +170,11 @@ vec3 brdf(vec3 rayDir, MaterialInfo materialInfo, vec3 normal, vec3 view, out ve
   return vec3(0.0, 0.0, 0.0);
 }
 
+vec3 fresnelReflectance(MaterialInfo materialInfo, vec3 rayDir, vec3 normal, vec3 view) {
+  AngularInfo angularInfo = getAngularInfo(rayDir, normal, view);
+  return specularReflection(materialInfo, angularInfo);
+}
+
 // Utility function to get a vector perpendicular to an input vector
 //    (from "Efficient Construction of Perpendicular Vectors Without Branching")
 vec3 getPerpendicularStark(vec3 u) {

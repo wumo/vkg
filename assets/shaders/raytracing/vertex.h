@@ -150,26 +150,6 @@ void getMaterialInfo(
                      vec4(1, 1, 1, 1);
   baseColor = material.baseColorFactor * baseColor;
 
-  //  materialInfo.diffuseColor = baseColor.rgb;
-  //  if(material.colorTex != nullIdx) {
-  //    float lod = texLodRayCone(material.colorTex, lambda);
-  //
-  //    if(lod <= 1) materialInfo.diffuseColor = vec3(1, 0, 0);
-  //    else if(lod < 2)
-  //      materialInfo.diffuseColor = vec3(0, 1, 0);
-  //    else if(lod < 3)
-  //      materialInfo.diffuseColor = vec3(0, 0, 1);
-  //    else if(lod < 4)
-  //      materialInfo.diffuseColor = vec3(1, 1, 0);
-  //    else if(lod < 5)
-  //      materialInfo.diffuseColor = vec3(0, 1, 1);
-  //    else if(lod < 6)
-  //      materialInfo.diffuseColor = vec3(1, 0, 1);
-  //    else
-  //      materialInfo.diffuseColor = vec3(lod / 10.0);
-  //  }
-  //  return;
-
   if(material.type == MaterialType_None) {
     materialInfo.diffuseColor = baseColor.rgb;
     return;

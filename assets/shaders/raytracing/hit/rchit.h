@@ -125,7 +125,9 @@ void main() {
 #ifdef SHADING_REFLECTIVE
   prd.direction = reflect(gl_WorldRayDirectionNV, state.normal);
   prd.origin = offsetRayUE5(state.pos, state.geom_normal, prd.direction);
-  prd.attenuation *= materialInfo.specularColor; //TODO may not be right
+  vec3 F = fresnelReflectance(materialInfo, -prd.direction, state.normal, viewDir);
+  prd.attenuation *= F * materialInfo.diffuseColor +
+                     (1 - F) * materialInfo.specularColor; //TODO may not be right
   prd.done = 0;
 #else
   prd.done = 1;
