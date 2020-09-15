@@ -104,11 +104,6 @@ void Base::loop(const std::function<void(uint32_t, double)> &updater) {
   onInit();
   auto start = std::chrono::high_resolution_clock::now();
   while(!window_->windowShouldClose()) {
-#ifndef NDEBUG
-    window_->setWindowTitle(toString(
-      "FPS: ", fpsMeter_.fps(), " Frame Time: ", std::round(fpsMeter_.frameTime()),
-      " ms"));
-#endif
     window_->pollEvents();
     if(window_->resizeWanted()) {
       resize();

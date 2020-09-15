@@ -5,7 +5,7 @@ using namespace vkg;
 
 auto main() -> int {
   WindowConfig windowConfig{};
-  FeatureConfig featureConfig{.numFrames = 3, .rayTrace = true};
+  FeatureConfig featureConfig{.numFrames = 2, .rayTrace = false};
   Renderer app{windowConfig, featureConfig};
   SceneConfig sceneConfig{
     .maxNumTransforms = 100'0000,
@@ -329,8 +329,12 @@ auto main() -> int {
   camera.setZFar(1e9);
   PanningCamera panningCamera{camera};
   bool pressed{false};
+  auto &fpsMeter = app.fpsMeter();
   app.loop([&](uint32_t frameIdx, double elapsed) {
     static auto lastChange = std::chrono::high_resolution_clock::now();
+
+    app.window().setWindowTitle(toString(
+      "FPS: ", fpsMeter.fps(), " Frame Time: ", std::round(fpsMeter.frameTime()), " ms"));
 
     panningCamera.update(input);
     {
