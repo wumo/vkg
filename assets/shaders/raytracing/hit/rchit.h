@@ -120,7 +120,7 @@ void main() {
   color += materialInfo.emissive;
 
   color *= prd.attenuation;
-  prd.radiance += color;
+  prd.radiance = color;
 
 #ifdef SHADING_REFLECTIVE
   prd.direction = reflect(gl_WorldRayDirectionNV, state.normal);

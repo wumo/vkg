@@ -47,20 +47,29 @@ auto main() -> int {
   }
 
   {
-    std::string name = "MetalRoughSpheres";
-    auto modelId = scene.loadModel(
-      "assets/glTF-models/2.0/" + name + "/glTF/" + name + ".gltf",
-      MaterialType::eReflective);
-    auto &model = scene.model(modelId);
-    auto aabb = model.aabb();
-    auto range = aabb.max - aabb.min;
-    auto scale = 10 / std::max(std::max(range.x, range.y), range.z);
-    auto center = aabb.center();
-    auto halfRange = aabb.halfRange();
-    Transform t{
-      {-center * scale + glm::vec3{0, scale * range.y / 2.f, 0}}, glm::vec3{scale}};
-    //  t.translation = -center;
-    scene.newModelInstance(modelId, t, false);
+    // brdf
+    auto primitive =
+      scene.newPrimitives(PrimitiveBuilder().sphere({}, 2.f).newPrimitive())[0];
+    auto &refractiveMat = scene.material(scene.newMaterial(MaterialType::eRefractive));
+    refractiveMat.setColorFactor({White, 1.f}).setPbrFactor({0, 0.3, 0.4, 0});
+    auto mesh2 = scene.newMesh(primitive, refractiveMat.id());
+    auto node2 = scene.newNode(Transform{{0, 0, 0}});
+    scene.node(node2).addMeshes({mesh2});
+    auto sphere = scene.newModel({node2});
+
+    for(int i = 0; i <= 10; ++i) {
+      float roughness = i * 0.1f;
+      for(int j = 0; j <= 10; ++j) {
+        float metallic = j * 0.1f;
+        auto &refractiveMat =
+          scene.material(scene.newMaterial(MaterialType::eRefractive));
+        refractiveMat.setColorFactor({White, 1.f})
+          .setPbrFactor({0, roughness, metallic, 0});
+        auto ins = scene.modelInstance(scene.newModelInstance(
+          sphere, Transform{glm::vec3{-20 + 5.f * i, -20 + 5.f * j, 0.f}}));
+        ins.setCustomMaterial(refractiveMat.id());
+      }
+    }
   }
 
   auto &input = app.window().input();
@@ -77,10 +86,10 @@ auto main() -> int {
       "FPS: ", fpsMeter.fps(), " Frame Time: ", std::round(fpsMeter.frameTime()), " ms"));
 
     panningCamera.update(input);
-//    auto loc = camera.location();
-//    println(
-//      "camera loc:", glm::to_string(loc),
-//      " camera dir:", glm::to_string(camera.direction()));
+    //    auto loc = camera.location();
+    //    println(
+    //      "camera loc:", glm::to_string(loc),
+    //      " camera dir:", glm::to_string(camera.direction()));
   });
   return 0;
 }

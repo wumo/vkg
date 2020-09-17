@@ -88,6 +88,7 @@ void main() {
       if(prd.done != 0) break;
       ray.origin = prd.origin;
       ray.direction = prd.direction;
+      prd.radiance = vec3(0);
     }
     hitValue += result;
   }

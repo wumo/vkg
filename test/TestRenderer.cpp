@@ -106,11 +106,11 @@ auto main() -> int {
                             .newPrimitive()
                             .line({0, 0, 4}, {4, 0, 0})
                             .newPrimitive(PrimitiveTopology::Lines));
-    auto &pbrMat = scene.material(scene.newMaterial(MaterialType::eBRDF));
+    auto &pbrMat = scene.material(scene.newMaterial(MaterialType::eReflective));
     auto gridTex = scene.newTexture("./assets/grid.png");
     pbrMat.setColorTex(gridTex).setPbrFactor({0, 1, 0, 0});
     auto mesh = scene.newMesh(primitives[0], pbrMat.id());
-    auto node = scene.newNode(Transform{{1, 0, 1}});
+    auto node = scene.newNode(Transform{{0, 0, 0}});
     scene.node(node).addMeshes({mesh});
     auto model = scene.newModel({node});
     scene.newModelInstance(model);
@@ -229,22 +229,22 @@ auto main() -> int {
     }
   }
 
-  {
-    std::string name = "MetalRoughSpheres";
-    auto modelId = scene.loadModel(
-      "assets/glTF-models/2.0/" + name + "/glTF/" + name + ".gltf",
-      MaterialType::eReflective);
-    auto &model = scene.model(modelId);
-    auto aabb = model.aabb();
-    auto range = aabb.max - aabb.min;
-    auto scale = 200 / std::max(std::max(range.x, range.y), range.z);
-    auto center = aabb.center();
-    auto halfRange = aabb.halfRange();
-    Transform t{
-      {-center * scale + glm::vec3{100, scale * range.y / 2.f, -200}}, glm::vec3{scale}};
-    //  t.translation = -center;
-    scene.newModelInstance(modelId, t, false);
-  }
+//  {
+//    std::string name = "MetalRoughSpheres";
+//    auto modelId = scene.loadModel(
+//      "assets/glTF-models/2.0/" + name + "/glTF/" + name + ".gltf",
+//      MaterialType::eReflective);
+//    auto &model = scene.model(modelId);
+//    auto aabb = model.aabb();
+//    auto range = aabb.max - aabb.min;
+//    auto scale = 200 / std::max(std::max(range.x, range.y), range.z);
+//    auto center = aabb.center();
+//    auto halfRange = aabb.halfRange();
+//    Transform t{
+//      {-center * scale + glm::vec3{100, scale * range.y / 2.f, -200}}, glm::vec3{scale}};
+//    //  t.translation = -center;
+//    scene.newModelInstance(modelId, t, false);
+//  }
 
   //  { //parallel mirror
   //    auto primitive = scene.newPrimitives(
@@ -368,7 +368,7 @@ auto main() -> int {
       pressed = false;
     }
     auto &sky = scene.atmosphere();
-    //    sky.setSunDirection(sunDirection(elapsed / 1000));
+    sky.setSunDirection(sunDirection(elapsed / 1000));
     auto tStart = std::chrono::high_resolution_clock::now();
     for(auto insId: insts) {
       auto &ins = scene.modelInstance(insId);
