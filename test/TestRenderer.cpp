@@ -15,7 +15,7 @@ auto main() -> int {
 
   auto kPi = glm::pi<float>();
   float seasonAngle = kPi / 4;
-  float sunAngle = 0;
+  float sunAngle = kPi / 4;
   float angularVelocity = kPi / 20;
   auto sunDirection = [&](float dt) {
     sunAngle += angularVelocity * dt;
@@ -28,7 +28,7 @@ auto main() -> int {
   auto sunDir = sunDirection(1);
   auto &sky = scene.atmosphere();
   sky.enable(true);
-  sky.setSunIntensity(10);
+  sky.setSunIntensity(2);
   sky.setSunDirection(sunDir);
 
   scene.shadowmap().enable(true);
@@ -56,18 +56,18 @@ auto main() -> int {
   auto texMat = scene.newMaterial(MaterialType::eBRDF);
   scene.material(texMat).setColorTex(colorTex).setPbrFactor({0, 0.3, 0.4, 0});
 
-  auto primitives =
-    scene.newPrimitives(PrimitiveBuilder().axis({}, 10.f, 0.1f, 0.5f, 50).newPrimitive());
+  {
+    auto primitives = scene.newPrimitives(
+      PrimitiveBuilder().axis({}, 10.f, 0.1f, 0.5f, 50).newPrimitive());
 
-  auto originMesh = scene.newMesh(primitives[0], yellowMat);
-  auto xMesh = scene.newMesh(primitives[1], redMat);
-  auto yMesh = scene.newMesh(primitives[2], greenMat);
-  auto zMesh = scene.newMesh(primitives[3], blueMat);
-  auto axisNode = scene.newNode();
-  scene.node(axisNode).addMeshes({originMesh, xMesh, yMesh, zMesh});
-  auto axisModel = scene.newModel({axisNode});
+    auto originMesh = scene.newMesh(primitives[0], yellowMat);
+    auto xMesh = scene.newMesh(primitives[1], redMat);
+    auto yMesh = scene.newMesh(primitives[2], greenMat);
+    auto zMesh = scene.newMesh(primitives[3], blueMat);
+    auto axisNode = scene.newNode();
+    scene.node(axisNode).addMeshes({originMesh, xMesh, yMesh, zMesh});
+    auto axisModel = scene.newModel({axisNode});
 
-  for(int i = 0; i < 1; ++i) {
     scene.newModelInstance(axisModel);
   }
 
@@ -176,8 +176,9 @@ auto main() -> int {
   std::vector<uint32_t> insts;
   {
     std::string name = "DamagedHelmet";
-    animModel =
-      scene.loadModel("assets/glTF-models/2.0/" + name + "/glTF/" + name + ".gltf",MaterialType::eReflective);
+    animModel = scene.loadModel(
+      "assets/glTF-models/2.0/" + name + "/glTF/" + name + ".gltf",
+      MaterialType::eReflective);
 
     auto &model = scene.model(animModel);
     auto aabb = model.aabb();
@@ -228,20 +229,34 @@ auto main() -> int {
     }
   }
 
-  //  {
-  //    std::string name = "Sponza";
-  //    auto modelId =
-  //      scene.loadModel("assets/glTF-models/2.0/" + name + "/glTF/" + name + ".gltf");
-  //    auto &model = scene.model(modelId);
-  //    auto aabb = model.aabb();
-  //    auto range = aabb.max - aabb.min;
-  //    auto scale = 200 / std::max(std::max(range.x, range.y), range.z);
-  //    auto center = aabb.center();
-  //    auto halfRange = aabb.halfRange();
-  //    Transform t{
-  //      {-center * scale + glm::vec3{100, scale * range.y / 2.f, 100}}, glm::vec3{scale}};
-  //    //  t.translation = -center;
-  //    scene.newModelInstance(modelId, t, false);
+  {
+    std::string name = "MetalRoughSpheres";
+    auto modelId = scene.loadModel(
+      "assets/glTF-models/2.0/" + name + "/glTF/" + name + ".gltf",
+      MaterialType::eReflective);
+    auto &model = scene.model(modelId);
+    auto aabb = model.aabb();
+    auto range = aabb.max - aabb.min;
+    auto scale = 200 / std::max(std::max(range.x, range.y), range.z);
+    auto center = aabb.center();
+    auto halfRange = aabb.halfRange();
+    Transform t{
+      {-center * scale + glm::vec3{100, scale * range.y / 2.f, -200}}, glm::vec3{scale}};
+    //  t.translation = -center;
+    scene.newModelInstance(modelId, t, false);
+  }
+
+  //  { //parallel mirror
+  //    auto primitive = scene.newPrimitives(
+  //      PrimitiveBuilder().rectangle({0, 1, 0}, {16, 0, 16}, {0, 16*std::sqrt(2), 0}).newPrimitive())[0];
+  //    auto &reflectiveMat = scene.material(scene.newMaterial(MaterialType::eReflective));
+  //    reflectiveMat.setColorFactor({White, 1.f}).setPbrFactor({0, 0.3, 0.5, 0});
+  //    auto mesh = scene.newMesh(primitive, reflectiveMat.id());
+  //    auto node = scene.newNode();
+  //    scene.node(node).addMeshes({mesh});
+  //    auto model = scene.newModel({node});
+  //    scene.newModelInstance(model, Transform{{0, 0, -30}});
+  //    scene.newModelInstance(model, Transform{{-30, 0, 0}});
   //  }
 
   std::vector<uint32_t> balls;
@@ -353,7 +368,7 @@ auto main() -> int {
       pressed = false;
     }
     auto &sky = scene.atmosphere();
-    sky.setSunDirection(sunDirection(elapsed / 1000));
+    //    sky.setSunDirection(sunDirection(elapsed / 1000));
     auto tStart = std::chrono::high_resolution_clock::now();
     for(auto insId: insts) {
       auto &ins = scene.modelInstance(insId);

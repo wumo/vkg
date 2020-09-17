@@ -51,7 +51,7 @@ vec3 toneMapACES(vec3 color) {
     clamp((color * (A * color + B)) / (color * (C * color + D) + E), 0.0, 1.0));
 }
 
-#define TONEMAP_UNCHARTED
+//#define TONEMAP_ACES
 
 vec4 toneMap(vec4 color, float exposure) {
   color *= exposure;
