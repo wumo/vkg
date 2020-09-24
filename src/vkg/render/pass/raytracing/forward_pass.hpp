@@ -41,7 +41,8 @@ private:
   void createCopyDepthPass(Device &device, SceneConfig &sceneConfig);
   void createOpaquePass(Device &device, SceneConfig &sceneConfig);
   void createTransparentPass(Device &device, SceneConfig &sceneConfig);
-  
+  void createCompositePass(Device &device, SceneConfig &sceneConfig);
+
   ComputeCullDrawCMDPassOut cullPassOut;
 
   struct SceneSetDef: DescriptorSetDef {
@@ -67,7 +68,7 @@ private:
 
   bool init{false};
 
-  uint32_t copyDepthPass{}, opaquePass, transparentPass{};
+  uint32_t copyDepthPass{}, opaquePass, transparentPass{}, compositePass{};
   vk::UniqueRenderPass renderPass;
   vk::UniquePipeline copyDepthPipe, opaqueLinesPipe, transparentPipe,
     transparentLinesPipe;
@@ -75,7 +76,7 @@ private:
   vk::UniqueDescriptorPool descriptorPool;
   struct FrameResource {
     Texture *backImg;
-    std::unique_ptr<Texture> depthAtt;
+    std::unique_ptr<Texture> depthAtt, transColorAtt, revealAtt;
     uint64_t lastNumValidSampler{0};
     vk::DescriptorSet sceneSet;
     vk::UniqueFramebuffer framebuffer;

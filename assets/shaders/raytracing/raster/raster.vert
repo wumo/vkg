@@ -8,6 +8,7 @@ layout(location = 2) in vec2 inUV0;
 
 layout(location = 0) out vec2 outUV0;
 layout(location = 1) out flat uint outMaterialID;
+layout(location = 2) out float outDepth;
 
 layout(push_constant) uniform PushConstant { uint frame; };
 
@@ -17,6 +18,7 @@ void main() {
   vec4 pos = model * vec4(inPos, 1.0);
   pos = pos / pos.w;
   outUV0 = inUV0;
-  outMaterialID =frameRef(mesh.material, frame);
+  outMaterialID = frameRef(mesh.material, frame);
   gl_Position = camera.projView * pos;
+  outDepth = (camera.view * pos).z;
 }

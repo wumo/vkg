@@ -84,12 +84,22 @@ void ForwardPass::compile(vkg::RenderContext &ctx, vkg::Resources &resources) {
     frame.backImg = backImg;
     auto w = frame.backImg->extent().width;
     auto h = frame.backImg->extent().height;
+    using vkUsage = vk::ImageUsageFlagBits;
+    frame.transColorAtt = image::make2DTex(
+      toString("transColorAtt", ctx.frameIndex), ctx.device, w, h,
+      vkUsage::eColorAttachment, vk::Format::eR16G16B16A16Sfloat,
+      vk::SampleCountFlagBits::e1, vk::ImageAspectFlagBits::eColor);
+    frame.revealAtt = image::make2DTex(
+      toString("revelAtt", ctx.frameIndex), ctx.device, w, h, vkUsage::eColorAttachment,
+      vk::Format::eR16Sfloat, vk::SampleCountFlagBits::e1,
+      vk::ImageAspectFlagBits::eColor);
     frame.depthAtt = image::make2DTex(
       toString("depthAtt", ctx.frameIndex), ctx.device, w, h,
-      vk::ImageUsageFlagBits::eDepthStencilAttachment, vk::Format::eD32Sfloat,
+      vkUsage::eDepthStencilAttachment, vk::Format::eD32Sfloat,
       vk::SampleCountFlagBits::e1, vk::ImageAspectFlagBits::eDepth);
     std::vector<vk::ImageView> attachments = {
-      frame.backImg->imageView(), frame.depthAtt->imageView()};
+      frame.backImg->imageView(), frame.transColorAtt->imageView(),
+      frame.revealAtt->imageView(), frame.depthAtt->imageView()};
     vk::FramebufferCreateInfo info{
       {}, *renderPass, uint32_t(attachments.size()), attachments.data(), w, h, 1};
     frame.framebuffer = ctx.device.vkDevice().createFramebufferUnique(info);
@@ -119,6 +129,16 @@ void ForwardPass::createRenderPass(Device &device, vk::Format format) {
                  .initialLayout(vk::ImageLayout::eColorAttachmentOptimal)
                  .finalLayout(vk::ImageLayout::eColorAttachmentOptimal)
                  .index();
+  auto transColor = maker.attachmentCopy(color)
+                      .format(vk::Format::eR16G16B16A16Sfloat)
+                      .loadOp(vk::AttachmentLoadOp::eClear)
+                      .storeOp(vk::AttachmentStoreOp::eDontCare)
+                      .index();
+  auto reveal = maker.attachmentCopy(transColor)
+                  .format(vk::Format::eR16Sfloat)
+                  .loadOp(vk::AttachmentLoadOp::eClear)
+                  .storeOp(vk::AttachmentStoreOp::eDontCare)
+                  .index();
   auto depth = maker.attachmentCopy(color)
                  .format(vk::Format::eD32Sfloat)
                  .loadOp(vk::AttachmentLoadOp::eDontCare)
@@ -133,9 +153,15 @@ void ForwardPass::createRenderPass(Device &device, vk::Format format) {
                  .depthStencil(depth)
                  .index();
   transparentPass = maker.subpass(vk::PipelineBindPoint::eGraphics)
-                      .color(color)
+                      .color(transColor)
+                      .color(reveal)
                       .depthStencil(depth)
                       .index();
+  compositePass = maker.subpass(vk::PipelineBindPoint::eGraphics)
+                    .input(transColor)
+                    .input(reveal)
+                    .color(color)
+                    .index();
   maker.dependency(VK_SUBPASS_EXTERNAL, copyDepthPass)
     .srcStage(vk::PipelineStageFlagBits::eBottomOfPipe)
     .dstStage(vk::PipelineStageFlagBits::eColorAttachmentOutput)
@@ -158,7 +184,13 @@ void ForwardPass::createRenderPass(Device &device, vk::Format format) {
     .srcAccess(vk::AccessFlagBits::eColorAttachmentWrite)
     .dstAccess(vk::AccessFlagBits::eDepthStencilAttachmentRead)
     .flags(vk::DependencyFlagBits::eByRegion);
-  maker.dependency(transparentPass, VK_SUBPASS_EXTERNAL)
+  maker.dependency(transparentPass, compositePass)
+    .srcStage(vk::PipelineStageFlagBits::eColorAttachmentOutput)
+    .dstStage(vk::PipelineStageFlagBits::eFragmentShader)
+    .srcAccess(vk::AccessFlagBits::eColorAttachmentWrite)
+    .dstAccess(vk::AccessFlagBits::eInputAttachmentRead)
+    .flags(vk::DependencyFlagBits::eByRegion);
+  maker.dependency(compositePass, VK_SUBPASS_EXTERNAL)
     .srcStage(vk::PipelineStageFlagBits::eColorAttachmentOutput)
     .dstStage(vk::PipelineStageFlagBits::eBottomOfPipe)
     .srcAccess(vk::AccessFlagBits::eColorAttachmentWrite)
@@ -254,10 +286,21 @@ void ForwardPass::createTransparentPass(Device &device, SceneConfig &sceneConfig
     .dynamicState(vk::DynamicState::eScissor);
 
   maker.blendColorAttachment(true)
-    .srcColorBlendFactor(vk::BlendFactor::eSrcAlpha)
-    .dstColorBlendFactor(vk::BlendFactor::eOneMinusSrcAlpha)
+    .srcColorBlendFactor(vk::BlendFactor::eOne)
+    .dstColorBlendFactor(vk::BlendFactor::eOne)
     .colorBlendOp(vk::BlendOp::eAdd)
     .srcAlphaBlendFactor(vk::BlendFactor::eOne)
+    .dstAlphaBlendFactor(vk::BlendFactor::eOne)
+    .alphaBlendOp(vk::BlendOp::eAdd)
+    .colorWriteMask(
+      vk::ColorComponentFlagBits::eR | vk::ColorComponentFlagBits::eG |
+      vk::ColorComponentFlagBits::eB | vk::ColorComponentFlagBits::eA);
+
+  maker.blendColorAttachment(true)
+    .srcColorBlendFactor(vk::BlendFactor::eZero)
+    .dstColorBlendFactor(vk::BlendFactor::eOneMinusSrcAlpha)
+    .colorBlendOp(vk::BlendOp::eAdd)
+    .srcAlphaBlendFactor(vk::BlendFactor::eZero)
     .dstAlphaBlendFactor(vk::BlendFactor::eOneMinusSrcAlpha)
     .alphaBlendOp(vk::BlendOp::eAdd)
     .colorWriteMask(
@@ -280,6 +323,41 @@ void ForwardPass::createTransparentPass(Device &device, SceneConfig &sceneConfig
   transparentLinesPipe = maker.createUnique();
   device.name(*transparentLinesPipe, "transparentLinesPipe");
 }
+void ForwardPass::createCompositePass(Device &device, SceneConfig &sceneConfig) {
+  GraphicsPipelineMaker maker(device.vkDevice());
+
+  maker.layout(pipeDef.layout())
+    .renderPass(*renderPass)
+    .subpass(compositePass)
+    .inputAssembly(vk::PrimitiveTopology::eTriangleList)
+    .polygonMode(vk::PolygonMode::eFill)
+    .cullMode(vk::CullModeFlagBits::eNone)
+    .frontFace(vk::FrontFace::eClockwise)
+    .depthTestEnable(false)
+    .viewport({})
+    .scissor({})
+    .dynamicState(vk::DynamicState::eViewport)
+    .dynamicState(vk::DynamicState::eScissor);
+
+  maker.blendColorAttachment(true)
+    .srcColorBlendFactor(vk::BlendFactor::eOneMinusSrcAlpha)
+    .dstColorBlendFactor(vk::BlendFactor::eSrcAlpha)
+    .colorBlendOp(vk::BlendOp::eAdd)
+    .srcAlphaBlendFactor(vk::BlendFactor::eOneMinusSrcAlpha)
+    .dstAlphaBlendFactor(vk::BlendFactor::eSrcAlpha)
+    .alphaBlendOp(vk::BlendOp::eAdd)
+    .colorWriteMask(
+      vk::ColorComponentFlagBits::eR | vk::ColorComponentFlagBits::eG |
+      vk::ColorComponentFlagBits::eB | vk::ColorComponentFlagBits::eA);
+
+  maker.shader(vk::ShaderStageFlagBits::eVertex, Shader{shader::common::quad_vert_span})
+    .shader(
+      vk::ShaderStageFlagBits::eFragment,
+      Shader{shader::deferred::lit_frag_span, sceneConfig.maxNumTextures});
+  litPipe = maker.createUnique();
+  device.name(*litPipe, "deferred lighting pipeline");
+}
+
 void ForwardPass::execute(vkg::RenderContext &ctx, vkg::Resources &resources) {
   auto drawInfos = resources.get(cullPassOut.drawCMDs);
   auto &frame = frames[ctx.frameIndex];
@@ -295,6 +373,8 @@ void ForwardPass::execute(vkg::RenderContext &ctx, vkg::Resources &resources) {
     vk::PipelineStageFlagBits::eFragmentShader);
 
   std::array<vk::ClearValue, 6> clearValues{
+    vk::ClearColorValue{std::array{0.0f, 0.0f, 0.0f, 0.0f}},
+    vk::ClearColorValue{std::array{0.0f, 0.0f, 0.0f, 0.0f}},
     vk::ClearColorValue{std::array{0.0f, 0.0f, 0.0f, 0.0f}},
     vk::ClearDepthStencilValue{1.0f, 0},
   };

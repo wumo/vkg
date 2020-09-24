@@ -4,6 +4,7 @@
 
 layout(location = 0) in vec2 inUV0;
 layout(location = 1) in flat uint inMaterialID;
+layout(location = 2) in float inDepth;
 
 layout(location = 0) out vec4 outColor;
 
