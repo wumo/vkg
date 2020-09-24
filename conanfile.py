@@ -2,7 +2,7 @@ from conans import ConanFile, CMake, tools
 
 class vkgConan(ConanFile):
     name = "vkg"
-    version = "0.0.4"
+    version = "0.0.5"
     settings = "os", "compiler", "build_type", "arch"
     requires = (
         "vulkan-headers/1.2.148@wumo/stable",
