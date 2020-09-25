@@ -27,7 +27,8 @@ void main() {
   // The depth functions in the paper want a camera-space depth of 0.1 < z < 500,
   // but the scene at the moment uses a range of about 0.01 to 50, so multiply
   // by 10 to get an adjusted depth:
-  const float depthZ = -inDepth * 10.0f;
+  const float depthZ =
+    (-inDepth - camera.zNear) / (camera.zFar - camera.zNear) * (500 - 0.1) + 0.1;
 
   const float distWeight = clamp(0.03 / (1e-5 + pow(depthZ / 200, 4.0)), 1e-2, 3e3);
 
