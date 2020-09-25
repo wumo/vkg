@@ -70,7 +70,7 @@ public:
     }
     auto extent = img->extent();
     auto dx = uint32_t(std::ceil(extent.width / double(local_size_x)));
-    auto dy = uint32_t(std::ceil(extent.width / double(local_size_y)));
+    auto dy = uint32_t(std::ceil(extent.height / double(local_size_y)));
     cb.dispatch(dx, dy, 1);
 
     ctx.device.end(cb);
