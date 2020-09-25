@@ -7,7 +7,7 @@ layout(location = 1) in flat uint inMaterialID;
 layout(location = 2) in float inDepth;
 
 layout(location = 0) out vec4 outColor;
-layout(location = 1) out vec4 outReveal;
+layout(location = 1) out float outReveal;
 
 void main() {
   MaterialDesc material = materials[inMaterialID];

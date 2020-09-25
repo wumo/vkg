@@ -4,6 +4,7 @@
 #include "raytracing/raster/raster_vert.hpp"
 #include "raytracing/raster/opaque_frag.hpp"
 #include "raytracing/raster/transparent_frag.hpp"
+#include "raytracing/raster/composite_frag.hpp"
 
 namespace vkg {
 void ForwardPass::setup(vkg::PassBuilder &builder) {
@@ -54,7 +55,9 @@ void ForwardPass::compile(vkg::RenderContext &ctx, vkg::Resources &resources) {
     auto sceneConfig = resources.get(passIn.sceneConfig);
     sceneSetDef.textures.descriptorCount() = sceneConfig.maxNumTextures;
     sceneSetDef.init(resources.device);
+    transSetDef.init(resources.device);
     pipeDef.scene(sceneSetDef);
+    pipeDef.trans(transSetDef);
     pipeDef.init(resources.device);
 
     {
@@ -62,6 +65,7 @@ void ForwardPass::compile(vkg::RenderContext &ctx, vkg::Resources &resources) {
       createCopyDepthPass(resources.device, sceneConfig);
       createOpaquePass(resources.device, sceneConfig);
       createTransparentPass(resources.device, sceneConfig);
+      createCompositePass(resources.device, sceneConfig);
     }
 
     {
@@ -72,6 +76,7 @@ void ForwardPass::compile(vkg::RenderContext &ctx, vkg::Resources &resources) {
       frames.resize(ctx.numFrames);
       for(int i = 0; i < ctx.numFrames; ++i) {
         frames[i].sceneSet = sceneSetDef.createSet(*descriptorPool);
+        frames[i].transSet = transSetDef.createSet(*descriptorPool);
         ctx.device.name(frames[i].sceneSet, name + toString("sceneSet", i));
         sceneSetDef.textures(0, uint32_t(samplers.size()), samplers.data());
         sceneSetDef.update(frames[i].sceneSet);
@@ -87,12 +92,13 @@ void ForwardPass::compile(vkg::RenderContext &ctx, vkg::Resources &resources) {
     using vkUsage = vk::ImageUsageFlagBits;
     frame.transColorAtt = image::make2DTex(
       toString("transColorAtt", ctx.frameIndex), ctx.device, w, h,
-      vkUsage::eColorAttachment, vk::Format::eR16G16B16A16Sfloat,
-      vk::SampleCountFlagBits::e1, vk::ImageAspectFlagBits::eColor);
-    frame.revealAtt = image::make2DTex(
-      toString("revelAtt", ctx.frameIndex), ctx.device, w, h, vkUsage::eColorAttachment,
-      vk::Format::eR16Sfloat, vk::SampleCountFlagBits::e1,
+      vkUsage ::eColorAttachment | vkUsage::eInputAttachment,
+      vk::Format::eR16G16B16A16Sfloat, vk::SampleCountFlagBits::e1,
       vk::ImageAspectFlagBits::eColor);
+    frame.revealAtt = image::make2DTex(
+      toString("revelAtt", ctx.frameIndex), ctx.device, w, h,
+      vkUsage ::eColorAttachment | vkUsage::eInputAttachment, vk::Format::eR16Sfloat,
+      vk::SampleCountFlagBits::e1, vk::ImageAspectFlagBits::eColor);
     frame.depthAtt = image::make2DTex(
       toString("depthAtt", ctx.frameIndex), ctx.device, w, h,
       vkUsage::eDepthStencilAttachment, vk::Format::eD32Sfloat,
@@ -117,6 +123,10 @@ void ForwardPass::compile(vkg::RenderContext &ctx, vkg::Resources &resources) {
   sceneSetDef.matrices(resources.get(passIn.matrices));
   sceneSetDef.materials(resources.get(passIn.materials));
   sceneSetDef.update(frame.sceneSet);
+
+  transSetDef.color(frame.transColorAtt->imageView());
+  transSetDef.reveal(frame.revealAtt->imageView());
+  transSetDef.update(frame.transSet);
 }
 void ForwardPass::createRenderPass(Device &device, vk::Format format) {
   RenderPassMaker maker;
@@ -298,7 +308,7 @@ void ForwardPass::createTransparentPass(Device &device, SceneConfig &sceneConfig
 
   maker.blendColorAttachment(true)
     .srcColorBlendFactor(vk::BlendFactor::eZero)
-    .dstColorBlendFactor(vk::BlendFactor::eOneMinusSrcAlpha)
+    .dstColorBlendFactor(vk::BlendFactor::eOneMinusSrcColor)
     .colorBlendOp(vk::BlendOp::eAdd)
     .srcAlphaBlendFactor(vk::BlendFactor::eZero)
     .dstAlphaBlendFactor(vk::BlendFactor::eOneMinusSrcAlpha)
@@ -340,11 +350,11 @@ void ForwardPass::createCompositePass(Device &device, SceneConfig &sceneConfig) 
     .dynamicState(vk::DynamicState::eScissor);
 
   maker.blendColorAttachment(true)
-    .srcColorBlendFactor(vk::BlendFactor::eOneMinusSrcAlpha)
-    .dstColorBlendFactor(vk::BlendFactor::eSrcAlpha)
+    .srcColorBlendFactor(vk::BlendFactor::eOne)
+    .dstColorBlendFactor(vk::BlendFactor::eOneMinusSrcAlpha)
     .colorBlendOp(vk::BlendOp::eAdd)
-    .srcAlphaBlendFactor(vk::BlendFactor::eOneMinusSrcAlpha)
-    .dstAlphaBlendFactor(vk::BlendFactor::eSrcAlpha)
+    .srcAlphaBlendFactor(vk::BlendFactor::eOne)
+    .dstAlphaBlendFactor(vk::BlendFactor::eOneMinusSrcAlpha)
     .alphaBlendOp(vk::BlendOp::eAdd)
     .colorWriteMask(
       vk::ColorComponentFlagBits::eR | vk::ColorComponentFlagBits::eG |
@@ -353,9 +363,10 @@ void ForwardPass::createCompositePass(Device &device, SceneConfig &sceneConfig) 
   maker.shader(vk::ShaderStageFlagBits::eVertex, Shader{shader::common::quad_vert_span})
     .shader(
       vk::ShaderStageFlagBits::eFragment,
-      Shader{shader::deferred::lit_frag_span, sceneConfig.maxNumTextures});
-  litPipe = maker.createUnique();
-  device.name(*litPipe, "deferred lighting pipeline");
+      Shader{
+        shader::raytracing::raster::composite_frag_span, sceneConfig.maxNumTextures});
+  compositePipe = maker.createUnique();
+  device.name(*compositePipe, "compositePipe");
 }
 
 void ForwardPass::execute(vkg::RenderContext &ctx, vkg::Resources &resources) {
@@ -371,6 +382,15 @@ void ForwardPass::execute(vkg::RenderContext &ctx, vkg::Resources &resources) {
     cb, *resources.get(passIn.traceRays.depthImg),
     vk::ImageLayout::eShaderReadOnlyOptimal, vk::AccessFlagBits::eShaderRead,
     vk::PipelineStageFlagBits::eFragmentShader);
+
+  image::transitTo(
+    cb, *frame.transColorAtt, vk::ImageLayout::eColorAttachmentOptimal,
+    vk::AccessFlagBits::eColorAttachmentWrite,
+    vk::PipelineStageFlagBits::eColorAttachmentOutput);
+  image::transitTo(
+    cb, *frame.revealAtt, vk::ImageLayout::eColorAttachmentOptimal,
+    vk::AccessFlagBits::eColorAttachmentWrite,
+    vk::PipelineStageFlagBits::eColorAttachmentOutput);
 
   std::array<vk::ClearValue, 6> clearValues{
     vk::ClearColorValue{std::array{0.0f, 0.0f, 0.0f, 0.0f}},
@@ -399,6 +419,9 @@ void ForwardPass::execute(vkg::RenderContext &ctx, vkg::Resources &resources) {
   cb.bindDescriptorSets(
     vk::PipelineBindPoint::eGraphics, pipeDef.layout(), pipeDef.scene.set(),
     frame.sceneSet, nullptr);
+  cb.bindDescriptorSets(
+    vk::PipelineBindPoint::eGraphics, pipeDef.layout(), pipeDef.trans.set(),
+    frame.transSet, nullptr);
 
   auto bufInfo = resources.get(passIn.positions);
   cb.bindVertexBuffers(0, bufInfo.buffer, bufInfo.offset);
@@ -446,6 +469,13 @@ void ForwardPass::execute(vkg::RenderContext &ctx, vkg::Resources &resources) {
   cb.bindPipeline(vk::PipelineBindPoint::eGraphics, *transparentLinesPipe);
   cb.setLineWidth(lineWidth_);
   draw(ShadeModel::TransparentLines);
+  dev.end(cb);
+
+  cb.nextSubpass(vk::SubpassContents::eInline);
+
+  dev.begin(cb, "Subpass composite");
+  cb.bindPipeline(vk::PipelineBindPoint::eGraphics, *compositePipe);
+  cb.draw(3, 1, 0, 0);
   dev.end(cb);
 
   cb.endRenderPass();

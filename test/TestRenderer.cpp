@@ -133,19 +133,47 @@ auto main() -> int {
 
   { // transparent
     auto primitives = scene.newPrimitives(PrimitiveBuilder()
-                                            .rectangle({4, 0, 4}, {2, 0, -2}, {0, 2, 0})
+                                            .rectangle({}, {-2,0,0}, {0,2,0})
                                             .newPrimitive()
                                             .line({4, 0, 4}, {4, 4, 4})
                                             .newPrimitive(PrimitiveTopology::Lines));
     auto tRedMat = scene.newMaterial(MaterialType::eTransparent);
-    scene.material(tRedMat).setColorFactor({Red, 0.5f});
-    auto node = scene.newNode();
-    scene.node(node).addMeshes({scene.newMesh(primitives[0], tRedMat)});
-    scene.newModelInstance(scene.newModel({node}));
+    {
+      scene.material(tRedMat).setColorFactor({Red, 0.5f});
+      auto node = scene.newNode();
+      scene.node(node).addMeshes({scene.newMesh(primitives[0], tRedMat)});
+      scene.newModelInstance(scene.newModel({node}), Transform{{0, 2, 20}});
+    }
+    {
+      auto tGreenMat = scene.newMaterial(MaterialType::eTransparent);
+      scene.material(tGreenMat).setColorFactor({Green, 0.5f});
+      auto node = scene.newNode();
+      scene.node(node).addMeshes({scene.newMesh(primitives[0], tGreenMat)});
+      scene.newModelInstance(scene.newModel({node}), Transform{{1, 2, 22}});
+    }
+    {
+      auto tBlueMat = scene.newMaterial(MaterialType::eTransparent);
+      scene.material(tBlueMat).setColorFactor({Blue, 0.5f});
+      auto node = scene.newNode();
+      scene.node(node).addMeshes({scene.newMesh(primitives[0], tBlueMat)});
+      scene.newModelInstance(scene.newModel({node}), Transform{{2, 2, 24}});
+    }
+    {
+      auto tYellowMat = scene.newMaterial(MaterialType::eTransparent);
+      scene.material(tYellowMat).setColorFactor({Yellow, 0.5f});
+      auto node = scene.newNode();
+      scene.node(node).addMeshes({scene.newMesh(primitives[0], tYellowMat)});
+      scene.newModelInstance(scene.newModel({node}), Transform{{3, 2, 26}});
+    }
+   
+    
 
     auto node2 = scene.newNode();
     scene.node(node2).addMeshes({scene.newMesh(primitives[1], tRedMat)});
     scene.newModelInstance(scene.newModel({node2}));
+    
+    
+    
   }
 
   {

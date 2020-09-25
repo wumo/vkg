@@ -55,6 +55,11 @@ private:
     __sampler2D__(textures, vkStage::eFragment);
   } sceneSetDef;
 
+  struct TransparentSetDef: DescriptorSetDef {
+    __input__(color, vkStage::eFragment);
+    __input__(reveal, vkStage::eFragment);
+  } transSetDef;
+
   struct PushConstant {
     uint32_t frame;
   } pushConstant{};
@@ -62,6 +67,7 @@ private:
   struct DeferredPipeDef: PipelineLayoutDef {
     __push_constant__(constant, vkStage::eVertex, PushConstant);
     __set__(scene, SceneSetDef);
+    __set__(trans, TransparentSetDef);
   } pipeDef;
 
   float lineWidth_{1.f};
@@ -71,14 +77,14 @@ private:
   uint32_t copyDepthPass{}, opaquePass, transparentPass{}, compositePass{};
   vk::UniqueRenderPass renderPass;
   vk::UniquePipeline copyDepthPipe, opaqueLinesPipe, transparentPipe,
-    transparentLinesPipe;
+    transparentLinesPipe, compositePipe;
 
   vk::UniqueDescriptorPool descriptorPool;
   struct FrameResource {
     Texture *backImg;
     std::unique_ptr<Texture> depthAtt, transColorAtt, revealAtt;
     uint64_t lastNumValidSampler{0};
-    vk::DescriptorSet sceneSet;
+    vk::DescriptorSet sceneSet, transSet;
     vk::UniqueFramebuffer framebuffer;
   };
   std::vector<FrameResource> frames;
