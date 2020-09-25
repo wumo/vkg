@@ -13,13 +13,23 @@ void DeferredPass::execute(RenderContext &ctx, Resources &resources) {
     cb, *frame.backImg, vk::ImageLayout::eColorAttachmentOptimal,
     vk::AccessFlagBits::eColorAttachmentWrite,
     vk::PipelineStageFlagBits::eColorAttachmentOutput);
+  image::transitTo(
+    cb, *frame.transColorAtt, vk::ImageLayout::eColorAttachmentOptimal,
+    vk::AccessFlagBits::eColorAttachmentWrite,
+    vk::PipelineStageFlagBits::eColorAttachmentOutput);
+  image::transitTo(
+    cb, *frame.revealAtt, vk::ImageLayout::eColorAttachmentOptimal,
+    vk::AccessFlagBits::eColorAttachmentWrite,
+    vk::PipelineStageFlagBits::eColorAttachmentOutput);
 
-  std::array<vk::ClearValue, 6> clearValues{
+  std::array<vk::ClearValue, 8> clearValues{
     vk::ClearColorValue{std::array{0.0f, 0.0f, 0.0f, 0.0f}},
     vk::ClearColorValue{std::array{0.0f, 0.0f, 0.0f, 0.0f}},
     vk::ClearColorValue{std::array{0.0f, 0.0f, 0.0f, 0.0f}},
     vk::ClearColorValue{std::array{0.0f, 0.0f, 0.0f, 0.0f}},
     vk::ClearColorValue{std::array{0.0f, 0.0f, 0.0f, 0.0f}},
+    vk::ClearColorValue{std::array{0.0f, 0.0f, 0.0f, 0.0f}},
+    vk::ClearColorValue{std::array{1.0f, 0.0f, 0.0f, 0.0f}},
     vk::ClearDepthStencilValue{1.0f, 0},
   };
 
@@ -46,6 +56,9 @@ void DeferredPass::execute(RenderContext &ctx, Resources &resources) {
   cb.bindDescriptorSets(
     vk::PipelineBindPoint::eGraphics, pipeDef.layout(), pipeDef.gbuffer.set(),
     frame.gbSet, nullptr);
+  cb.bindDescriptorSets(
+    vk::PipelineBindPoint::eGraphics, pipeDef.layout(), pipeDef.trans.set(),
+    frame.transSet, nullptr);
   if(atmosSetting.isEnabled())
     cb.bindDescriptorSets(
       vk::PipelineBindPoint::eGraphics, pipeDef.layout(), pipeDef.atmosphere.set(),
@@ -126,6 +139,13 @@ void DeferredPass::execute(RenderContext &ctx, Resources &resources) {
   cb.setLineWidth(lineWidth_);
   cb.bindPipeline(vk::PipelineBindPoint::eGraphics, *transLinePipe);
   draw(ShadeModel::TransparentLines);
+  dev.end(cb);
+
+  cb.nextSubpass(vk::SubpassContents::eInline);
+
+  dev.begin(cb, "Subpass composite");
+  cb.bindPipeline(vk::PipelineBindPoint::eGraphics, *compositePipe);
+  cb.draw(3, 1, 0, 0);
   dev.end(cb);
 
   cb.endRenderPass();

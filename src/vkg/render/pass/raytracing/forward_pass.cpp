@@ -350,11 +350,11 @@ void ForwardPass::createCompositePass(Device &device, SceneConfig &sceneConfig) 
     .dynamicState(vk::DynamicState::eScissor);
 
   maker.blendColorAttachment(true)
-    .srcColorBlendFactor(vk::BlendFactor::eOne)
-    .dstColorBlendFactor(vk::BlendFactor::eOneMinusSrcAlpha)
+    .srcColorBlendFactor(vk::BlendFactor::eOneMinusSrcAlpha)
+    .dstColorBlendFactor(vk::BlendFactor::eSrcAlpha)
     .colorBlendOp(vk::BlendOp::eAdd)
-    .srcAlphaBlendFactor(vk::BlendFactor::eOne)
-    .dstAlphaBlendFactor(vk::BlendFactor::eOneMinusSrcAlpha)
+    .srcAlphaBlendFactor(vk::BlendFactor::eOneMinusSrcAlpha)
+    .dstAlphaBlendFactor(vk::BlendFactor::eSrcAlpha)
     .alphaBlendOp(vk::BlendOp::eAdd)
     .colorWriteMask(
       vk::ColorComponentFlagBits::eR | vk::ColorComponentFlagBits::eG |
@@ -392,10 +392,10 @@ void ForwardPass::execute(vkg::RenderContext &ctx, vkg::Resources &resources) {
     vk::AccessFlagBits::eColorAttachmentWrite,
     vk::PipelineStageFlagBits::eColorAttachmentOutput);
 
-  std::array<vk::ClearValue, 6> clearValues{
+  std::array<vk::ClearValue, 4> clearValues{
     vk::ClearColorValue{std::array{0.0f, 0.0f, 0.0f, 0.0f}},
     vk::ClearColorValue{std::array{0.0f, 0.0f, 0.0f, 0.0f}},
-    vk::ClearColorValue{std::array{0.0f, 0.0f, 0.0f, 0.0f}},
+    vk::ClearColorValue{std::array{1.0f, 0.0f, 0.0f, 0.0f}},
     vk::ClearDepthStencilValue{1.0f, 0},
   };
 

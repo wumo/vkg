@@ -51,6 +51,7 @@ private:
   auto createLightingPass(Device &device, SceneConfig sceneConfig) -> void;
   auto createUnlitPass(Device &device, SceneConfig sceneConfig) -> void;
   auto createTransparentPass(Device &device, SceneConfig sceneConfig) -> void;
+  void createCompositePass(Device &device, SceneConfig &sceneConfig);
 
   struct SceneSetDef: DescriptorSetDef {
     __buffer__(camera, vkStage::eVertex | vkStage::eFragment);
@@ -70,6 +71,11 @@ private:
     __input__(emissive, vkStage::eFragment);
     __input__(depth, vkStage::eFragment);
   } gbufferSetDef;
+
+  struct TransparentSetDef: DescriptorSetDef {
+    __input__(color, vkStage::eFragment);
+    __input__(reveal, vkStage::eFragment);
+  } transSetDef;
 
   struct CSMSetDef: DescriptorSetDef {
     __uniform__(setting, vkStage::eFragment);
@@ -92,6 +98,7 @@ private:
     __push_constant__(constant, vkStage::eVertex, PushConstant);
     __set__(scene, SceneSetDef);
     __set__(gbuffer, GBufferSetDef);
+    __set__(trans, TransparentSetDef);
     __set__(atmosphere, AtmosphereSetDef);
     __set__(shadowMap, CSMSetDef);
   } pipeDef;
@@ -101,20 +108,21 @@ private:
 
   bool init{false};
 
-  uint32_t gbPass{}, litPass{}, unlitPass{}, transPass{};
+  uint32_t gbPass{}, litPass{}, unlitPass{}, transPass{}, compositePass{};
   vk::UniqueRenderPass renderPass;
   vk::UniquePipeline gbTriPipe, gbWireFramePipe;
   vk::UniquePipeline unlitTriPipe, unlitLinePipe;
-  vk::UniquePipeline transTriPipe, transLinePipe;
+  vk::UniquePipeline transTriPipe, transLinePipe, compositePipe;
   vk::UniquePipeline litPipe, litAtmosPipe, litCSMPipe, litAtmosCSMPipe;
 
   vk::UniqueDescriptorPool descriptorPool;
 
   struct FrameResource {
     Texture *backImg;
-    std::unique_ptr<Texture> depthAtt, normalAtt, diffuseAtt, specularAtt, emissiveAtt;
+    std::unique_ptr<Texture> depthAtt, normalAtt, diffuseAtt, specularAtt, emissiveAtt,
+      transColorAtt, revealAtt;
     uint64_t lastNumValidSampler{0};
-    vk::DescriptorSet sceneSet, gbSet, shadowMapSet, atmosphereSet;
+    vk::DescriptorSet sceneSet, gbSet, transSet, shadowMapSet, atmosphereSet;
     vk::UniqueFramebuffer framebuffer;
   };
   std::vector<FrameResource> frames;

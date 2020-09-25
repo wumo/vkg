@@ -19,7 +19,7 @@ layout(set = 0, binding = 4) uniform sampler2D textures[maxNumTextures];
 layout(set = 0, binding = 5) uniform LightingUBO { LightingDesc lighting; };
 layout(set = 0, binding = 6, std430) readonly buffer LightsBuffer { LightDesc lights[]; };
 
-#ifdef SUBPASS
+#ifdef SUBPASS_GBUFFER
   #ifdef MULTISAMPLE
     #define SUBPASS_INPUT subpassInputMS
     #define SUBPASS_LOAD(sampler) subpassLoad(sampler, gl_SampleID)
@@ -37,17 +37,22 @@ layout(set = 1, binding = 4,input_attachment_index = 4) uniform SUBPASS_INPUT sa
   // clang-format on
 #endif
 
+#ifdef SUBPASS_COMPOSITE
+layout(set = 2, binding = 0, input_attachment_index = 0) uniform subpassInput texColor;
+layout(set = 2, binding = 1, input_attachment_index = 1) uniform subpassInput texWeights;
+#endif
+
 #ifdef USE_ATMOSPHERE
-  #define ATMOSPHERE_SET 2
+  #define ATMOSPHERE_SET 3
   #include "../atmosphere/resources.h"
 #endif
 
 #ifdef USE_SHADOW_MAP
-layout(set = 3, binding = 0) uniform ShadowMapSettingUBO {
+layout(set = 4, binding = 0) uniform ShadowMapSettingUBO {
   ShadowMapSetting shadowMapSeting;
 };
-layout(set = 3, binding = 1) buffer Cascades { CascadeDesc cascades[]; };
-layout(set = 3, binding = 2) uniform sampler2DArray shadowMap;
+layout(set = 4, binding = 1) buffer Cascades { CascadeDesc cascades[]; };
+layout(set = 4, binding = 2) uniform sampler2DArray shadowMap;
 #endif
 
 #endif //VKG_RESOURCES_H

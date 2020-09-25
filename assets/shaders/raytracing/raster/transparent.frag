@@ -41,5 +41,5 @@ void main() {
   // Blend function: GL_ONE, GL_ONE
   outColor = color * weight;
   // GL blend function: GL_ZERO, GL_ONE_MINUS_SRC_ALPHA
-  outReveal.r = color.a;
+  outReveal = color.a;
 }

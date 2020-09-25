@@ -18,10 +18,12 @@ void DeferredPass::compile(RenderContext &ctx, Resources &resources) {
     sceneSetDef.textures.descriptorCount() = sceneConfig.maxNumTextures;
     sceneSetDef.init(resources.device);
     gbufferSetDef.init(resources.device);
+    transSetDef.init(resources.device);
     csmSetDef.init(resources.device);
     atmosphereSetDef.init(resources.device);
     pipeDef.scene(sceneSetDef);
     pipeDef.gbuffer(gbufferSetDef);
+    pipeDef.trans(transSetDef);
     pipeDef.atmosphere(atmosphereSetDef);
     pipeDef.shadowMap(csmSetDef);
     pipeDef.init(resources.device);
@@ -31,6 +33,7 @@ void DeferredPass::compile(RenderContext &ctx, Resources &resources) {
     createLightingPass(resources.device, sceneConfig);
     createUnlitPass(resources.device, sceneConfig);
     createTransparentPass(resources.device, sceneConfig);
+    createCompositePass(resources.device, sceneConfig);
 
     {
       descriptorPool = DescriptorPoolMaker()
@@ -41,6 +44,7 @@ void DeferredPass::compile(RenderContext &ctx, Resources &resources) {
       for(int i = 0; i < ctx.numFrames; ++i) {
         frames[i].sceneSet = sceneSetDef.createSet(*descriptorPool);
         frames[i].gbSet = gbufferSetDef.createSet(*descriptorPool);
+        frames[i].transSet = transSetDef.createSet(*descriptorPool);
         frames[i].shadowMapSet = csmSetDef.createSet(*descriptorPool);
         frames[i].atmosphereSet = atmosphereSetDef.createSet(*descriptorPool);
         sceneSetDef.textures(0, uint32_t(samplers.size()), samplers.data());
@@ -105,6 +109,15 @@ auto DeferredPass::createAttachments(Device &device, uint32_t frameIdx) -> void 
   frame.emissiveAtt = image::make2DTex(
     toString("emissiveAtt", frameIdx), device, w, h,
     vkUsage::eColorAttachment | vkUsage::eInputAttachment, vk::Format::eR8G8B8A8Unorm);
+  frame.transColorAtt = image::make2DTex(
+    toString("transColorAtt", frameIdx), device, w, h,
+    vkUsage ::eColorAttachment | vkUsage::eInputAttachment,
+    vk::Format::eR16G16B16A16Sfloat, vk::SampleCountFlagBits::e1,
+    vk::ImageAspectFlagBits::eColor);
+  frame.revealAtt = image::make2DTex(
+    toString("revelAtt", frameIdx), device, w, h,
+    vkUsage ::eColorAttachment | vkUsage::eInputAttachment, vk::Format::eR16Sfloat,
+    vk::SampleCountFlagBits::e1, vk::ImageAspectFlagBits::eColor);
   frame.depthAtt = image::make2DTex(
     toString("depthAtt", frameIdx), device, w, h,
     vkUsage::eDepthStencilAttachment | vkUsage::eInputAttachment, vk::Format::eD32Sfloat,
@@ -117,10 +130,15 @@ auto DeferredPass::createAttachments(Device &device, uint32_t frameIdx) -> void 
   gbufferSetDef.depth(frame.depthAtt->imageView());
   gbufferSetDef.update(frame.gbSet);
 
+  transSetDef.color(frame.transColorAtt->imageView());
+  transSetDef.reveal(frame.revealAtt->imageView());
+  transSetDef.update(frame.transSet);
+
   std::vector<vk::ImageView> attachments = {
     frame.backImg->imageView(),     frame.normalAtt->imageView(),
     frame.diffuseAtt->imageView(),  frame.specularAtt->imageView(),
-    frame.emissiveAtt->imageView(), frame.depthAtt->imageView()};
+    frame.emissiveAtt->imageView(), frame.transColorAtt->imageView(),
+    frame.revealAtt->imageView(),   frame.depthAtt->imageView()};
 
   vk::FramebufferCreateInfo info{
     {}, *renderPass, uint32_t(attachments.size()), attachments.data(), w, h, 1};
@@ -148,6 +166,16 @@ auto DeferredPass::createRenderPass(Device &device, vk::Format format) -> void {
   auto diffuse = maker.attachmentCopy(normal).format(vk::Format::eR8G8B8A8Unorm).index();
   auto specular = maker.attachmentCopy(normal).format(vk::Format::eR8G8B8A8Unorm).index();
   auto emissive = maker.attachmentCopy(normal).format(vk::Format::eR8G8B8A8Unorm).index();
+  auto transColor = maker.attachmentCopy(backImg)
+                      .format(vk::Format::eR16G16B16A16Sfloat)
+                      .loadOp(vk::AttachmentLoadOp::eClear)
+                      .storeOp(vk::AttachmentStoreOp::eDontCare)
+                      .index();
+  auto reveal = maker.attachmentCopy(backImg)
+                  .format(vk::Format::eR16Sfloat)
+                  .loadOp(vk::AttachmentLoadOp::eClear)
+                  .storeOp(vk::AttachmentStoreOp::eDontCare)
+                  .index();
   auto depth = maker.attachmentCopy(normal)
                  .format(vk::Format::eD32Sfloat)
                  .finalLayout(vk::ImageLayout::eDepthStencilAttachmentOptimal)
@@ -172,9 +200,15 @@ auto DeferredPass::createRenderPass(Device &device, vk::Format format) -> void {
                 .depthStencil(depth)
                 .index();
   transPass = maker.subpass(vk::PipelineBindPoint::eGraphics)
-                .color(backImg)
+                .color(transColor)
+                .color(reveal)
                 .depthStencil(depth)
                 .index();
+  compositePass = maker.subpass(vk::PipelineBindPoint::eGraphics)
+                    .input(transColor)
+                    .input(reveal)
+                    .color(backImg)
+                    .index();
   maker.dependency(VK_SUBPASS_EXTERNAL, gbPass)
     .srcStage(vk::PipelineStageFlagBits::eBottomOfPipe)
     .dstStage(vk::PipelineStageFlagBits::eColorAttachmentOutput)
@@ -205,7 +239,13 @@ auto DeferredPass::createRenderPass(Device &device, vk::Format format) -> void {
     .srcAccess(vk::AccessFlagBits::eColorAttachmentWrite)
     .dstAccess(vk::AccessFlagBits::eDepthStencilAttachmentRead)
     .flags(vk::DependencyFlagBits::eByRegion);
-  maker.dependency(transPass, VK_SUBPASS_EXTERNAL)
+  maker.dependency(transPass, compositePass)
+    .srcStage(vk::PipelineStageFlagBits::eColorAttachmentOutput)
+    .dstStage(vk::PipelineStageFlagBits::eFragmentShader)
+    .srcAccess(vk::AccessFlagBits::eColorAttachmentWrite)
+    .dstAccess(vk::AccessFlagBits::eInputAttachmentRead)
+    .flags(vk::DependencyFlagBits::eByRegion);
+  maker.dependency(compositePass, VK_SUBPASS_EXTERNAL)
     .srcStage(vk::PipelineStageFlagBits::eColorAttachmentOutput)
     .dstStage(vk::PipelineStageFlagBits::eBottomOfPipe)
     .srcAccess(vk::AccessFlagBits::eColorAttachmentWrite)

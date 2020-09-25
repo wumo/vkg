@@ -2,7 +2,7 @@
 #define VKG_DEFERRED_LIGHTING_H
 
 #include "../math.h"
-#define SUBPASS
+#define SUBPASS_GBUFFER
 #include "resources.h"
 #ifdef USE_ATMOSPHERE
   #include "../atmosphere/lighting.h"
