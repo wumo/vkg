@@ -18,6 +18,8 @@ uint32_t WindowGetTitleLength(CWindow *window);
 void WindowGetTitle(CWindow *window, char *titleBuf);
 Input *WindowGetInput(CWindow *window);
 
+void WindowClose(CWindow *window);
+
 int32_t InputMousePosX(Input *input);
 int32_t InputMousePosY(Input *input);
 double InputScrollOffsetX(Input *input);

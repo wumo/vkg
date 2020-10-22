@@ -25,6 +25,7 @@ public:
   auto createSurface(vk::Instance instance) -> void;
 
   auto windowShouldClose() -> bool;
+  void setWindowShouldClose();
   auto pollEvents() -> void;
   auto terminate() -> void;
 

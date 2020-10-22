@@ -213,6 +213,8 @@ auto Window::createSurface(vk::Instance instance) -> void {
 }
 
 auto Window::windowShouldClose() -> bool { return glfwWindowShouldClose(window); }
+void Window::setWindowShouldClose() { glfwSetWindowShouldClose(window, GLFW_TRUE); }
+
 auto Window::pollEvents() -> void { glfwPollEvents(); }
 
 auto Window::terminate() -> void {

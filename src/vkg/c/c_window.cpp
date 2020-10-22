@@ -22,10 +22,17 @@ void WindowSetTitle(CWindow *window, char *titleBuf, uint32_t size) {
   auto *win = reinterpret_cast<vkg::Window *>(window);
   win->setWindowTitle(std::string{titleBuf, size});
 }
+
+void WindowClose(CWindow *window) {
+  auto *win = reinterpret_cast<vkg::Window *>(window);
+  win->setWindowShouldClose();
+}
+
 Input *WindowGetInput(CWindow *window) {
   auto *win = reinterpret_cast<vkg::Window *>(window);
   return &win->input();
 }
+
 int32_t InputMousePosX(Input *input) { return input->mousePosX; }
 int32_t InputMousePosY(Input *input) { return input->mousePosY; }
 double InputScrollOffsetX(Input *input) { return input->scrollXOffset; }
