@@ -61,7 +61,8 @@ public:
       {{}, vk::Filter::eLinear, vk::Filter::eLinear, vk::SamplerMipmapMode::eLinear},
     const std::string &name = "") -> uint32_t;
   auto newTexture(
-    std::span<std::byte> bytes, uint32_t width, uint32_t height, bool mipmap = true,
+    std::span<std::byte> bytes, uint32_t width, uint32_t height,
+    vk::Format format = vk::Format::eR8G8B8A8Unorm, bool mipmap = true,
     vk::SamplerCreateInfo sampler =
       {{}, vk::Filter::eLinear, vk::Filter::eLinear, vk::SamplerMipmapMode::eLinear},
     const std::string &name = "") -> uint32_t;

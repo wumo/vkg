@@ -90,7 +90,8 @@ void GLTFLoader::loadTextures(const tinygltf::Model &model) {
         });
     }
     textures.push_back(scene.newTexture(
-      {(std::byte *)(dataPtr.get()), size}, image.width, image.height, true, sampler));
+      {(std::byte *)(dataPtr.get()), size}, image.width, image.height,
+      vk::Format::eR8G8B8A8Unorm, true, sampler));
   }
 }
 

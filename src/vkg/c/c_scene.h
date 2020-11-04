@@ -12,6 +12,7 @@
 #include "c_camera.h"
 #include "c_atmosphere.h"
 #include "c_shadowmap.h"
+#include "vkg/base/resource/texture_formats.h"
 
 #ifdef __cplusplus
 extern "C" {
@@ -52,11 +53,10 @@ void SceneNewPrimitives(
   CScene *scene, CPrimitiveBuilder *builder, bool perFrame, uint32_t *ptrs);
 
 uint32_t SceneNewMaterial(CScene *scene, CMaterialType type, bool perFrame);
-uint32_t SceneNewTexture(
-  CScene *scene, char *pathBuf, uint32_t pathSize, bool mipmap);
+uint32_t SceneNewTexture(CScene *scene, char *pathBuf, uint32_t pathSize, bool mipmap);
 uint32_t SceneNewTextureFromBytes(
   CScene *scene, const char *bytes, uint32_t numBytes, uint32_t width, uint32_t height,
-  bool mipmap);
+  TextureFormat format, bool mipmap);
 uint32_t SceneNewMesh(CScene *scene, uint32_t primitive, uint32_t material);
 uint32_t SceneNewNode(CScene *scene, ctransform *transform);
 uint32_t SceneNewModel(CScene *scene, uint32_t *nodes, uint32_t numNodes);

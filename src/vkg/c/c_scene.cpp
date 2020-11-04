@@ -1,6 +1,8 @@
 #include "c_scene.h"
 #include "vkg/render/scene.hpp"
+#include "vkg/base/resource/texture_formats.hpp"
 #include <cstring>
+
 using namespace vkg;
 uint32_t SceneNewPrimitive(
   CScene *scene, cvec3 *positions, uint32_t position_offset_float, uint32_t numPositions,
@@ -32,9 +34,11 @@ uint32_t SceneNewTexture(CScene *scene, char *pathBuf, uint32_t pathSize, bool m
 }
 uint32_t SceneNewTextureFromBytes(
   CScene *scene, const char *bytes, uint32_t numBytes, uint32_t width, uint32_t height,
-  bool mipmap) {
+  TextureFormat format, bool mipmap) {
   auto *scene_ = reinterpret_cast<Scene *>(scene);
-  return scene_->newTexture({(std::byte *)bytes, numBytes}, width, height, mipmap);
+  return scene_->newTexture(
+    {(std::byte *)bytes, numBytes}, width, height, image::toVulkanTextureFormat(format),
+    mipmap);
 }
 uint32_t SceneNewMesh(CScene *scene, uint32_t primitive, uint32_t material) {
   auto *scene_ = reinterpret_cast<Scene *>(scene);

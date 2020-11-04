@@ -23,11 +23,17 @@ auto main() -> int {
   sky.setSunDirection({-1, -0.1, 0});
 
   // primitive
-  auto primitives =
-    scene.newPrimitives(PrimitiveBuilder().sphere({}, 1.f).newPrimitive());
+  auto primitives = scene.newPrimitives(
+    PrimitiveBuilder().box({}, {1, 0, 0}, {0, 0, 1}, 1.f).newPrimitive());
   // material
-  auto &mat = scene.material(scene.newMaterial(MaterialType::eBRDF));
-  mat.setColorFactor({Green, 1.f}).setPbrFactor({0, 0.3, 0.4, 0});
+  std::vector<uint32_t> bytes{0xFF0000FFu, 0xFF00FF, 0xFFFF, 0xFFFF00FFu};
+  auto tex = scene.newTexture(
+    {(std::byte *)(bytes.data()), bytes.size() * sizeof(int32_t)}, 2, 2,
+    vk::Format::eR8G8B8A8Unorm, true);
+
+  auto &mat = scene.material(scene.newMaterial(MaterialType::eNone));
+  mat.setColorTex(tex);
+  //  mat.setColorFactor({Green, 1.f}).setPbrFactor({0, 0.3, 0.4, 0});
   // primitive + material => mesh
   auto mesh = scene.newMesh(primitives[0], mat.id());
   // mesh => node

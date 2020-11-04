@@ -135,12 +135,12 @@ auto Scene::newTexture(
   return uint32_t(Dev.textures.size() - 1);
 }
 auto Scene::newTexture(
-  std::span<std::byte> bytes, uint32_t width, uint32_t height, bool mipmap,
-  vk::SamplerCreateInfo sampler, const std::string &name) -> uint32_t {
+  std::span<std::byte> bytes, uint32_t width, uint32_t height, vk::Format format,
+  bool mipmap, vk::SamplerCreateInfo sampler, const std::string &name) -> uint32_t {
   ensureTextures(1);
   //TODO choose queueIdx
   Dev.textures.push_back(
-    image::load2DFromBytes(0, name, device, bytes, width, height, mipmap));
+    image::load2DFromBytes(0, name, device, bytes, width, height, mipmap, format));
   auto &tex = Dev.textures.back();
   if(mipmap) {
     sampler.mipmapMode = vk::SamplerMipmapMode::eLinear;
@@ -249,7 +249,8 @@ auto Scene::addToDrawGroup(uint32_t meshId, ShadeModel oldShadeModelID) -> Shade
     case PrimitiveTopology::Procedural:
     case PrimitiveTopology::Patches: throw std::runtime_error("Not supported"); break;
   }
-  if(oldShadeModelID != ShadeModel::Unknown) Host.shadeModelCount[value(oldShadeModelID)]--;
+  if(oldShadeModelID != ShadeModel::Unknown)
+    Host.shadeModelCount[value(oldShadeModelID)]--;
   Host.shadeModelCount[value(smID)]++;
   return smID;
 }
