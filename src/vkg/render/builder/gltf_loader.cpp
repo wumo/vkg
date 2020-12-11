@@ -8,6 +8,18 @@ using namespace glm;
 
 GLTFLoader::GLTFLoader(Scene &scene, MaterialType materialType)
   : scene{scene}, defaultMatType{materialType} {}
+
+auto GLTFLoader::load(std::span<std::byte> bytes) -> uint32_t {
+  tinygltf::Model model;
+  tinygltf::TinyGLTF loader;
+  std::string err, warn;
+  auto result = loader.LoadBinaryFromMemory(
+    &model, &err, &warn, (unsigned char *)bytes.data(), bytes.size_bytes());
+  errorIf(!result, "failed to load glTF err: ", err, ", warn: ", warn);
+
+  return internalLoad(model);
+}
+
 auto GLTFLoader::load(const std::string &file) -> uint32_t {
   tinygltf::Model model;
   tinygltf::TinyGLTF loader;
@@ -15,8 +27,11 @@ auto GLTFLoader::load(const std::string &file) -> uint32_t {
   auto result = endWith(file, ".gltf") ?
                   loader.LoadASCIIFromFile(&model, &err, &warn, file) :
                   loader.LoadBinaryFromFile(&model, &err, &warn, file);
-  errorIf(!result, "failed to load glTF ", file);
+  errorIf(!result, "failed to load glTF: ", file, ", err: ", err, ", warn: ", warn);
 
+  return internalLoad(model);
+}
+auto GLTFLoader::internalLoad(const tinygltf::Model &model) -> uint32_t {
   loadTextureSamplers(model);
   loadTextures(model);
   loadMaterials(model);

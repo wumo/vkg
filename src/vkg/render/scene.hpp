@@ -73,6 +73,8 @@ public:
     -> uint32_t;
   auto loadModel(const std::string &file, MaterialType materialType = MaterialType::eBRDF)
     -> uint32_t;
+  auto loadModel(std::span<std::byte> bytes, MaterialType materialType = MaterialType::eBRDF)
+  -> uint32_t;
   auto newModelInstance(
     uint32_t model, const Transform &transform = Transform{}, bool perFrame = false)
     -> uint32_t;

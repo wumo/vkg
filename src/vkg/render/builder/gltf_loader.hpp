@@ -12,16 +12,19 @@ class GLTFLoader {
 public:
   explicit GLTFLoader(Scene &scene, MaterialType materialType);
 
+  auto load(std::span<std::byte> bytes) -> uint32_t;
   auto load(const std::string &file) -> uint32_t;
 
 private:
+  auto internalLoad(const tinygltf::Model &model) -> uint32_t;
   void loadTextureSamplers(const tinygltf::Model &model);
   void loadTextures(const tinygltf::Model &model);
   void loadMaterials(const tinygltf::Model &model);
   auto loadNode(int thisID, const tinygltf::Model &model) -> uint32_t;
   auto loadPrimitive(const tinygltf::Model &model, const tinygltf::Primitive &primitive)
     -> uint32_t;
-  AABB loadVertices(const tinygltf::Model &model, const tinygltf::Primitive &primitive);
+  auto loadVertices(const tinygltf::Model &model, const tinygltf::Primitive &primitive)
+    -> AABB;
   auto loadIndices(const tinygltf::Model &model, const tinygltf::Primitive &primitive)
     -> void;
   auto loadAnimations(const tinygltf::Model &model) -> void;

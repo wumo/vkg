@@ -174,6 +174,10 @@ auto Scene::loadModel(const std::string &file, MaterialType materialType) -> uin
   GLTFLoader loader{*this, materialType};
   return loader.load(file);
 }
+auto Scene::loadModel(std::span<std::byte> bytes, MaterialType materialType) -> uint32_t {
+  GLTFLoader loader{*this, materialType};
+  return loader.load(bytes);
+}
 auto Scene::newModelInstance(uint32_t model, const Transform &transform, bool perFrame)
   -> uint32_t {
   auto id = uint32_t(Host.modelInstances.size());

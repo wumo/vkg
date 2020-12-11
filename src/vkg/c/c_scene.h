@@ -62,6 +62,9 @@ uint32_t SceneNewNode(CScene *scene, ctransform *transform);
 uint32_t SceneNewModel(CScene *scene, uint32_t *nodes, uint32_t numNodes);
 uint32_t SceneLoadModel(
   CScene *scene, char *pathBuf, uint32_t pathSize, CMaterialType type);
+uint32_t SceneLoadModelFromBytes(
+  CScene *scene, const char *bytes, uint32_t numBytes, uint32_t pathSize,
+  CMaterialType type);
 uint32_t SceneNewModelInstance(
   CScene *scene, uint32_t model, ctransform *transform, bool perFrame);
 uint32_t SceneNewLight(CScene *scene, bool perFrame);
