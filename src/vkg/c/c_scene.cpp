@@ -67,8 +67,7 @@ uint32_t SceneLoadModel(
     std::string(pathBuf, pathSize), static_cast<MaterialType>(type));
 }
 uint32_t SceneLoadModelFromBytes(
-  CScene *scene, const char *bytes, uint32_t numBytes, uint32_t pathSize,
-  CMaterialType type) {
+  CScene *scene, const char *bytes, uint32_t numBytes, CMaterialType type) {
   auto *scene_ = reinterpret_cast<Scene *>(scene);
   return scene_->loadModel(
     {(std::byte *)bytes, numBytes}, static_cast<MaterialType>(type));
