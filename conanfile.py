@@ -2,7 +2,7 @@ from conans import ConanFile, CMake, tools
 
 class vkgConan(ConanFile):
     name = "vkg"
-    version = "0.0.6"
+    version = "0.0.7"
     settings = "os", "compiler", "build_type", "arch"
     requires = (
         "vulkan-headers/1.2.148@wumo/stable",
@@ -13,7 +13,8 @@ class vkgConan(ConanFile):
         "stb/20200203",
         "tinygltf/2.4.0",
         "par_lib/master@wumo/stable",
-        "magic_get/1.0.1@wumo/stable"
+        "magic_get/1.0.1@wumo/stable",
+        # "bullet3/3.07"
     )
     build_requires = ("glslvk/0.0.2@wumo/stable")
     generators = "cmake"
