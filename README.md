@@ -22,7 +22,7 @@ Requirements:
 * `python3` >= 3.7
 * `git` >= 2.0.0
 * `gcc` >= 10.0; `Visual Studio 2019`; `clang` >= 10.0
-* `cmake` >= 3.12
+* `cmake` >= 3.17
 * `conan` >= 1.28
 * Graphics driver that supports `Vulkan 1.2.0`(nvidia-450 or above)
 * `RayTracing Feature` requires RTX 20 series graphics card.

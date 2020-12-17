@@ -312,6 +312,7 @@ auto ShadowMapPass::createPipeline(Device &device, ShadowMapSetting &setting) ->
       .frontFace(vk::FrontFace::eCounterClockwise)
       .depthTestEnable(true)
       .depthWriteEnable(true)
+      .depthClampEnable(false)
       .depthCompareOp(vk::CompareOp::eLessOrEqual)
       .viewport({})
       .scissor({})
