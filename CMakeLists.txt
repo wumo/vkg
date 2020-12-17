@@ -1,4 +1,4 @@
-cmake_minimum_required(VERSION 3.12)
+cmake_minimum_required(VERSION 3.17)
 project(vkg LANGUAGES C CXX)
 
 set(CMAKE_VERBOSE_MAKEFILE ON)
