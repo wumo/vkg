@@ -57,6 +57,8 @@ uint32_t SceneNewTexture(CScene *scene, char *pathBuf, uint32_t pathSize, bool m
 uint32_t SceneNewTextureFromBytes(
   CScene *scene, const char *bytes, uint32_t numBytes, uint32_t width, uint32_t height,
   TextureFormat format, bool mipmap);
+uint32_t SceneNewTextureFromMemory(
+  CScene *scene, const char *bytes, uint32_t numBytes, bool mipmap);
 uint32_t SceneNewMesh(CScene *scene, uint32_t primitive, uint32_t material);
 uint32_t SceneNewNode(CScene *scene, ctransform *transform);
 uint32_t SceneNewModel(CScene *scene, uint32_t *nodes, uint32_t numNodes);

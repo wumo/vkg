@@ -61,6 +61,11 @@ public:
       {{}, vk::Filter::eLinear, vk::Filter::eLinear, vk::SamplerMipmapMode::eLinear},
     const std::string &name = "") -> uint32_t;
   auto newTexture(
+    std::span<std::byte> bytes, bool mipmap = true,
+    vk::SamplerCreateInfo sampler =
+      {{}, vk::Filter::eLinear, vk::Filter::eLinear, vk::SamplerMipmapMode::eLinear},
+    const std::string &name = "") -> uint32_t;
+  auto newTexture(
     std::span<std::byte> bytes, uint32_t width, uint32_t height,
     vk::Format format = vk::Format::eR8G8B8A8Unorm, bool mipmap = true,
     vk::SamplerCreateInfo sampler =
@@ -73,8 +78,9 @@ public:
     -> uint32_t;
   auto loadModel(const std::string &file, MaterialType materialType = MaterialType::eBRDF)
     -> uint32_t;
-  auto loadModel(std::span<std::byte> bytes, MaterialType materialType = MaterialType::eBRDF)
-  -> uint32_t;
+  auto loadModel(
+    std::span<std::byte> bytes, MaterialType materialType = MaterialType::eBRDF)
+    -> uint32_t;
   auto newModelInstance(
     uint32_t model, const Transform &transform = Transform{}, bool perFrame = false)
     -> uint32_t;

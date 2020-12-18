@@ -40,6 +40,11 @@ uint32_t SceneNewTextureFromBytes(
     {(std::byte *)bytes, numBytes}, width, height, image::toVulkanTextureFormat(format),
     mipmap);
 }
+uint32_t SceneNewTextureFromMemory(
+  CScene *scene, const char *bytes, uint32_t numBytes, bool mipmap) {
+  auto *scene_ = reinterpret_cast<Scene *>(scene);
+  return scene_->newTexture({(std::byte *)bytes, numBytes}, mipmap);
+}
 uint32_t SceneNewMesh(CScene *scene, uint32_t primitive, uint32_t material) {
   auto *scene_ = reinterpret_cast<Scene *>(scene);
   return scene_->newMesh(primitive, material);

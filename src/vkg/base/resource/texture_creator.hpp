@@ -60,6 +60,11 @@ auto load2DFromFile(
   bool mipmap = false, vk::Format format = vk::Format::eR8G8B8A8Unorm)
   -> std::unique_ptr<Texture>;
 
+auto load2DFromMemory(
+  uint32_t queueIdx, const std::string &name, Device &device, std::span<std::byte> bytes,
+  bool mipmap, vk::Format format = vk::Format::eR8G8B8A8Unorm)
+  -> std::unique_ptr<Texture>;
+
 auto load2DFromGrayScaleFile(
   uint32_t queueIdx, const std::string &name, Device &device, const std::string &file,
   bool mipmap = false, vk::Format format = vk::Format::eR16Sfloat)

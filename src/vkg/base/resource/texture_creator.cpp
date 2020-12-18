@@ -196,6 +196,25 @@ auto load2DFromFile(
   return texture;
 }
 
+auto load2DFromMemory(
+  uint32_t queueIdx, const std::string &name, Device &device, std::span<std::byte> bytes,
+  bool mipmap, vk::Format format) -> std::unique_ptr<Texture> {
+  uint32_t texWidth, texHeight, texChannels;
+  auto pixels = UniqueBytes(
+    stbi_load_from_memory(
+      reinterpret_cast<const stbi_uc *>(bytes.data()), bytes.size_bytes(),
+      reinterpret_cast<int *>(&texWidth), reinterpret_cast<int *>(&texHeight),
+      reinterpret_cast<int *>(&texChannels), STBI_rgb_alpha),
+    [](stbi_uc *ptr) { stbi_image_free(ptr); });
+
+  errorIf(pixels == nullptr, "failed to load texture ", name);
+  auto texture = makeSampler2DTex(name, device, texWidth, texHeight, format, mipmap);
+  auto imageSize = texWidth * texHeight * STBI_rgb_alpha * sizeof(stbi_uc);
+  upload(queueIdx, *texture, {(std::byte *)(pixels.get()), imageSize}, !mipmap);
+  if(mipmap) generateMipmap(queueIdx, *texture);
+  return texture;
+}
+
 auto load2DFromGrayScaleFile(
   uint32_t queueIdx, const std::string &name, Device &device, const std::string &file,
   bool mipmap, vk::Format format) -> std::unique_ptr<Texture> {

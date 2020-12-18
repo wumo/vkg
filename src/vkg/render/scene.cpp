@@ -134,6 +134,26 @@ auto Scene::newTexture(
     tex->sampler(), tex->imageView(), tex->layout()};
   return uint32_t(Dev.textures.size() - 1);
 }
+
+auto Scene::newTexture(
+  std::span<std::byte> bytes, bool mipmap, vk::SamplerCreateInfo sampler,
+  const std::string &name) -> uint32_t {
+  ensureTextures(1);
+  //TODO choose queueIdx
+  Dev.textures.push_back(image::load2DFromMemory(0, name, device, bytes, mipmap));
+  auto &tex = Dev.textures.back();
+  if(mipmap) {
+    sampler.mipmapMode = vk::SamplerMipmapMode::eLinear;
+    sampler.maxLod = static_cast<float>(tex->mipLevels());
+    sampler.anisotropyEnable = device.supported().samplerAnisotropy;
+    sampler.maxAnisotropy = device.limits().maxSamplerAnisotropy;
+  }
+  tex->setSampler(sampler);
+  Dev.sampler2Ds[Dev.textures.size() - 1] = {
+    tex->sampler(), tex->imageView(), tex->layout()};
+  return uint32_t(Dev.textures.size() - 1);
+}
+
 auto Scene::newTexture(
   std::span<std::byte> bytes, uint32_t width, uint32_t height, vk::Format format,
   bool mipmap, vk::SamplerCreateInfo sampler, const std::string &name) -> uint32_t {
