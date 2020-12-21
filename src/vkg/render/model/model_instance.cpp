@@ -38,6 +38,7 @@ auto ModelInstance::visible() const -> bool { return visible_; }
 
 auto ModelInstance::customMaterial() const -> uint32_t { return customMatId; }
 auto ModelInstance::setVisible(bool visible) -> void {
+  if(visible_ == visible) return;
   visible_ = visible;
   for(auto &inst: meshInstDescs) {
     inst.desc.ptr->visible = visible;

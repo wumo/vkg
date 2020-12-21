@@ -140,8 +140,9 @@ void RayTracingPass::compile(RenderContext &ctx, Resources &resources) {
     atmosphereSetDef.irradiance(*resources.get(passIn.atmosphere.irradiance));
     atmosphereSetDef.update(frame.atmosphereSet);
   }
-  
-  resources.set(passOut.depthImg, frame.depthImg.get());//per frame resource must be update
+
+  resources.set(
+    passOut.depthImg, frame.depthImg.get()); //per frame resource must be update
 }
 
 void RayTracingPass::execute(RenderContext &ctx, Resources &resources) {
@@ -164,7 +165,8 @@ void RayTracingPass::execute(RenderContext &ctx, Resources &resources) {
   auto scratchBufInfo = frame.tlas.scratchBuffer->bufferInfo();
   cb.buildAccelerationStructureNV(
     info, tlasInstances.buffer, tlasInstances.offset, false, *frame.tlas.as, nullptr,
-    scratchBufInfo.buffer, scratchBufInfo.offset);
+    scratchBufInfo.buffer,
+    scratchBufInfo.offset); //TODO when tlasCount==0, not entirely invisible!
 
   cb.pipelineBarrier(
     vk::PipelineStageFlagBits::eAccelerationStructureBuildNV,

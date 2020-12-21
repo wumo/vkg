@@ -78,6 +78,7 @@ void main() {
   ins.shader_flag = shader_flag;
 
   PrimitiveDesc prim = primitives[frameRef(mesh.primitive, frame)];
+  //ins.handle =(mesh.visible)? prim.handle : 0 ;
   ins.handle = prim.handle;
 
   uint tlasIdx = atomicAdd(tlasInstanceCount, 1);
