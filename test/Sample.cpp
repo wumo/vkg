@@ -30,10 +30,6 @@ auto main() -> int {
   scene.material(greenMat).setColorFactor({Green, 1.f});
   auto blueMat = scene.newMaterial();
   scene.material(blueMat).setColorFactor({Blue, 1.f});
-  auto colorTex = scene.newTexture(
-    "./assets/glTF-models/2.0/TextureCoordinateTest/glTF/TextureCoordinateTemplate.png");
-  auto texMat = scene.newMaterial(MaterialType::eBRDF);
-  scene.material(texMat).setColorTex(colorTex).setPbrFactor({0, 0.3, 0.4, 0});
 
   {
     auto primitives = scene.newPrimitives(
@@ -49,7 +45,6 @@ auto main() -> int {
 
     scene.newModelInstance(axisModel);
   }
-
 
   // primitive
   auto primitives =
@@ -77,19 +72,17 @@ auto main() -> int {
   // capture input
   auto &input = app.window().input();
 
-  float total=0;
+  float total = 0;
   //render loop
   app.loop([&](uint32_t frameIdx, double elapsedMs) {
     // update camera from input
     panningCamera.update(input);
 
-    total+=elapsedMs;
+    total += elapsedMs;
 
     // apply transform per frame
     auto &ins = scene.modelInstance(sphere);
-    if(total>2000){
-      ins.setVisible(false);
-    }
+    if(total > 2000) { ins.setVisible(false); }
 
     auto t = ins.transform();
     t.translation.x -= elapsedMs * 0.001;

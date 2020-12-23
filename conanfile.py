@@ -1,8 +1,9 @@
 from conans import ConanFile, CMake, tools
 
+
 class vkgConan(ConanFile):
     name = "vkg"
-    version = "0.0.8"
+    version = "0.0.9"
     settings = "os", "compiler", "build_type", "arch"
     requires = (
         "vulkan-headers/1.2.148@wumo/stable",
@@ -58,3 +59,6 @@ class vkgConan(ConanFile):
 
     def package_info(self):
         self.cpp_info.libs = tools.collect_libs(self)
+        self.cpp_info.defines = ["VULKAN_HPP_DISPATCH_LOADER_DYNAMIC=1"]
+        if self.options.shared:
+            self.cpp_info.defines.append("VULKAN_HPP_STORAGE_SHARED=1")
