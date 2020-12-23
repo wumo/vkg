@@ -8,7 +8,7 @@
 #include <span>
 #include <utility>
 #include "vkg/util/syntactic_sugar.hpp"
-#include "boost/pfr/precise.hpp"
+#include "boost/pfr.hpp"
 
 namespace vkg {
 

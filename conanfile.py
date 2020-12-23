@@ -8,12 +8,12 @@ class vkgConan(ConanFile):
         "vulkan-headers/1.2.148@wumo/stable",
         "vma/2.3.0@wumo/stable",
         "glfw/3.4@wumo/stable",
-        "spirv-cross/20200519",
+        "spirv-cross/20200917",
         "glm/0.9.9.8",
         "stb/20200203",
-        "tinygltf/2.4.0",
+        "tinygltf/2.5.0",
         "par_lib/master@wumo/stable",
-        "magic_get/1.0.1@wumo/stable",
+        "magic_get/2.0.1@wumo/stable",
         # "bullet3/3.07"
     )
     build_requires = ("glslvk/0.0.2@wumo/stable")
