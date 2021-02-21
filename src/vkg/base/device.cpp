@@ -214,8 +214,8 @@ Device::Device(
 void Device::createAllocator() {
   VmaAllocatorCreateInfo createInfo{};
   createInfo.flags = VMA_ALLOCATOR_CREATE_KHR_DEDICATED_ALLOCATION_BIT;
-  createInfo.physicalDevice = physicalDevice_;
-  createInfo.device = *device_;
+  createInfo.physicalDevice = VkPhysicalDevice(physicalDevice_);
+  createInfo.device = VkDevice(*device_);
   auto &dispatcher = VULKAN_HPP_DEFAULT_DISPATCHER;
   vulkanFunctions = {
     dispatcher.vkGetPhysicalDeviceProperties,

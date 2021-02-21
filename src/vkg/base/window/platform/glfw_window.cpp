@@ -205,10 +205,10 @@ auto Window::setWindowTitle(const std::string &title) -> void {
 
 auto Window::createSurface(vk::Instance instance) -> void {
   VkSurfaceKHR _surface;
-  auto result = glfwCreateWindowSurface(instance, window, nullptr, &_surface);
+  auto result = glfwCreateWindowSurface(VkInstance(instance), window, nullptr, &_surface);
   errorIf(result != VK_SUCCESS, "error create surface");
   surface = vk::UniqueSurfaceKHR{
-    _surface,
+    vk::SurfaceKHR{_surface},
     vk::ObjectDestroy<vk::Instance, VULKAN_HPP_DEFAULT_DISPATCHER_TYPE>{instance}};
 }
 

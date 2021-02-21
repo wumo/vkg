@@ -34,7 +34,8 @@ void Device::name(
     nameInfo.pObjectName = markerName.c_str();
 
     VULKAN_HPP_DEFAULT_DISPATCHER.vkDebugMarkerSetObjectNameEXT(
-      *device_, reinterpret_cast<const VkDebugMarkerObjectNameInfoEXT *>(&nameInfo));
+      VkDevice(*device_),
+      reinterpret_cast<const VkDebugMarkerObjectNameInfoEXT *>(&nameInfo));
   }
 }
 
@@ -49,7 +50,8 @@ void Device::tag(
     tagInfo.tagSize = tagSize;
     tagInfo.pTag = tag;
     VULKAN_HPP_DEFAULT_DISPATCHER.vkDebugMarkerSetObjectTagEXT(
-      *device_, reinterpret_cast<const VkDebugMarkerObjectTagInfoEXT *>(&tagInfo));
+      VkDevice(*device_),
+      reinterpret_cast<const VkDebugMarkerObjectTagInfoEXT *>(&tagInfo));
   }
 }
 
@@ -61,7 +63,8 @@ void Device::begin(
     memcpy(markerInfo.color, color.data(), sizeof(color));
     markerInfo.pMarkerName = markerName.c_str();
     VULKAN_HPP_DEFAULT_DISPATCHER.vkCmdDebugMarkerBeginEXT(
-      commandBuffer, reinterpret_cast<const VkDebugMarkerMarkerInfoEXT *>(&markerInfo));
+      VkCommandBuffer(commandBuffer),
+      reinterpret_cast<const VkDebugMarkerMarkerInfoEXT *>(&markerInfo));
   }
 }
 
@@ -73,13 +76,14 @@ void Device::insert(
     memcpy(markerInfo.color, color.data(), sizeof(color));
     markerInfo.pMarkerName = markerName.c_str();
     VULKAN_HPP_DEFAULT_DISPATCHER.vkCmdDebugMarkerInsertEXT(
-      commandBuffer, reinterpret_cast<const VkDebugMarkerMarkerInfoEXT *>(&markerInfo));
+      VkCommandBuffer(commandBuffer),
+      reinterpret_cast<const VkDebugMarkerMarkerInfoEXT *>(&markerInfo));
   }
 }
 
 void Device::end(vk::CommandBuffer commandBuffer) {
   if(VULKAN_HPP_DEFAULT_DISPATCHER.vkCmdDebugMarkerEndEXT)
-    VULKAN_HPP_DEFAULT_DISPATCHER.vkCmdDebugMarkerEndEXT(commandBuffer);
+    VULKAN_HPP_DEFAULT_DISPATCHER.vkCmdDebugMarkerEndEXT(VkCommandBuffer(commandBuffer));
 }
 
 }

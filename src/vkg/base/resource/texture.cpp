@@ -8,8 +8,8 @@ Texture::Texture(
   currentLayout = info.initialLayout;
   this->info = info;
   vmaImage = UniquePtr(new VmaImage{device}, [=](VmaImage *ptr) {
-    debugLog("deallocate image:", name, " ", ptr->image);
-    vmaDestroyImage(ptr->vkezDevice.allocator(), ptr->image, ptr->allocation);
+    debugLog("deallocate image:", name, " ", VkImage(ptr->image));
+    vmaDestroyImage(ptr->vkezDevice.allocator(), VkImage(ptr->image), ptr->allocation);
     delete ptr;
   });
   auto result = vmaCreateImage(
@@ -17,7 +17,7 @@ Texture::Texture(
     reinterpret_cast<VkImage *>(&(vmaImage->image)), &vmaImage->allocation, &alloc);
   errorIf(result != VK_SUCCESS, "failed to allocate image!");
   debugLog(
-    "allocate image: ", name, " ", vmaImage->image, "[", alloc.deviceMemory, "+",
+    "allocate image: ", name, " ", VkImage(vmaImage->image), "[", alloc.deviceMemory, "+",
     alloc.offset, "]");
   VkMemoryPropertyFlags memFlags;
   vmaGetMemoryTypeProperties(device.allocator(), alloc.memoryType, &memFlags);

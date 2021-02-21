@@ -7,8 +7,8 @@ Buffer::Buffer(
   const std::string &name) {
   this->info = info;
   vmaBuffer = UniquePtr(new VmaBuffer{device}, [=](VmaBuffer *ptr) {
-    debugLog("deallocate buffer:", name, " ", ptr->buffer);
-    vmaDestroyBuffer(ptr->vkezDevice.allocator(), ptr->buffer, ptr->allocation);
+    debugLog("deallocate buffer:", name, " ", VkBuffer(ptr->buffer));
+    vmaDestroyBuffer(ptr->vkezDevice.allocator(), VkBuffer(ptr->buffer), ptr->allocation);
     delete ptr;
   });
   auto result = vmaCreateBuffer(
@@ -16,8 +16,8 @@ Buffer::Buffer(
     reinterpret_cast<VkBuffer *>(&(vmaBuffer->buffer)), &vmaBuffer->allocation, &alloc);
   errorIf(result != VK_SUCCESS, "failed to allocate buffer!");
   debugLog(
-    "allocate buffer:", name, " ", vmaBuffer->buffer, "[", alloc.deviceMemory, "+",
-    alloc.offset, "]");
+    "allocate buffer:", name, " ", VkBuffer(vmaBuffer->buffer), "[", alloc.deviceMemory,
+    "+", alloc.offset, "]");
   VkMemoryPropertyFlags memFlags;
   vmaGetMemoryTypeProperties(device.allocator(), alloc.memoryType, &memFlags);
   if(
@@ -45,7 +45,7 @@ auto Buffer::bufferInfo() const -> BufferInfo {
 }
 auto Buffer::device() const -> Device & { return vmaBuffer->vkezDevice; }
 auto Buffer::devMem() const -> std::pair<vk::DeviceMemory, vk::DeviceSize> {
-  return {alloc.deviceMemory, alloc.offset};
+  return {vk::DeviceMemory{alloc.deviceMemory}, alloc.offset};
 }
 auto Buffer::size() const -> vk::DeviceSize { return info.size; }
 }
