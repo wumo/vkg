@@ -13,7 +13,7 @@ auto DescriptorSetLayoutMaker::binding(
   if(bindingFlag & vk::DescriptorBindingFlagBits::eUpdateAfterBind)
     updateAfterBind = true;
   errorIf(
-    variableDescriptorBinding >=0 && binding >= uint32_t(variableDescriptorBinding),
+    variableDescriptorBinding >= 0 && binding >= uint32_t(variableDescriptorBinding),
     "variable descriptor binding should be the largest binding!");
   if(bindingFlag & vk::DescriptorBindingFlagBits::eVariableDescriptorCount) {
     errorIf(
@@ -130,14 +130,14 @@ auto DescriptorSetUpdater::writeBufferViews(
 }
 auto DescriptorSetUpdater::writeAccelerationStructures(
   uint32_t dstBinding, uint32_t dstArrayElement, uint32_t descriptorCount,
-  const vk::AccelerationStructureKHR *pASInfo) -> DescriptorSetUpdater & {
+  const vk::AccelerationStructureNV *pASInfo) -> DescriptorSetUpdater & {
   vk::WriteDescriptorSet write{
     {},
     dstBinding,
     dstArrayElement,
     descriptorCount,
     vk::DescriptorType::eAccelerationStructureKHR};
-  vk::WriteDescriptorSetAccelerationStructureKHR writeAS{descriptorCount, pASInfo};
+  vk::WriteDescriptorSetAccelerationStructureNV writeAS{descriptorCount, pASInfo};
   writeASs.push_back(writeAS);
   descriptorWrites.push_back(write);
   writeASpNextPtr.push_back({descriptorWrites.size() - 1, writeASs.size() - 1});
@@ -182,11 +182,11 @@ auto DescriptorSetUpdater::writeBufferView(
   return *this;
 }
 auto DescriptorSetUpdater::writeAccelerationStructure(
-  uint32_t dstBinding, uint32_t dstArrayElement, vk::AccelerationStructureKHR ASInfo)
+  uint32_t dstBinding, uint32_t dstArrayElement, vk::AccelerationStructureNV ASInfo)
   -> DescriptorSetUpdater & {
   vk::WriteDescriptorSet write{
     {}, dstBinding, dstArrayElement, 1, vk::DescriptorType::eAccelerationStructureKHR};
-  vk::WriteDescriptorSetAccelerationStructureKHR writeAS{1};
+  vk::WriteDescriptorSetAccelerationStructureNV writeAS{1};
   ASInfos.push_back(ASInfo);
   writeASs.push_back(writeAS);
   descriptorWrites.push_back(write);
@@ -210,7 +210,7 @@ auto DescriptorSetUpdater::update(vk::Device device, vk::DescriptorSet dstSet) -
   for(auto [writeIndex, vectorIndex]: writeASpNextPtr)
     descriptorWrites[writeIndex].pNext = writeASs.data() + vectorIndex;
   for(auto [writeIndex, vectorIndex]: writeASInfoPtr)
-    ((vk::WriteDescriptorSetAccelerationStructureKHR *)descriptorWrites[writeIndex].pNext)
+    ((vk::WriteDescriptorSetAccelerationStructureNV *)descriptorWrites[writeIndex].pNext)
       ->pAccelerationStructures = ASInfos.data() + vectorIndex;
 
   device.updateDescriptorSets(descriptorWrites, descriptorCopies);

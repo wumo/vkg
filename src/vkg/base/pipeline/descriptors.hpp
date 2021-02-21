@@ -112,7 +112,7 @@ private:
   std::vector<vk::DescriptorBufferInfo> bufferInfos;
   std::vector<vk::DescriptorImageInfo> imageInfos;
   std::vector<vk::BufferView> bufferViews;
-  std::vector<vk::WriteDescriptorSetAccelerationStructureKHR> writeASs;
-  std::vector<vk::AccelerationStructureKHR> ASInfos;
+  std::vector<vk::WriteDescriptorSetAccelerationStructureNV> writeASs;
+  std::vector<vk::AccelerationStructureNV> ASInfos;
 };
 }
