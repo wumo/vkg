@@ -19,8 +19,7 @@ void NodeAddMeshes(CScene *scene, uint32_t id, uint32_t *meshes, uint32_t numMes
 uint32_t NodeGetParent(CScene *scene, uint32_t id);
 uint32_t NodeNumChildren(CScene *scene, uint32_t id);
 void NodeGetChildren(CScene *scene, uint32_t id, uint32_t *children);
-void NodeAddChildren(
-  CScene *scene, uint32_t id, uint32_t *children, uint32_t numChildren);
+void NodeAddChildren(CScene *scene, uint32_t id, uint32_t *children, uint32_t numChildren);
 void NodeGetAABB(CScene *scene, uint32_t id, caabb *aabb);
 
 #ifdef __cplusplus

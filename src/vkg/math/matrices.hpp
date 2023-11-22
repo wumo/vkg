@@ -28,8 +28,7 @@ auto perspectiveMatrix(float fovy, float aspect, float zNear, float zFar) -> glm
  * define a orthographic  projection (direction:+Z,right:+X,up:-Y), x in [-1,1],
  * y in [-1,1], z in [0,1] that is the vulkan clipping volume.
  */
-auto orthoMatrix(
-  float left, float right, float bottom, float top, float zNear, float zFar) -> glm::mat4;
+auto orthoMatrix(float left, float right, float bottom, float top, float zNear, float zFar) -> glm::mat4;
 /**
  * define a orthographic  projection (direction:+Z,right:+X,up:-Y), x in [-1,1],
  * y in [-1,1], z in [0,1] that is the vulkan clipping volume.

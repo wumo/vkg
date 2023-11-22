@@ -6,13 +6,13 @@
 #ifdef __cplusplus
 extern "C" {
 #else
-  #include <stdbool.h>
+    #include <stdbool.h>
 #endif
 
 struct CScene;
 
 uint32_t ModelInstanceGetCount(CScene *scene, uint32_t id);
-void ModelInstanceGetTransform(CScene *scene, uint32_t id, ctransform *transform);//TODO offset_float?
+void ModelInstanceGetTransform(CScene *scene, uint32_t id, ctransform *transform); //TODO offset_float?
 void ModelInstanceSetTransform(CScene *scene, uint32_t id, ctransform *transform);
 uint32_t ModelInstanceGetModel(CScene *scene, uint32_t id);
 bool ModelInstanceGetVisible(CScene *scene, uint32_t id);

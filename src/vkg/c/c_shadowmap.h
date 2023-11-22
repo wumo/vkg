@@ -6,7 +6,7 @@
 #ifdef __cplusplus
 extern "C" {
 #else
-  #include <stdbool.h>
+    #include <stdbool.h>
 #endif
 
 struct CShadowMapSetting;

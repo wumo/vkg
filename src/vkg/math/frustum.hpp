@@ -4,12 +4,12 @@
 
 namespace vkg {
 struct Frustum {
-  std::array<glm::vec4, 6> planes;
+    std::array<glm::vec4, 6> planes;
 
-  Frustum() = default;
+    Frustum() = default;
 
-  explicit Frustum(glm::mat4 m);
-  auto update(glm::mat4 m) -> void;
-  auto contains(glm::vec3 p) -> bool;
+    explicit Frustum(glm::mat4 m);
+    auto update(glm::mat4 m) -> void;
+    auto contains(glm::vec3 p) -> bool;
 };
 }

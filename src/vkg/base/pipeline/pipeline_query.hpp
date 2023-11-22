@@ -4,18 +4,18 @@
 namespace vkg {
 struct PipelineQuery {
 
-  explicit PipelineQuery(vk::Device device);
+    explicit PipelineQuery(vk::Device device);
 
-  auto reset(vk::CommandBuffer cb) -> void;
-  auto begin(vk::CommandBuffer cb) -> void;
-  auto end(vk::CommandBuffer cb) -> void;
-  auto fetchResults() -> void;
+    auto reset(vk::CommandBuffer cb) -> void;
+    auto begin(vk::CommandBuffer cb) -> void;
+    auto end(vk::CommandBuffer cb) -> void;
+    auto fetchResults() -> void;
 
-  std::vector<uint64_t> pipelineStats;
-  std::vector<std::string> pipelineStatNames;
+    std::vector<uint64_t> pipelineStats;
+    std::vector<std::string> pipelineStatNames;
 
 private:
-  vk::Device device;
-  vk::UniqueQueryPool queryPool;
+    vk::Device device;
+    vk::UniqueQueryPool queryPool;
 };
 }

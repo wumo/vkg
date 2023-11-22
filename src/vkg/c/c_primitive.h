@@ -5,14 +5,14 @@
 #ifdef __cplusplus
 extern "C" {
 #else
-  #include <stdbool.h>
+    #include <stdbool.h>
 #endif
 
 enum CPrimitiveTopology {
-  CPrimitiveTriangles = 1u,
-  CPrimitiveLines = 2u,
-  CPrimitiveProcedural = 3u,
-  CPrimitivePatches = 4u
+    CPrimitiveTriangles = 1u,
+    CPrimitiveLines = 2u,
+    CPrimitiveProcedural = 3u,
+    CPrimitivePatches = 4u
 };
 
 struct CScene;
@@ -28,12 +28,10 @@ caabb PrimitiveGetAABB(CScene *scene, uint32_t id, uint32_t idx);
 void PrimitiveSetAABB(CScene *scene, uint32_t id, caabb *aabb, uint32_t idx);
 
 void PrimitiveUpdate(
-  CScene *scene, uint32_t id, uint32_t idx, cvec3 *positions,
-  uint32_t position_offset_float, uint32_t numPositions, cvec3 *normals,
-  uint32_t normal_offset_float, uint32_t numNormals, caabb *aabb);
+    CScene *scene, uint32_t id, uint32_t idx, cvec3 *positions, uint32_t position_offset_float, uint32_t numPositions,
+    cvec3 *normals, uint32_t normal_offset_float, uint32_t numNormals, caabb *aabb);
 
-void PrimitiveUpdateFromBuilder(
-  CScene *scene, uint32_t id, uint32_t idx, CPrimitiveBuilder *builder);
+void PrimitiveUpdateFromBuilder(CScene *scene, uint32_t id, uint32_t idx, CPrimitiveBuilder *builder);
 
 #ifdef __cplusplus
 }

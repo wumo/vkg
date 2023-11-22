@@ -6,7 +6,7 @@
 #ifdef __cplusplus
 extern "C" {
 #else
-  #include <stdbool.h>
+    #include <stdbool.h>
 #endif
 
 struct CAtmosphereSetting;
@@ -15,15 +15,11 @@ typedef struct CAtmosphereSetting CAtmosphereSetting;
 bool AtmosphereIsEnabled(CAtmosphereSetting *atmosphere);
 void AtmosphereEnable(CAtmosphereSetting *atmosphere, bool enabled);
 
-void AtmosphereGetSunDirection(
-  CAtmosphereSetting *atmosphere, cvec3 *sunDirection, uint32_t offset_float);
-void AtmosphereSetSunDirection(
-  CAtmosphereSetting *atmosphere, cvec3 *sunDirection, uint32_t offset_float);
+void AtmosphereGetSunDirection(CAtmosphereSetting *atmosphere, cvec3 *sunDirection, uint32_t offset_float);
+void AtmosphereSetSunDirection(CAtmosphereSetting *atmosphere, cvec3 *sunDirection, uint32_t offset_float);
 
-void AtmosphereGetEarthCenter(
-  CAtmosphereSetting *atmosphere, cvec3 *earthCenter, uint32_t offset_float);
-void AtmosphereSetEarthCenter(
-  CAtmosphereSetting *atmosphere, cvec3 *earthCenter, uint32_t offset_float);
+void AtmosphereGetEarthCenter(CAtmosphereSetting *atmosphere, cvec3 *earthCenter, uint32_t offset_float);
+void AtmosphereSetEarthCenter(CAtmosphereSetting *atmosphere, cvec3 *earthCenter, uint32_t offset_float);
 
 float AtmosphereGetSunIntensity(CAtmosphereSetting *atmosphere);
 void AtmosphereSetSunIntensity(CAtmosphereSetting *atmosphere, float intensity);

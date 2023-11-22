@@ -10,14 +10,14 @@
 namespace vkg {
 class ComputePipelineMaker {
 public:
-  explicit ComputePipelineMaker(Device &device);
-  auto layout(vk::PipelineLayout layout) -> ComputePipelineMaker &;
-  auto shader(Shader &&shader) -> ComputePipelineMaker &;
-  auto createUnique(vk::PipelineCache pipelineCache = {}) -> vk::UniquePipeline;
+    explicit ComputePipelineMaker(Device &device);
+    auto layout(vk::PipelineLayout layout) -> ComputePipelineMaker &;
+    auto shader(Shader &&shader) -> ComputePipelineMaker &;
+    auto createUnique(vk::PipelineCache pipelineCache = {}) -> vk::UniquePipeline;
 
 private:
-  Device &device;
-  vk::PipelineLayout layout_;
-  Shader shader_;
+    Device &device;
+    vk::PipelineLayout layout_;
+    Shader shader_;
 };
 }

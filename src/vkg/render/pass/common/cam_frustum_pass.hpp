@@ -7,22 +7,22 @@
 
 namespace vkg {
 struct CamFrustumPassIn {
-  FrameGraphResource<Camera *> camera;
+    FrameGraphResource<Camera *> camera;
 };
 struct CamFrustumPassOut {
-  FrameGraphResource<std::span<Frustum>> camFrustum;
-  FrameGraphResource<BufferInfo> camBuffer;
+    FrameGraphResource<std::span<Frustum>> camFrustum;
+    FrameGraphResource<BufferInfo> camBuffer;
 };
 
 class CamFrustumPass: public Pass<CamFrustumPassIn, CamFrustumPassOut> {
 public:
-  void setup(PassBuilder &builder) override;
-  void compile(RenderContext &ctx, Resources &resources) override;
-  void execute(RenderContext &ctx, Resources &resources) override;
+    void setup(PassBuilder &builder) override;
+    void compile(RenderContext &ctx, Resources &resources) override;
+    void execute(RenderContext &ctx, Resources &resources) override;
 
 private:
-  std::vector<Frustum> frustums;
-  std::vector<std::unique_ptr<Buffer>> camBuffers;
-  bool init{false};
+    std::vector<Frustum> frustums;
+    std::vector<std::unique_ptr<Buffer>> camBuffers;
+    bool init{false};
 };
 }

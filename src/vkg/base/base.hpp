@@ -30,66 +30,61 @@ typedef void (*Updater)(uint32_t frameIdx, double elapsedMs, void *data);
 
 class Base {
 public:
-  explicit Base(
-    const WindowConfig &windowConfig = {}, const FeatureConfig &featureConfig = {});
+    explicit Base(const WindowConfig &windowConfig = {}, const FeatureConfig &featureConfig = {});
 
-  void loop(
-    const std::function<void(uint32_t frameIdx, double elapsedMs)> &updater =
-      [](uint32_t, float) {});
-  void loop(Updater updater, void *data);
-  void loop(CallFrameUpdater &updater);
+    void loop(const std::function<void(uint32_t frameIdx, double elapsedMs)> &updater = [](uint32_t, float) {});
+    void loop(Updater updater, void *data);
+    void loop(CallFrameUpdater &updater);
 
-  auto window() -> Window &;
-  auto featureConfig() const -> const FeatureConfig &;
+    auto window() -> Window &;
+    auto featureConfig() const -> const FeatureConfig &;
 
-  auto device() -> Device &;
-  auto swapchain() -> Swapchain &;
+    auto device() -> Device &;
+    auto swapchain() -> Swapchain &;
 
-  auto fpsMeter() -> FPSMeter &;
+    auto fpsMeter() -> FPSMeter &;
 
 protected:
-  auto syncSemaphore(double elapsed, const std::function<void(uint32_t, double)> &updater)
-    -> void;
-  auto syncTimeline(double elapsed, const std::function<void(uint32_t, double)> &updater)
-    -> void;
-  virtual auto resize() -> void;
-  virtual auto onInit() -> void{};
-  virtual void onFrame(uint32_t imageIndex, float elapsed);
+    auto syncSemaphore(double elapsed, const std::function<void(uint32_t, double)> &updater) -> void;
+    auto syncTimeline(double elapsed, const std::function<void(uint32_t, double)> &updater) -> void;
+    virtual auto resize() -> void;
+    virtual auto onInit() -> void{};
+    virtual void onFrame(uint32_t imageIndex, float elapsed);
 
-  auto createDebugUtils() -> void;
-  auto createSyncObjects() -> void;
-  auto createCommandBuffers() -> void;
+    auto createDebugUtils() -> void;
+    auto createSyncObjects() -> void;
+    auto createCommandBuffers() -> void;
 
-  FeatureConfig featureConfig_;
+    FeatureConfig featureConfig_;
 
-  std::unique_ptr<Instance> instance;
-  vk::UniqueDebugUtilsMessengerEXT callback;
-  std::unique_ptr<Window> window_;
-  std::unique_ptr<Device> device_;
-  std::unique_ptr<Swapchain> swapchain_;
+    std::unique_ptr<Instance> instance;
+    vk::UniqueDebugUtilsMessengerEXT callback;
+    std::unique_ptr<Window> window_;
+    std::unique_ptr<Device> device_;
+    std::unique_ptr<Swapchain> swapchain_;
 
-  std::vector<vk::CommandBuffer> cmdBuffers;
+    std::vector<vk::CommandBuffer> cmdBuffers;
 
-  struct SemaphoreSync {
-    vk::UniqueSemaphore imageAvailable;
-    vk::UniqueSemaphore renderFinished;
+    struct SemaphoreSync {
+        vk::UniqueSemaphore imageAvailable;
+        vk::UniqueSemaphore renderFinished;
 
-    vk::UniqueFence resourcesFence;
-  };
-  std::vector<SemaphoreSync> semaphoreSyncs;
+        vk::UniqueFence resourcesFence;
+    };
+    std::vector<SemaphoreSync> semaphoreSyncs;
 
-  struct TimelineSync {
-    vk::UniqueSemaphore wsiImageAvailable;
-    vk::UniqueSemaphore wsiReadyToPresent;
+    struct TimelineSync {
+        vk::UniqueSemaphore wsiImageAvailable;
+        vk::UniqueSemaphore wsiReadyToPresent;
 
-    vk::UniqueSemaphore semaphore;
-    uint64_t waitValue{0};
-  };
+        vk::UniqueSemaphore semaphore;
+        uint64_t waitValue{0};
+    };
 
-  std::vector<TimelineSync> timelineSyncs;
+    std::vector<TimelineSync> timelineSyncs;
 
-  uint32_t frameIndex{0};
+    uint32_t frameIndex{0};
 
-  FPSMeter fpsMeter_;
+    FPSMeter fpsMeter_;
 };
 }

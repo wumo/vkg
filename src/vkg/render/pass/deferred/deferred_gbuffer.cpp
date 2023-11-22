@@ -4,47 +4,45 @@
 
 namespace vkg {
 auto DeferredPass::createGbufferPass(Device &device, SceneConfig sceneConfig) -> void {
-  GraphicsPipelineMaker maker(device.vkDevice());
+    GraphicsPipelineMaker maker(device.vkDevice());
 
-  maker.layout(pipeDef.layout())
-    .renderPass(*renderPass)
-    .subpass(gbPass)
-    .vertexInputAuto(
-      {{.stride = sizeof(Vertex::Position),
-        .attributes = {{vk::Format::eR32G32B32Sfloat}}},
-       {.stride = sizeof(Vertex::Normal), .attributes = {{vk::Format::eR32G32B32Sfloat}}},
-       {.stride = sizeof(Vertex::UV), .attributes = {{vk::Format::eR32G32Sfloat}}}})
-    .inputAssembly(vk::PrimitiveTopology::eTriangleList)
-    .polygonMode(vk::PolygonMode::eFill)
-    .cullMode(vk::CullModeFlagBits::eBack)
-    .frontFace(vk::FrontFace::eCounterClockwise)
-    .depthTestEnable(true)
-    .depthWriteEnable(true)
-    .depthCompareOp(vk::CompareOp::eLessOrEqual)
-    .viewport({})
-    .scissor({})
-    .dynamicState(vk::DynamicState::eViewport)
-    .dynamicState(vk::DynamicState::eScissor)
-    .dynamicState(vk::DynamicState::eLineWidth);
+    maker.layout(pipeDef.layout())
+        .renderPass(*renderPass)
+        .subpass(gbPass)
+        .vertexInputAuto(
+            {{.stride = sizeof(Vertex::Position), .attributes = {{vk::Format::eR32G32B32Sfloat}}},
+             {.stride = sizeof(Vertex::Normal), .attributes = {{vk::Format::eR32G32B32Sfloat}}},
+             {.stride = sizeof(Vertex::UV), .attributes = {{vk::Format::eR32G32Sfloat}}}})
+        .inputAssembly(vk::PrimitiveTopology::eTriangleList)
+        .polygonMode(vk::PolygonMode::eFill)
+        .cullMode(vk::CullModeFlagBits::eBack)
+        .frontFace(vk::FrontFace::eCounterClockwise)
+        .depthTestEnable(true)
+        .depthWriteEnable(true)
+        .depthCompareOp(vk::CompareOp::eLessOrEqual)
+        .viewport({})
+        .scissor({})
+        .dynamicState(vk::DynamicState::eViewport)
+        .dynamicState(vk::DynamicState::eScissor)
+        .dynamicState(vk::DynamicState::eLineWidth);
 
-  maker.blendColorAttachment(false); //normalAtt
-  maker.blendColorAttachment(false); //albedoAtt
-  maker.blendColorAttachment(false); //pbrAtt
-  maker.blendColorAttachment(false); //emissiveAtt
+    maker.blendColorAttachment(false); //normalAtt
+    maker.blendColorAttachment(false); //albedoAtt
+    maker.blendColorAttachment(false); //pbrAtt
+    maker.blendColorAttachment(false); //emissiveAtt
 
-  maker
-    .shader(
-      vk::ShaderStageFlagBits::eVertex,
-      Shader{shader::deferred::deferred_vert_span, sceneConfig.maxNumTextures})
-    .shader(
-      vk::ShaderStageFlagBits::eFragment,
-      Shader{shader::deferred::gbuffer_frag_span, sceneConfig.maxNumTextures});
-  gbTriPipe = maker.createUnique();
-  device.name(*gbTriPipe, "gbuffer triangle pipeline");
+    maker
+        .shader(
+            vk::ShaderStageFlagBits::eVertex, Shader{shader::deferred::deferred_vert_span, sceneConfig.maxNumTextures})
+        .shader(
+            vk::ShaderStageFlagBits::eFragment,
+            Shader{shader::deferred::gbuffer_frag_span, sceneConfig.maxNumTextures});
+    gbTriPipe = maker.createUnique();
+    device.name(*gbTriPipe, "gbuffer triangle pipeline");
 
-  maker.cullMode(vk::CullModeFlagBits::eNone).polygonMode(vk::PolygonMode::eLine);
+    maker.cullMode(vk::CullModeFlagBits::eNone).polygonMode(vk::PolygonMode::eLine);
 
-  gbWireFramePipe = maker.createUnique();
-  device.name(*gbWireFramePipe, "gbuffer wireframe pipeline");
+    gbWireFramePipe = maker.createUnique();
+    device.name(*gbWireFramePipe, "gbuffer wireframe pipeline");
 }
 }

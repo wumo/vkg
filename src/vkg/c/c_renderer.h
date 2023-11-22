@@ -7,19 +7,19 @@
 #ifdef __cplusplus
 extern "C" {
 #else
-  #include <stdbool.h>
+    #include <stdbool.h>
 #endif
 
 typedef struct {
-  const char *title;
-  uint32_t width, height;
+    const char *title;
+    uint32_t width, height;
 } CWindowConfig;
 
 typedef struct {
-  bool fullscreen;
-  bool vsync;
-  uint32_t numFrames;
-  bool rayTrace;
+    bool fullscreen;
+    bool vsync;
+    uint32_t numFrames;
+    bool rayTrace;
 } CFeatureConfig;
 
 struct CRenderer;
@@ -37,10 +37,9 @@ void RendererLoopUpdater(CRenderer *renderer, CCallFrameUpdater *updater);
 
 CWindow *RendererGetWindow(CRenderer *renderer);
 
-CScene *RendererAddScene(
-  CRenderer *renderer, CSceneConfig sceneConfig, char *nameBuf, uint32_t size);
+CScene *RendererAddScene(CRenderer *renderer, CSceneConfig sceneConfig, char *nameBuf, uint32_t size);
 
-CFPSMeter * RenderGetFPSMeter(CRenderer*renderer);
+CFPSMeter *RenderGetFPSMeter(CRenderer *renderer);
 
 #ifdef __cplusplus
 }

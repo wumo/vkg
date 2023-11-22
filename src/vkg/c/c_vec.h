@@ -9,34 +9,34 @@ extern "C" {
 const static uint32_t CNullIdx = ~0U;
 
 typedef struct {
-  uint32_t start;
-  uint32_t size;
+    uint32_t start;
+    uint32_t size;
 } CUintRange;
 typedef struct {
-  float x, y;
+    float x, y;
 } cvec2;
 typedef struct {
-  float x, y, z;
+    float x, y, z;
 } cvec3;
 typedef struct {
-  float x, y, z, w;
+    float x, y, z, w;
 } cvec4;
 typedef struct {
-  cvec3 c1, c2, c3;
+    cvec3 c1, c2, c3;
 } cmat3;
 typedef struct {
-  cvec4 c1, c2, c3, c4;
+    cvec4 c1, c2, c3, c4;
 } cmat4;
 
 typedef struct {
-  cvec3 translation;
-  cvec3 scale;
-  cvec4 rotation;
+    cvec3 translation;
+    cvec3 scale;
+    cvec4 rotation;
 } ctransform;
 
 typedef struct {
-  cvec3 min;
-  cvec3 max;
+    cvec3 min;
+    cvec3 max;
 } caabb;
 
 void AABBMergePoint(caabb *aabb, cvec3 *p, uint32_t offset);

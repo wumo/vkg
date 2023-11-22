@@ -2,5 +2,5 @@
 
 class CallFrameUpdater {
 public:
-  virtual void update(uint32_t frameIdx, double elapsedDuration) {}
+    virtual void update(uint32_t frameIdx, double elapsedDuration) {}
 };
