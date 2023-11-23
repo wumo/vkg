@@ -8,7 +8,7 @@ class vkgConan(ConanFile):
     requires = (
         "vulkan-headers/1.3.268.0",
         "vulkan-memory-allocator/3.0.1",
-#         "glfw/3.3.7",
+        "glfw/3.3.7",
         "spirv-cross/cci.20211113",
         "glm/cci.20230113",
         "stb/cci.20230920",
